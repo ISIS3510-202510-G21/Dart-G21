@@ -1,5 +1,6 @@
 import 'package:dart_g21/core/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:dart_g21/widgets/navigation_bar_host.dart';
 
 class ProfilePage extends StatefulWidget {
   final String title;
@@ -22,7 +23,7 @@ class _ProfilePageState extends State<ProfilePage> {
         title: Row(
           children: [
             BackButton(),
-            Text("Profile", style: TextStyle(color: Colors.black)),
+            Text("Profile", style: TextStyle(color: AppColors.textPrimary)),
           ],
         ),
       ),
@@ -34,57 +35,65 @@ class _ProfilePageState extends State<ProfilePage> {
         ],
      
       ),
-      bottomNavigationBar: buildBottomNavigationBar(),
+      //bottomNavigationBar: buildBottomNavigationBar(),
+      bottomNavigationBar: BottomNavBarHost(
+        selectedIndex: selectedIndex,
+        onItemTapped: (index) {
+          setState(() {
+            selectedIndex = index;
+          });
+        },
+      ),
         );
       }
 
-  Widget buildBottomNavigationBar() {
-        return BottomNavigationBar(
-      currentIndex: selectedIndex,
-      onTap: (index) {
-        setState(() {
-          selectedIndex = index;
-        });
-      },
-      backgroundColor: Colors.white,
-      type: BottomNavigationBarType.fixed,
-      elevation: 0,
-      selectedItemColor: Colors.blue,
-      unselectedItemColor: Colors.grey,
-      showSelectedLabels: true,
-      showUnselectedLabels: true,
-      items: [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home, size: 35),
-          label: "Home",
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.map, size:35),
-          label: "Map",
-        ),
-        BottomNavigationBarItem(
-        icon: Container(
-        width: 46,
-        height: 46,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.blue,
-        ),
-        child: Icon(Icons.add, size: 25, color: Colors.white),
-          ),
-          label: "",
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.event, size: 35),
-          label: "My events",
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person, size: 35),
-          label: "Profile",
-        ),
-      ],
-        );
-      }
+  // Widget buildBottomNavigationBar() {
+  //       return BottomNavigationBar(
+  //     currentIndex: selectedIndex,
+  //     onTap: (index) {
+  //       setState(() {
+  //         selectedIndex = index;
+  //       });
+  //     },
+  //     backgroundColor: AppColors.primary,
+  //     type: BottomNavigationBarType.fixed,
+  //     elevation: 0,
+  //     selectedItemColor: Colors.blue,
+  //     unselectedItemColor: AppColors.secondaryText,
+  //     showSelectedLabels: true,
+  //     showUnselectedLabels: true,
+  //     items: [
+  //       BottomNavigationBarItem(
+  //         icon: Icon(Icons.home, size: 35),
+  //         label: "Home",
+  //       ),
+  //       BottomNavigationBarItem(
+  //         icon: Icon(Icons.map, size:35),
+  //         label: "Map",
+  //       ),
+  //       BottomNavigationBarItem(
+  //       icon: Container(
+  //       width: 46,
+  //       height: 46,
+  //       decoration: BoxDecoration(
+  //         shape: BoxShape.circle,
+  //         color: Colors.blue,
+  //       ),
+  //       child: Icon(Icons.add, size: 25, color: AppColors.primary),
+  //         ),
+  //         label: "",
+  //       ),
+  //       BottomNavigationBarItem(
+  //         icon: Icon(Icons.event, size: 35),
+  //         label: "My events",
+  //       ),
+  //       BottomNavigationBarItem(
+  //         icon: Icon(Icons.person, size: 35),
+  //         label: "Profile",
+  //       ),
+  //     ],
+  //       );
+  //     }
 
  Widget buildTop() {
    final bottom = 200.0;
@@ -105,7 +114,7 @@ class _ProfilePageState extends State<ProfilePage> {
 // Widget para la imagen de portada
   Widget buildCoverImage() {
     return Container(
-      color: Colors.grey,
+      color: AppColors.secondaryText,
       // child: Image.network(
       //   'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRa9Qk9n8S50ofIrPoQA3m3r9UAqOJ-9t4mMQ&s',
       //   width: double.infinity,
@@ -144,7 +153,7 @@ class _ProfilePageState extends State<ProfilePage> {
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Colors.black,
+              color: AppColors.textPrimary,
             ),
             textAlign: TextAlign.center,
           ),
@@ -152,7 +161,7 @@ class _ProfilePageState extends State<ProfilePage> {
             'Flutter Software Engineer',
             style: TextStyle(
               fontSize: 18,
-              color: Colors.grey[700],
+              color: AppColors.secondaryText,
             ),
             textAlign: TextAlign.center,
           ),
@@ -171,7 +180,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   Text(
                     'Following',
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: AppColors.secondaryText),
                   ),
                 ],
               ),
@@ -184,7 +193,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   Text(
                     'Followers',
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: AppColors.secondaryText),
                   ),
                 ],
               ),
@@ -196,14 +205,14 @@ class _ProfilePageState extends State<ProfilePage> {
           // Botón Edit Profile
           ElevatedButton.icon(
             onPressed: () {},
-            icon: Icon(Icons.edit, color: Colors.blue),
+            icon: Icon(Icons.edit, color: AppColors.secondary),
             label: Text(
               "Edit Profile",
-              style: TextStyle(color: Colors.blue),
+              style: TextStyle(color: AppColors.secondary),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              side: BorderSide(color: Colors.blue),
+              backgroundColor: AppColors.primary,
+              side: BorderSide(color: AppColors.secondary),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
           ),
@@ -218,14 +227,14 @@ class _ProfilePageState extends State<ProfilePage> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.black,
+                color: AppColors.textPrimary,
               ),
             ),
           ),
           SizedBox(height: 8),
           Text(
             'Enjoy your favorite dish and a lovely time with friends and family. Food from local food trucks will be available for purchase. ',
-            style: TextStyle(fontSize: 16, color: Colors.black),
+            style: TextStyle(fontSize: 16, color: AppColors.textPrimary),
             textAlign: TextAlign.justify,
           ),
           Align(
@@ -234,7 +243,7 @@ class _ProfilePageState extends State<ProfilePage> {
               onPressed: () {},
               child: Text(
                 "Read More...",
-                style: TextStyle(color: Colors.blue),
+                style: TextStyle(color: AppColors.secondary),
               ),
             ),
           ),
@@ -251,8 +260,8 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               TextButton.icon(
                 onPressed: () {},
-                icon: Icon(Icons.edit, size: 16, color: Colors.blue),
-                label: Text("Change", style: TextStyle(color: Colors.blue)),
+                icon: Icon(Icons.edit, size: 16, color: AppColors.secondary),
+                label: Text("Change", style: TextStyle(color: AppColors.secondary)),
               ),
             ],
           ),
@@ -262,12 +271,12 @@ class _ProfilePageState extends State<ProfilePage> {
             spacing: 10,
             runSpacing: 10,
             children: [
-              buildInterestChip('Programming', Colors.purple),
-              buildInterestChip('Concert', Colors.red),
-              buildInterestChip('Music', Colors.orange),
-              buildInterestChip('Art', Colors.blue),
-              buildInterestChip('Movie', Colors.green),
-              buildInterestChip('Others', Colors.cyan),
+              buildInterestChip('Programming', AppColors.buttonPurple),
+              buildInterestChip('Concert', AppColors.buttonRed),
+              buildInterestChip('Music', AppColors.buttonOrange),
+              buildInterestChip('Art', AppColors.secondary),
+              buildInterestChip('Movie', AppColors.buttonGreen),
+              buildInterestChip('Others', AppColors.buttonLightBlue),
             ],
           ),
 
@@ -281,7 +290,7 @@ class _ProfilePageState extends State<ProfilePage> {
   // Widget para cada chip de intereses
   Widget buildInterestChip(String label, Color color) {
     return Chip(
-      label: Text(label, style: TextStyle(color: Colors.white)),
+      label: Text(label, style: TextStyle(color: AppColors.primary)),
       backgroundColor: color,
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
     );
