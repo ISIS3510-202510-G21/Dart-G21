@@ -1,5 +1,5 @@
-import 'package:dart_g21/core/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:dart_g21/core/colors.dart';
 import 'package:dart_g21/widgets/navigation_bar_host.dart';
 
 class MyEventsPage extends StatefulWidget {
@@ -10,11 +10,40 @@ class MyEventsPage extends StatefulWidget {
   @override
   _MyEventsPageState createState() => _MyEventsPageState();
 }
- 
+
 class _MyEventsPageState extends State<MyEventsPage> {
-  final double coverHeight = 200;
-  final double profileHeight = 180;
-  int selectedIndex = 4; // Índice del ícono seleccionado (Profile)
+  int selectedIndex = 2; // Índice del ícono seleccionado (My Events)
+
+  //  Lista de eventos de ejemplo
+  final List<Map<String, String>> upcomingEvents = [
+    {
+      "date": "Wed, Apr 28 • 5:30 PM",
+      "title": "A Virtual Evening of Smooth Jazz",
+      "image": "https://st3.depositphotos.com/1297731/14775/i/450/depositphotos_147759535-stock-photo-crowd-at-concert-summer-music.jpg",
+      "value": "0" 
+    },
+    {
+      "date": "Wed, Apr 28 • 5:30 PM",
+      "title": "A Virtual Evening of Smooth Jazz",
+      "image": "https://st3.depositphotos.com/1297731/14775/i/450/depositphotos_147759535-stock-photo-crowd-at-concert-summer-music.jpg",
+      "value": "10"
+    },
+  ];
+
+  final List<Map<String, String>> previousEvents = [
+    {
+      "date": "Thu, Mar 6 • 1:30 PM",
+      "title": "International Gala Music Festival",
+      "image": "https://st3.depositphotos.com/1297731/14775/i/450/depositphotos_147759535-stock-photo-crowd-at-concert-summer-music.jpg",
+      "value": "0"
+    },
+    {
+      "date": "Wed, Feb 25 • 3:30 PM",
+      "title": "Women Leadership Conference",
+      "image": "https://st3.depositphotos.com/1297731/14775/i/450/depositphotos_147759535-stock-photo-crowd-at-concert-summer-music.jpg",
+      "value": "0"
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -23,19 +52,28 @@ class _MyEventsPageState extends State<MyEventsPage> {
         title: Row(
           children: [
             BackButton(),
-            Text("My Events", style: TextStyle(color: AppColors.textPrimary)),
+            Text("My Events", style: TextStyle(fontSize: 24, color: AppColors.textPrimary)),
           ],
         ),
       ),
+
+      // Cuerpo con lista de eventos
       body: ListView(
-        padding: EdgeInsets.zero,
-        children: <Widget>[
-          buildTop(),
-          buildContent(),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        children: [
+          //  Sección de Upcoming Events
+          buildSectionTitle("Upcoming Events"),
+          ...upcomingEvents.map((event) => buildEventCard(event)).toList(),
+
+          SizedBox(height: 20),
+
+          //  Sección de Previous Events
+          buildSectionTitle("Previous Events"),
+          ...previousEvents.map((event) => buildEventCard(event)).toList(),
         ],
-     
       ),
-      //bottomNavigationBar: buildBottomNavigationBar(),
+
+      //  Barra de navegación inferior
       bottomNavigationBar: BottomNavBarHost(
         selectedIndex: selectedIndex,
         onItemTapped: (index) {
@@ -44,206 +82,106 @@ class _MyEventsPageState extends State<MyEventsPage> {
           });
         },
       ),
-        );
-      }
-
-  
-
- Widget buildTop() {
-   final bottom = 200.0;
-   final top = 20.0;
-   return Stack (
-            clipBehavior: Clip.none,
-            alignment: Alignment.topCenter,
-            children:[
-              Container(margin: EdgeInsets.only(bottom: bottom),
-              child:buildCoverImage() ),
-              Positioned(
-                top: top,
-                child:buildProfileImage(),
-          )],
-          );
-  }  
-
-// Widget para la imagen de portada
-  Widget buildCoverImage() {
-    return Container(
-      color: AppColors.primary,
     );
   }
 
-// Widget para la imagen de perfil
-  Widget buildProfileImage(){
-    return CircleAvatar( 
-      radius: profileHeight/2,
-      backgroundColor: Colors.grey.shade800,
-      backgroundImage: NetworkImage(
-        'https://b2472105.smushcdn.com/2472105/wp-content/uploads/2023/09/Poses-Perfil-Profesional-Mujeres-ago.-10-2023-1-819x1024.jpg?lossy=1&strip=1&webp=1',
+  // Widget para los títulos de sección ("Upcoming Events", "Previous Events")
+  Widget buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Text(
+        title,
+        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
       ),
     );
   }
 
+  //  Widget para cada tarjeta de evento
+Widget buildEventCard(Map<String, String> event) {
+  return Material(
+    color: Colors.transparent, // 
+    child: InkWell(
+      onTap: () {
+        print("Evento seleccionado: ${event['title']}");
+      },
+      borderRadius: BorderRadius.circular(12), 
+      splashColor: Colors.blue.withOpacity(0.2), 
+      highlightColor: Colors.blue.withOpacity(0.1), 
+      child: Card(
+        margin: EdgeInsets.symmetric(vertical: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 4, 
+        child: Padding(
+          padding: EdgeInsets.all(12),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                //  Imagen y pago
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        event["image"]!,
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    if (event["value"] != "0")
+                      Icon(Icons.payments, color: AppColors.textPrimary),
+                  ],
+                ),
 
- 
+                SizedBox(width: 12),
 
-// Widget para el contenido del perfil
-  Widget buildContent() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(height: 20),
-
-          //Nombre y Profesión
-          Text(
-            'James Summer',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          Text(
-            'Flutter Software Engineer',
-            style: TextStyle(
-              fontSize: 18,
-              color: AppColors.secondaryText,
-            ),
-            textAlign: TextAlign.center,
-          ),
-
-          SizedBox(height: 16),
-
-          //Seguidores y Seguidos
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Column(
-                children: [
-                  Text(
-                    '350',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                //  Detalles del evento alineados arriba
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 10),
+                      Text(
+                        event["date"]!,
+                        style: TextStyle(fontSize: 12, color: AppColors.secondary),
+                      ),
+                      SizedBox(height: 15),
+                      Text(
+                        event["title"]!,
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
+                    ],
                   ),
-                  Text(
-                    'Following',
-                    style: TextStyle(color: AppColors.secondaryText),
-                  ),
-                ],
-              ),
-              SizedBox(width: 40),
-              Column(
-                children: [
-                  Text(
-                    '346',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    'Followers',
-                    style: TextStyle(color: AppColors.secondaryText),
-                  ),
-                ],
-              ),
-            ],
-          ),
+                ),
 
-          SizedBox(height: 20),
-
-          // Botón Edit Profile
-          ElevatedButton.icon(
-            onPressed: () {},
-            icon: Icon(Icons.edit, color: AppColors.secondary),
-            label: Text(
-              "Edit Profile",
-              style: TextStyle(color: AppColors.secondary),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              side: BorderSide(color: AppColors.secondary),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                //  Botones de guardar y eliminar bien alineados
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.flag_outlined, color: AppColors.textPrimary),
+                      onPressed: () {},
+                    ),
+                    Spacer(),
+                    IconButton(
+                      icon: Icon(Icons.delete_outline, color: AppColors.textPrimary),
+                      onPressed: () {},
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-
-          SizedBox(height: 20),
-
-          //Sección "About Me"
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'About Me...',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Enjoy your favorite dish and a lovely time with friends and family. Food from local food trucks will be available for purchase. ',
-            style: TextStyle(fontSize: 16, color: AppColors.textPrimary),
-            textAlign: TextAlign.justify,
-          ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton(
-              onPressed: () {},
-              child: Text(
-                "Read More...",
-                style: TextStyle(color: AppColors.secondary),
-              ),
-            ),
-          ),
-
-          SizedBox(height: 20),
-
-          // Sección "Interest"
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Interest',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              TextButton.icon(
-                onPressed: () {},
-                icon: Icon(Icons.edit, size: 16, color: AppColors.secondary),
-                label: Text("Change", style: TextStyle(color: AppColors.secondary)),
-              ),
-            ],
-          ),
-          SizedBox(height: 20),
-          // Chips de intereses
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              buildInterestChip('Programming', AppColors.buttonPurple),
-              buildInterestChip('Concert', AppColors.buttonRed),
-              buildInterestChip('Music', AppColors.buttonOrange),
-              buildInterestChip('Art', AppColors.secondary),
-              buildInterestChip('Movie', AppColors.buttonGreen),
-              buildInterestChip('Others', AppColors.buttonLightBlue),
-            ],
-          ),
-
-          SizedBox(height: 40), // Espaciado final
-        ],
+        ),
       ),
-    );
-  }
-
-
-  // Widget para cada chip de intereses
-  Widget buildInterestChip(String label, Color color) {
-    return Chip(
-      label: Text(label, style: TextStyle(color: AppColors.primary)),
-      backgroundColor: color,
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-    );
-  }
-
- 
+    ),
+  );
 }
 
+
+
+}
