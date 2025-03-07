@@ -22,8 +22,7 @@ class _ProfilePageState extends State<ProfilePage> {
       appBar: AppBar(
         title: Row(
           children: [
-            BackButton(),
-            Text("Profile", style: TextStyle(color: AppColors.textPrimary)),
+            Text("Profile", style: TextStyle(color: AppColors.textPrimary, fontSize: 24)),
           ],
         ),
       ),
@@ -36,64 +35,17 @@ class _ProfilePageState extends State<ProfilePage> {
      
       ),
       //bottomNavigationBar: buildBottomNavigationBar(),
-      bottomNavigationBar: BottomNavBarHost(
-        selectedIndex: selectedIndex,
-        onItemTapped: (index) {
-          setState(() {
-            selectedIndex = index;
-          });
-        },
-      ),
+      // bottomNavigationBar: BottomNavBarHost(
+      //   selectedIndex: selectedIndex,
+      //   onItemTapped: (index) {
+      //     setState(() {
+      //       selectedIndex = index;
+      //     });
+      //   },
+      // ),
         );
       }
 
-  // Widget buildBottomNavigationBar() {
-  //       return BottomNavigationBar(
-  //     currentIndex: selectedIndex,
-  //     onTap: (index) {
-  //       setState(() {
-  //         selectedIndex = index;
-  //       });
-  //     },
-  //     backgroundColor: AppColors.primary,
-  //     type: BottomNavigationBarType.fixed,
-  //     elevation: 0,
-  //     selectedItemColor: Colors.blue,
-  //     unselectedItemColor: AppColors.secondaryText,
-  //     showSelectedLabels: true,
-  //     showUnselectedLabels: true,
-  //     items: [
-  //       BottomNavigationBarItem(
-  //         icon: Icon(Icons.home, size: 35),
-  //         label: "Home",
-  //       ),
-  //       BottomNavigationBarItem(
-  //         icon: Icon(Icons.map, size:35),
-  //         label: "Map",
-  //       ),
-  //       BottomNavigationBarItem(
-  //       icon: Container(
-  //       width: 46,
-  //       height: 46,
-  //       decoration: BoxDecoration(
-  //         shape: BoxShape.circle,
-  //         color: Colors.blue,
-  //       ),
-  //       child: Icon(Icons.add, size: 25, color: AppColors.primary),
-  //         ),
-  //         label: "",
-  //       ),
-  //       BottomNavigationBarItem(
-  //         icon: Icon(Icons.event, size: 35),
-  //         label: "My events",
-  //       ),
-  //       BottomNavigationBarItem(
-  //         icon: Icon(Icons.person, size: 35),
-  //         label: "Profile",
-  //       ),
-  //     ],
-  //       );
-  //     }
 
  Widget buildTop() {
    final bottom = 200.0;
@@ -115,12 +67,6 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget buildCoverImage() {
     return Container(
       color: AppColors.secondaryText,
-      // child: Image.network(
-      //   'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRa9Qk9n8S50ofIrPoQA3m3r9UAqOJ-9t4mMQ&s',
-      //   width: double.infinity,
-      //   height:coverHeight,
-      //   fit: BoxFit.cover,
-      //),
     );
   }
 
@@ -151,7 +97,7 @@ class _ProfilePageState extends State<ProfilePage> {
           Text(
             'James Summer',
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 32,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
             ),
@@ -160,7 +106,7 @@ class _ProfilePageState extends State<ProfilePage> {
           Text(
             'Flutter Software Engineer',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 22,
               color: AppColors.secondaryText,
             ),
             textAlign: TextAlign.center,
@@ -176,11 +122,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
                   Text(
                     '350',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   Text(
                     'Following',
-                    style: TextStyle(color: AppColors.secondaryText),
+                    style: TextStyle(color: AppColors.secondaryText, fontSize: 14),
                   ),
                 ],
               ),
@@ -189,11 +135,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
                   Text(
                     '346',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   Text(
                     'Followers',
-                    style: TextStyle(color: AppColors.secondaryText),
+                    style: TextStyle(color: AppColors.secondaryText, fontSize: 14),
                   ),
                 ],
               ),
@@ -208,7 +154,7 @@ class _ProfilePageState extends State<ProfilePage> {
             icon: Icon(Icons.edit, color: AppColors.secondary),
             label: Text(
               "Edit Profile",
-              style: TextStyle(color: AppColors.secondary),
+              style: TextStyle(color: AppColors.secondary, fontSize: 14),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
@@ -225,7 +171,7 @@ class _ProfilePageState extends State<ProfilePage> {
             child: Text(
               'About Me...',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
               ),
@@ -234,7 +180,7 @@ class _ProfilePageState extends State<ProfilePage> {
           SizedBox(height: 8),
           Text(
             'Enjoy your favorite dish and a lovely time with friends and family. Food from local food trucks will be available for purchase. ',
-            style: TextStyle(fontSize: 16, color: AppColors.textPrimary),
+            style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
             textAlign: TextAlign.justify,
           ),
           Align(
@@ -243,7 +189,7 @@ class _ProfilePageState extends State<ProfilePage> {
               onPressed: () {},
               child: Text(
                 "Read More...",
-                style: TextStyle(color: AppColors.secondary),
+                style: TextStyle(color: AppColors.secondary, fontSize: 14),
               ),
             ),
           ),
@@ -256,12 +202,12 @@ class _ProfilePageState extends State<ProfilePage> {
             children: [
               Text(
                 'Interest',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               TextButton.icon(
                 onPressed: () {},
                 icon: Icon(Icons.edit, size: 16, color: AppColors.secondary),
-                label: Text("Change", style: TextStyle(color: AppColors.secondary)),
+                label: Text("Change", style: TextStyle(color: AppColors.secondary,fontSize: 16)),
               ),
             ],
           ),
@@ -290,7 +236,7 @@ class _ProfilePageState extends State<ProfilePage> {
   // Widget para cada chip de intereses
   Widget buildInterestChip(String label, Color color) {
     return Chip(
-      label: Text(label, style: TextStyle(color: AppColors.primary)),
+      label: Text(label, style: TextStyle(color: AppColors.primary, fontSize: 14)),
       backgroundColor: color,
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
     );
