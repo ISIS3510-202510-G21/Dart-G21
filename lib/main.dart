@@ -1,7 +1,14 @@
+import 'package:dart_g21/screens/MyEvents/head.dart';
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MaterialApp(
+    initialRoute: '/',
+    routes: {
+      '/': (context) =>  MyEventsPage(title: 'Flutter Demo Home Page'),
+      '/profile': (context) => MyEventsPage(title: 'MyEvents Page'),
+    },
+  ));
 }
 
 class MyApp extends StatelessWidget {

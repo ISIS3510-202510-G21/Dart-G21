@@ -51,7 +51,6 @@ class _MyEventsPageState extends State<MyEventsPage> {
       appBar: AppBar(
         title: Row(
           children: [
-            BackButton(),
             Text("My Events", style: TextStyle(fontSize: 24, color: AppColors.textPrimary)),
           ],
         ),
@@ -74,14 +73,14 @@ class _MyEventsPageState extends State<MyEventsPage> {
       ),
 
       //  Barra de navegación inferior
-      bottomNavigationBar: BottomNavBarHost(
-        selectedIndex: selectedIndex,
-        onItemTapped: (index) {
-          setState(() {
-            selectedIndex = index;
-          });
-        },
-      ),
+      // bottomNavigationBar: BottomNavBarHost(
+      //   selectedIndex: selectedIndex,
+      //   onItemTapped: (index) {
+      //     setState(() {
+      //       selectedIndex = index;
+      //     });
+      //   },
+      // ),
     );
   }
 
