@@ -16,7 +16,7 @@ class BottomNavBarHost extends StatelessWidget {
     return BottomAppBar(
       shape: const CircularNotchedRectangle(),
       notchMargin: 5.0,
-      elevation: 8.0,
+      elevation: 10.0,
       color: AppColors.primary,
       shadowColor: AppColors.icons,
       child: SizedBox(
