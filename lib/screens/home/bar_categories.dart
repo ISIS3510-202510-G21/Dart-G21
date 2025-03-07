@@ -30,7 +30,7 @@ class BarCategories extends StatelessWidget{
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 5),
                 child: ElevatedButton(
-                  onPressed: () {} , //TODO
+                  onPressed: () {} ,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: colors[index % colors.length],
                     shape: RoundedRectangleBorder(
