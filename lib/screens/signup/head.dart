@@ -1,3 +1,4 @@
+import 'package:dart_g21/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/core/colors.dart';
 import 'package:dart_g21/widgets/custom_input_field.dart';
@@ -29,6 +30,47 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   @override
+Widget build(BuildContext context) {
+  print("SignUpScreen cargado"); // Esto nos ayudará a verificar si la pantalla se está ejecutando
+
+  double screenWidth = MediaQuery.of(context).size.width;
+
+  return Scaffold(
+    backgroundColor: AppColors.primary,
+    body: SafeArea(
+      child: Center(
+        child: SingleChildScrollView(
+          child: Container(
+            width: screenWidth > 500 ? 400 : screenWidth * 0.9,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildBackButton(context),
+                const SizedBox(height: 30),
+                _buildTitle(),
+                const SizedBox(height: 40),
+                _buildFormFields(),
+                const SizedBox(height: 38),
+                _buildSignUpButton(),
+                const SizedBox(height: 38),
+                _buildDivider(),
+                const SizedBox(height: 38),
+                _buildSocialLoginButtons(),
+                const SizedBox(height: 20),
+                _buildSignInText(context),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+
+
+  /* @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width; // Detecta el ancho de la pantalla
 
@@ -64,7 +106,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       ),
     );
   }
-
+ */
   Widget _buildBackButton(BuildContext context) {
     return GestureDetector(
       onTap: () => Navigator.pop(context),
@@ -134,8 +176,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
       width: double.infinity,
       height: 48,
       child: ElevatedButton(
-        onPressed: () {
-          // TODO: Implementar la lógica de registro
+        onPressed: () async {
+          AuthService().SignUpScreen(
+            name: _nameController.text, 
+            email:_emailController.text, 
+            password:_passwordController.text
+            );
+          // ACAAAAA TODO: Implementar la lógica de registro
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.secondary,
