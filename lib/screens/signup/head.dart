@@ -1,4 +1,3 @@
-import 'package:dart_g21/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/core/colors.dart';
 import 'package:dart_g21/widgets/custom_input_field.dart';
@@ -177,11 +176,11 @@ Widget build(BuildContext context) {
       height: 48,
       child: ElevatedButton(
         onPressed: () async {
-          AuthService().SignUpScreen(
+          /* AuthService().SignUpScreen(
             name: _nameController.text, 
             email:_emailController.text, 
             password:_passwordController.text
-            );
+            ); */
           // ACAAAAA TODO: Implementar la lógica de registro
         },
         style: ElevatedButton.styleFrom(

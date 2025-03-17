@@ -1,19 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:dart_g21/screens/signup/head.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform, // 🔥 Agrega esto
-  );
-
-  testFirestoreWrite(); // 🔥 Prueba escribir en Firestore
-  testFirestoreRead();  //
 
   runApp(MaterialApp(
     initialRoute: '/',
@@ -23,37 +13,6 @@ void main() async {
     },
   ));
 }
-
-void testFirestoreWrite() async {
-  FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-  try {
-    await firestore.collection("events").add({
-      "name": "Evento de Prueba",
-      "description": "Este es un evento de prueba desde Flutter.",
-      "timestamp": FieldValue.serverTimestamp(),
-      "host_id": "fake-host-id" // Necesitas un ID válido para que la regla permita la escritura
-    });
-
-    print("🔥 Datos escritos correctamente en Firestore.");
-  } catch (e) {
-    print("❌ Error al escribir en Firestore: $e");
-  }
-}
-
-void testFirestoreRead() async {
-  FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-  try {
-    var snapshot = await firestore.collection("events").get();
-    for (var doc in snapshot.docs) {
-      print("📌 Documento leído: ${doc.data()}");
-    }
-  } catch (e) {
-    print("❌ Error al leer Firestore: $e");
-  }
-}
-
 
 class AppInitializer extends StatelessWidget {
   @override
