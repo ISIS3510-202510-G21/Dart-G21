@@ -1,11 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:dart_g21/screens/signup/head.dart';
 import 'package:firebase_core/firebase_core.dart';
+//import 'package:dart_g21/screens/signin/head.dart';
+import 'package:dart_g21/screens/home/head.dart';
 
 
 void main() async {
 
   runApp(MaterialApp(
+    /* debugShowCheckedModeBanner: false,
+    initialRoute: '/signin', // La app inicia en la pantalla de Sign In
+    routes: {
+      '/signin': (context) => SignInScreen(),  // Pantalla de inicio de sesión
+      '/signup': (context) => SignUpScreen(),  // Pantalla de registro
+      '/home': (context) => HomeScreen(),      // Pantalla principal (Home)
+    },
+  )); */
+  
     initialRoute: '/',
     routes: {
       '/': (context) => SignUpScreen(),
@@ -13,6 +24,8 @@ void main() async {
     },
   ));
 }
+
+
 
 class AppInitializer extends StatelessWidget {
   @override
