@@ -141,7 +141,8 @@ class _ProfilePageState extends State<ProfilePage> {
               Column(
                 children: [
                   Text(
-                    '350',
+                    profile.followers.length.toString(),
+                   // '350',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   Text(
@@ -154,7 +155,8 @@ class _ProfilePageState extends State<ProfilePage> {
               Column(
                 children: [
                   Text(
-                    '346',
+                    profile.following.length.toString(),
+                    //'346',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   Text(
