@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dart_g21/core/colors.dart';
+import 'package:dart_g21/services/auth_service.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
@@ -175,6 +176,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
     height: 48,
     child: ElevatedButton(
       onPressed: () async {
+         AuthService().SignUpScreen(
+            name: _nameController.text, 
+            email:_emailController.text, 
+            password:_passwordController.text
+            );
         // TODO: Implementar lógica de registro
         //Navigator.pushNamed(context, '/home'); // HABILITARLOOO PARA ir a Home después de registrarse
       },
@@ -226,7 +232,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       ),
       TextButton(
         onPressed: () {
-          //Navigator.pushNamed(context, '/signin'); // HABILITARLO DESPUES PARA Ir a Sign In
+          Navigator.pushNamed(context, '/signin'); // HABILITARLO DESPUES PARA Ir a Sign In
         },
         child: const Text(
           'Sign In',

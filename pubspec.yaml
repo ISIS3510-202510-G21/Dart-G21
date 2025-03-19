@@ -69,14 +69,6 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
      - lib/assets/logosignin.png
-     - lib/assets/password.png
-     - lib/assets/visibility.png
-     - lib/assets/email.png
-     - lib/assets/arrow.png
-     - lib/assets/google.png
-     - lib/assets/facebook.png
-     - lib/assets/field.png
-     - lib/assets/visibility_off.png
   
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
