@@ -1,11 +1,9 @@
-import 'dart:ffi';
-
 class Location{
   String id;
   String address;
   String city;
   String details;
-  Bool university;
+  bool university;
 
   Location({required this.id, required this.address, required this.city, required this.details, required this.university});
 
