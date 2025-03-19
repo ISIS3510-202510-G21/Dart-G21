@@ -2,17 +2,15 @@ class User {
   String id;
   String name;
   String email;
-  String username;
   String userType;
 
-  User({required this.id, required this.name, required this.email, required this.username, required this.userType});
+  User({required this.id, required this.name, required this.email, required this.userType});
 
   // Convertir objeto a Map para Firestore
   Map<String, dynamic> toMap() {
     return {
       'name': name,
       'email': email,
-      'username': username,
       'user_type': userType
     };
   }
@@ -23,7 +21,6 @@ class User {
       id: id,
       name: map['name'],
       email: map['email'],
-      username: map['username'],
       userType: map['user_type'],
     );
   }

@@ -1,5 +1,3 @@
-import 'dart:ffi';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_g21/models/category.dart';
 import 'package:dart_g21/models/location.dart';
@@ -13,7 +11,7 @@ class Event {
   DateTime start_date;
   DateTime end_date;
   String image;
-  Int cost;
+  int cost;
   String location_id;
   String category;
   List<String> attendees;
