@@ -1,5 +1,6 @@
 import 'dart:ffi';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_g21/models/category.dart';
 import 'package:dart_g21/models/location.dart';
 import 'package:dart_g21/models/user.dart';
@@ -13,9 +14,9 @@ class Event {
   DateTime end_date;
   String image;
   Int cost;
-  Location location_id;
-  Category_event category;
-  List<User> attendees;
+  String location_id;
+  String category;
+  List<String> attendees;
 
   Event({required this.id, required this.name, required this.description, required this.start_date, required this.end_date, required this.image, required this.cost, required this.location_id, required this.category, required this.attendees});
 
@@ -25,8 +26,8 @@ class Event {
     return {
       'name': name,
       'description': description,
-      'start_date': start_date,
-      'end_date': end_date,
+      'start_date': start_date.toUtc(),
+      'end_date': end_date.toUtc(),
       'image': image,
       'cost': cost,
       'location_id': location_id,
@@ -41,13 +42,13 @@ class Event {
       id: id,
       name: map['name'],
       description: map['description'],
-      start_date: map['start_date'],
-      end_date: map['end_date'],
+      start_date: (map['start_date'] as Timestamp).toDate(),
+      end_date: (map['start_date'] as Timestamp).toDate(),
       image: map['image'],
       cost: map['cost'],
-      location_id: map['location_id'],
-      category: map['category'],
-      attendees: map['attendees'],
+      location_id: map['location_id'] ?? '',
+      category: map['category'] ?? '',
+      attendees: List<String>.from(map['attendees'] ?? []),
     );
   }
 }

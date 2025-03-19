@@ -12,6 +12,10 @@ class ProfileController {
     return await _profileRepository.getProfileById(profileId);
   }
 
+  Future<Profile?> getProfileByUserId(String userId) async {
+    return await _profileRepository.getProfileByUserId(userId);
+  }
+
   Future<void> addProfile(Profile profile) async {
     await _profileRepository.addProfile(profile);
   }

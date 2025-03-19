@@ -14,6 +14,10 @@ class ProfileRepository {
     return await _profileDao.getProfileById(profileId);
   }
 
+  Future<Profile?> getProfileByUserId(String userId) async {
+    return await _profileDao.getProfileByUserId(userId);
+  }
+
   Future<void> addProfile(Profile profile) async {
     await _profileDao.insertProfile(profile);
   }

@@ -5,7 +5,7 @@ class ProfileDAO {
   final FirestoreService _firestore = FirestoreService();
   final String collectionPath = "profiles";
 
-  // 🔥 Obtener perfiles en tiempo real
+  // Obtener perfiles en tiempo real
   Stream<List<Profile>> getProfilesStream() {
     return _firestore.getCollectionStream(collectionPath).map((data) {
       return data.map((doc) => Profile.fromMap(doc, doc["id"])).toList();
@@ -20,6 +20,17 @@ class ProfileDAO {
     }
     return null;
   }
+
+// Obtener un perfil por ID de usuario
+  Future<Profile?> getProfileByUserId(String userId) async {
+    final doc = await _firestore.getDocumentByField(collectionPath, "user_ref", userId);
+    if (doc != null) {
+      return Profile.fromMap(doc.data() as Map<String, dynamic>, doc.id);
+    }
+    return null;
+  }
+ 
+
 
   // Agregar un perfil
   Future<void> insertProfile(Profile profile) async {

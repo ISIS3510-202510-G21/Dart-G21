@@ -149,19 +149,19 @@ class _ProfilePageState extends State<ProfilePage> {
           SizedBox(height: 20),
 
           // Botón Edit Profile
-          ElevatedButton.icon(
-            onPressed: () {},
-            icon: Icon(Icons.edit, color: AppColors.secondary),
-            label: Text(
-              "Edit Profile",
-              style: TextStyle(color: AppColors.secondary, fontSize: 14),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              side: BorderSide(color: AppColors.secondary),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-          ),
+          // ElevatedButton.icon(
+          //   onPressed: () {},
+          //   icon: Icon(Icons.edit, color: AppColors.secondary),
+          //   label: Text(
+          //     "Edit Profile",
+          //     style: TextStyle(color: AppColors.secondary, fontSize: 14),
+          //   ),
+          //   style: ElevatedButton.styleFrom(
+          //     backgroundColor: AppColors.primary,
+          //     side: BorderSide(color: AppColors.secondary),
+          //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          //   ),
+          // ),
 
           SizedBox(height: 20),
 
@@ -183,16 +183,16 @@ class _ProfilePageState extends State<ProfilePage> {
             style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
             textAlign: TextAlign.justify,
           ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton(
-              onPressed: () {},
-              child: Text(
-                "Read More...",
-                style: TextStyle(color: AppColors.secondary, fontSize: 14),
-              ),
-            ),
-          ),
+          // Align(
+          //   alignment: Alignment.centerLeft,
+          //   child: TextButton(
+          //     onPressed: () {},
+          //     child: Text(
+          //       "Read More...",
+          //       style: TextStyle(color: AppColors.secondary, fontSize: 14),
+          //     ),
+          //   ),
+          // ),
 
           SizedBox(height: 20),
 
@@ -204,11 +204,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 'Interest',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
-              TextButton.icon(
-                onPressed: () {},
-                icon: Icon(Icons.edit, size: 16, color: AppColors.secondary),
-                label: Text("Change", style: TextStyle(color: AppColors.secondary,fontSize: 16)),
-              ),
+              // TextButton.icon(
+              //   onPressed: () {},
+              //   icon: Icon(Icons.edit, size: 16, color: AppColors.secondary),
+              //   label: Text("Change", style: TextStyle(color: AppColors.secondary,fontSize: 16)),
+              // ),
             ],
           ),
           SizedBox(height: 20),
