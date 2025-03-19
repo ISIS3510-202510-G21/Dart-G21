@@ -27,4 +27,13 @@ class ProfileController {
   Future<void> deleteProfile(String profileId) async {
     await _profileRepository.deleteProfile(profileId);
   }
+
+  //Eliminar un evento de la lista de eventos asociados de un perfil
+  Future<void> removeEventFromProfile(String profileId, String eventId) async {
+    Profile? profile = await getProfileById(profileId);
+    if (profile != null) {
+      profile.events_associated.remove(eventId);
+      await updateProfile(profile);
+    }
+  }
 }
