@@ -183,6 +183,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           password: _passwordController.text,
           confirmPassword: _confirmPasswordController.text,
         );
+        //Navigator.pushNamed(context, '/home'); // HABILITARLOOO PARA ir a Home después de registrarse
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.secondary,

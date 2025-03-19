@@ -162,6 +162,7 @@ class _SignInScreenState extends State<SignInScreen> {
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
+        //Navigator.pushNamed(context, '/home'); // HABILITARLOOO PARA ir a Home después de registrarse
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.secondary,
