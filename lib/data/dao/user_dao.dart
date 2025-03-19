@@ -1,33 +1,40 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_g21/models/user.dart';
 
-class UserDAO {
-  final CollectionReference usersCollection = FirebaseFirestore.instance.collection('users');
+import '../database/firestore_service.dart';
 
-  //Observer Pattern: Stream de usuarios en tiempo real
+
+class UserDAO {
+  final FirestoreService _firestore = FirestoreService();
+  final String collectionPath = "users";
+
+  // Observer Pattern: Escuchar cambios en la colección de usuarios
   Stream<List<User>> getUsersStream() {
-    return usersCollection.snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) => User.fromMap(doc.data() as Map<String, dynamic>, doc.id)).toList();
+    return _firestore.getCollectionStream(collectionPath).map((data) {
+      return data.map((doc) => User.fromMap(doc, doc["id"])).toList();
     });
   }
 
+  // Obtener usuario por ID
   Future<User?> getUserById(String userId) async {
-    DocumentSnapshot doc = await usersCollection.doc(userId).get();
+    final doc = await _firestore.getDocumentById(collectionPath, userId);
     if (doc.exists) {
       return User.fromMap(doc.data() as Map<String, dynamic>, doc.id);
     }
     return null;
   }
 
+  // Agregar usuario
   Future<void> insertUser(User user) async {
-    await usersCollection.doc(user.id).set(user.toMap());
+    await _firestore.addDocument(collectionPath, user.toMap());
   }
 
+  // Actualizar usuario
   Future<void> updateUser(User user) async {
-    await usersCollection.doc(user.id).update(user.toMap());
+    await _firestore.updateDocument(collectionPath, user.id, user.toMap());
   }
 
+  // Eliminar usuario
   Future<void> deleteUser(String userId) async {
-    await usersCollection.doc(userId).delete();
+    await _firestore.deleteDocument(collectionPath, userId);
   }
 }

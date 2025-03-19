@@ -1,33 +1,38 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_g21/models/profile.dart';
+import '../database/firestore_service.dart';
 
 class ProfileDAO {
-  final CollectionReference profilesCollection = FirebaseFirestore.instance.collection('profiles');
+  final FirestoreService _firestore = FirestoreService();
+  final String collectionPath = "profiles";
 
-  // Observer Pattern: Stream de usuarios en tiempo real
+  // 🔥 Obtener perfiles en tiempo real
   Stream<List<Profile>> getProfilesStream() {
-    return profilesCollection.snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) => Profile.fromMap(doc.data() as Map<String, dynamic>, doc.id)).toList();
+    return _firestore.getCollectionStream(collectionPath).map((data) {
+      return data.map((doc) => Profile.fromMap(doc, doc["id"])).toList();
     });
   }
 
+  // Obtener un perfil por ID
   Future<Profile?> getProfileById(String profileId) async {
-    DocumentSnapshot doc = await profilesCollection.doc(profileId).get();
+    final doc = await _firestore.getDocumentById(collectionPath, profileId);
     if (doc.exists) {
       return Profile.fromMap(doc.data() as Map<String, dynamic>, doc.id);
     }
     return null;
   }
 
+  // Agregar un perfil
   Future<void> insertProfile(Profile profile) async {
-    await profilesCollection.doc(profile.id).set(profile.toMap());
+    await _firestore.addDocument(collectionPath, profile.toMap());
   }
 
+  // Actualizar un perfil
   Future<void> updateProfile(Profile profile) async {
-    await profilesCollection.doc(profile.id).update(profile.toMap());
+    await _firestore.updateDocument(collectionPath, profile.id, profile.toMap());
   }
 
+  // Eliminar un perfil
   Future<void> deleteProfile(String profileId) async {
-    await profilesCollection.doc(profileId).delete();
+    await _firestore.deleteDocument(collectionPath, profileId);
   }
 }

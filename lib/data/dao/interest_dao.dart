@@ -1,34 +1,40 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_g21/models/interest.dart';
+
+import '../database/firestore_service.dart';
 
 
 class InterestDAO {
-  final CollectionReference interestsCollection = FirebaseFirestore.instance.collection('interests');
+  final FirestoreService _firestore = FirestoreService();
+  final String collectionPath = "interests";
 
-  //Observer Pattern: Stream de usuarios en tiempo real
+  // 🔥 Obtener intereses en tiempo real
   Stream<List<Interest>> getInterestsStream() {
-    return interestsCollection.snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) => Interest.fromMap(doc.data() as Map<String, dynamic>, doc.id)).toList();
+    return _firestore.getCollectionStream(collectionPath).map((data) {
+      return data.map((doc) => Interest.fromMap(doc, doc["id"])).toList();
     });
   }
 
+  // Obtener interés por ID
   Future<Interest?> getInterestById(String interestId) async {
-    DocumentSnapshot doc = await interestsCollection.doc(interestId).get();
+    final doc = await _firestore.getDocumentById(collectionPath, interestId);
     if (doc.exists) {
       return Interest.fromMap(doc.data() as Map<String, dynamic>, doc.id);
     }
     return null;
   }
 
+  // Agregar interés
   Future<void> insertInterest(Interest interest) async {
-    await interestsCollection.doc(interest.id).set(interest.toMap());
+    await _firestore.addDocument(collectionPath, interest.toMap());
   }
 
+  //Actualizar interés
   Future<void> updateInterest(Interest interest) async {
-    await interestsCollection.doc(interest.id).update(interest.toMap());
+    await _firestore.updateDocument(collectionPath, interest.id, interest.toMap());
   }
 
+  //Eliminar interés
   Future<void> deleteInterest(String interestId) async {
-    await interestsCollection.doc(interestId).delete();
+    await _firestore.deleteDocument(collectionPath, interestId);
   }
 }

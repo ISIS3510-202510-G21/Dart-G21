@@ -1,34 +1,38 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_g21/models/location.dart';
-
+import '../database/firestore_service.dart';
 
 class LocationDAO {
-  final CollectionReference locationsCollection = FirebaseFirestore.instance.collection('locations');
+  final FirestoreService _firestore = FirestoreService();
+  final String collectionPath = "locations";
 
-  //Observer Pattern: Stream de usuarios en tiempo real
+  // Obtener ubicaciones en tiempo real
   Stream<List<Location>> getLocationsStream() {
-    return locationsCollection.snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) => Location.fromMap(doc.data() as Map<String, dynamic>, doc.id)).toList();
+    return _firestore.getCollectionStream(collectionPath).map((data) {
+      return data.map((doc) => Location.fromMap(doc, doc["id"])).toList();
     });
   }
 
+  // Obtener ubicación por ID
   Future<Location?> getLocationById(String locationId) async {
-    DocumentSnapshot doc = await locationsCollection.doc(locationId).get();
+    final doc = await _firestore.getDocumentById(collectionPath, locationId);
     if (doc.exists) {
       return Location.fromMap(doc.data() as Map<String, dynamic>, doc.id);
     }
     return null;
   }
 
+  // Agregar ubicación
   Future<void> insertLocation(Location location) async {
-    await locationsCollection.doc(location.id).set(location.toMap());
+    await _firestore.addDocument(collectionPath, location.toMap());
   }
 
+  // Actualizar ubicación
   Future<void> updateLocation(Location location) async {
-    await locationsCollection.doc(location.id).update(location.toMap());
+    await _firestore.updateDocument(collectionPath, location.id, location.toMap());
   }
 
+  // Eliminar ubicación
   Future<void> deleteLocation(String locationId) async {
-    await locationsCollection.doc(locationId).delete();
+    await _firestore.deleteDocument(collectionPath, locationId);
   }
 }
