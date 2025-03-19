@@ -14,7 +14,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
-  
+  //nuevo
+  String userType = "attendee";
+
   String? selectedUserType;
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
@@ -177,13 +179,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
     child: ElevatedButton(
       onPressed: () async {
         //signUp con validaciones
-        await AuthService().signUp(
+        /* await AuthService().signUp(
           name: _nameController.text,
           email: _emailController.text,
           password: _passwordController.text,
           confirmPassword: _confirmPasswordController.text,
-        );
+        ); */
         //Navigator.pushNamed(context, '/home'); // HABILITARLOOO PARA ir a Home después de registrarse
+        await AuthService().signUp(
+          _nameController.text,
+          _emailController.text,
+          _passwordController.text,
+          _confirmPasswordController.text,
+          selectedUserType ?? "attendee",
+        );
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.secondary,

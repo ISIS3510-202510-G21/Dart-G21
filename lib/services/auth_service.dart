@@ -5,9 +5,9 @@ import 'package:fluttertoast/fluttertoast.dart';
 
 class AuthService {
 
-  /* final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
- */
+
   //validación de Email
   bool isValidEmail(String email) {
     //revisó si el email tiene doble @ o es inválido
@@ -26,13 +26,16 @@ class AuthService {
   }
 
   //función para el sign up
-  Future<void> signUp({
-    required String name,
-    required String email,
-    required String password,
-    required String confirmPassword,
-  }) async {
+  Future<String?> signUp(
+     String name,
+     String email,
+     String password,
+     String confirmPassword,
+     String userType,
+  ) async {
     try {
+
+      
       //verificar si los campos están vacíos
       if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
         Fluttertoast.showToast(
@@ -43,11 +46,11 @@ class AuthService {
           textColor: Colors.white,
           fontSize: 14.0,
         );
-        return;
+        return null;
       }
 
       //validar el email
-      if (!isValidEmail(email)) return;
+      if (!isValidEmail(email)) return null;
 
       //verificar si las contraseñas coinciden
       if (password != confirmPassword) {
@@ -59,15 +62,38 @@ class AuthService {
           textColor: Colors.white,
           fontSize: 14.0,
         );
-        return;
+        return null;
       }
 
-      //intentar crear el usuario en FirebaseAuth
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+/*    guardo el UID del usuario para almacenar datos en firestore
+      el UID lo uso para crear los documentos en users/UID y profiles/UID en firestore
+ */
+      //Crear usuario en Firebase Authentication (NUEVOOO)
+      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
+      String userId = userCredential.user!.uid; // ✅ Obtener UID del usuario
 
+      //guardar datos en Firestore (colección `users`)
+      await _firestore.collection("users").doc(userId).set({
+        "email": email,
+        "name": name,
+        "user_type": userType,
+      });
+
+      //guardar perfil en Firestore (colección `profiles`)
+      await _firestore.collection("profiles").doc(userId).set({
+        "picture": "",
+        "description": "",
+        "headline": "",
+        "events_associated": [],
+        "followers": [],
+        "following": [],
+        "interests": [],
+        "user_ref": userId,
+      });
+     
       //mostrar mensaje de éxito
       Fluttertoast.showToast(
         msg: "Account created successfully!",
