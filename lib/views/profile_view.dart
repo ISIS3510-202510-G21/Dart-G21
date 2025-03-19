@@ -1,17 +1,26 @@
+import 'package:dart_g21/controllers/interest_controller.dart';
+import 'package:dart_g21/controllers/profile_controller.dart';
+import 'package:dart_g21/controllers/user_controller.dart';
 import 'package:dart_g21/core/colors.dart';
+import 'package:dart_g21/models/interest.dart';
+import 'package:dart_g21/models/profile.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/widgets/navigation_bar_host.dart';
 
 class ProfilePage extends StatefulWidget {
-  final String title;
+  final String userId;
 
-  ProfilePage({Key? key, required this.title}) : super(key: key);
+
+  ProfilePage({Key? key, required this.userId,}) : super(key: key);
 
   @override
   _ProfilePageState createState() => _ProfilePageState();
 }
  
 class _ProfilePageState extends State<ProfilePage> {
+  final ProfileController _profileController = ProfileController();
+  final InterestController _interestController = InterestController();
+  final UserController _userController = UserController();
   final double coverHeight = 200;
   final double profileHeight = 180;
   int selectedIndex = 4; // Índice del ícono seleccionado (Profile)
@@ -20,34 +29,30 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: [
-            Text("Profile", style: TextStyle(color: AppColors.textPrimary, fontSize: 24)),
-          ],
-        ),
+        title: Text("Profile", style: TextStyle(color: AppColors.textPrimary, fontSize: 24)),
       ),
-      body: ListView(
-        padding: EdgeInsets.zero,
-        children: <Widget>[
-          buildTop(),
-          buildContent(),
-        ],
-     
+      body: StreamBuilder<Profile?>(
+        stream: _profileController.getProfileByUserId(widget.userId),  // Conexión con Firestore
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return Center(child: CircularProgressIndicator());  // Cargando datos
+          }
+          
+          Profile profile = snapshot.data!;
+          return ListView(
+            padding: EdgeInsets.zero,
+            children: <Widget>[
+              buildTop(profile), 
+              buildContent(profile), 
+            ],
+          );
+        },
       ),
-      //bottomNavigationBar: buildBottomNavigationBar(),
-      // bottomNavigationBar: BottomNavBarHost(
-      //   selectedIndex: selectedIndex,
-      //   onItemTapped: (index) {
-      //     setState(() {
-      //       selectedIndex = index;
-      //     });
-      //   },
-      // ),
-        );
-      }
+    );
+  }
 
 
- Widget buildTop() {
+ Widget buildTop(Profile profile) {
    final bottom = 200.0;
    final top = 20.0;
    return Stack (
@@ -58,7 +63,7 @@ class _ProfilePageState extends State<ProfilePage> {
               child:buildCoverImage() ),
               Positioned(
                 top: top,
-                child:buildProfileImage(),
+                child:buildProfileImage(profile),
           )],
           );
   }  
@@ -71,12 +76,13 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
 // Widget para la imagen de perfil
-  Widget buildProfileImage(){
+  Widget buildProfileImage(Profile profile) {
     return CircleAvatar( 
       radius: profileHeight/2,
       backgroundColor: Colors.grey.shade800,
       backgroundImage: NetworkImage(
-        'https://b2472105.smushcdn.com/2472105/wp-content/uploads/2023/09/Poses-Perfil-Profesional-Mujeres-ago.-10-2023-1-819x1024.jpg?lossy=1&strip=1&webp=1',
+        //'https://b2472105.smushcdn.com/2472105/wp-content/uploads/2023/09/Poses-Perfil-Profesional-Mujeres-ago.-10-2023-1-819x1024.jpg?lossy=1&strip=1&webp=1',
+        profile.picture,
       ),
     );
   }
@@ -85,7 +91,8 @@ class _ProfilePageState extends State<ProfilePage> {
  
 
 // Widget para el contenido del perfil
-  Widget buildContent() {
+  Widget buildContent(Profile profile) {
+    List<Color> colors = [AppColors.buttonPurple, AppColors.buttonRed, AppColors.buttonOrange, AppColors.secondary, AppColors.buttonGreen, AppColors.buttonLightBlue];
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 24),
       child: Column(
@@ -94,17 +101,30 @@ class _ProfilePageState extends State<ProfilePage> {
           SizedBox(height: 20),
 
           //Nombre y Profesión
-          Text(
-            'James Summer',
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-            textAlign: TextAlign.center,
+          FutureBuilder(
+            future: _userController.getUserById(profile.user_ref),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.done) {
+                if (snapshot.hasData) {
+                  return Text(
+                    snapshot.data!.name,
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                    textAlign: TextAlign.center,
+                  );
+                } else {
+                  return Text('User not found');
+                }
+              }
+              return Text('Loading...');
+            },
           ),
           Text(
-            'Flutter Software Engineer',
+            //'Flutter Software Engineer',
+            profile.headline,
             style: TextStyle(
               fontSize: 22,
               color: AppColors.secondaryText,
@@ -179,7 +199,8 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           SizedBox(height: 8),
           Text(
-            'Enjoy your favorite dish and a lovely time with friends and family. Food from local food trucks will be available for purchase. ',
+            profile.description ?? 'No description available',
+            //'Enjoy your favorite dish and a lovely time with friends and family. Food from local food trucks will be available for purchase. ',
             style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
             textAlign: TextAlign.justify,
           ),
@@ -217,12 +238,27 @@ class _ProfilePageState extends State<ProfilePage> {
             spacing: 10,
             runSpacing: 10,
             children: [
-              buildInterestChip('Programming', AppColors.buttonPurple),
-              buildInterestChip('Concert', AppColors.buttonRed),
-              buildInterestChip('Music', AppColors.buttonOrange),
-              buildInterestChip('Art', AppColors.secondary),
-              buildInterestChip('Movie', AppColors.buttonGreen),
-              buildInterestChip('Others', AppColors.buttonLightBlue),
+
+              for (var interest in profile.interests)
+                FutureBuilder(
+                  future: _interestController.getInterestById(interest),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.done) {
+                      if (snapshot.hasData) {
+                        return buildInterestChip(snapshot.data!.name, colors[interest.hashCode % colors.length]);
+                      } else {
+                        return Text('Interest not found');
+                      }
+                    }
+                    return Text('Loading...');
+                  },
+                ),
+              // buildInterestChip('Programming', AppColors.buttonPurple),
+              // buildInterestChip('Concert', AppColors.buttonRed),
+              // buildInterestChip('Music', AppColors.buttonOrange),
+              // buildInterestChip('Art', AppColors.secondary),
+              // buildInterestChip('Movie', AppColors.buttonGreen),
+              // buildInterestChip('Others', AppColors.buttonLightBlue),
             ],
           ),
 

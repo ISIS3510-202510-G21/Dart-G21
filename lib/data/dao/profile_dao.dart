@@ -22,13 +22,11 @@ class ProfileDAO {
   }
 
 // Obtener un perfil por ID de usuario
-  Future<Profile?> getProfileByUserId(String userId) async {
-    final doc = await _firestore.getDocumentByField(collectionPath, "user_ref", userId);
-    if (doc != null) {
-      return Profile.fromMap(doc.data() as Map<String, dynamic>, doc.id);
-    }
-    return null;
-  }
+ Stream<Profile?> getProfileByUserId(String userId) {
+  return _firestore
+      .getDocumentByField(collectionPath, "user_ref", userId)
+      .map((doc) => doc != null ? Profile.fromMap(doc.data() as Map<String, dynamic>, doc.id) : null);
+}
  
 
 

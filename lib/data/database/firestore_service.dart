@@ -41,13 +41,11 @@ class FirestoreService {
   }
 
   //Obtener un documento por un campo específico
-  Future<DocumentSnapshot?> getDocumentByField(String collectionPath, String field, dynamic value) async {
-    final snapshot = await _db.collection(collectionPath).where(field, isEqualTo: value).get();
-    if (snapshot.docs.isNotEmpty) {
-      return snapshot.docs.first;
-    }
-    return null;
-  }
+  Stream<DocumentSnapshot?> getDocumentByField(String collectionPath, String field, dynamic value) {
+  return _db.collection(collectionPath).where(field, isEqualTo: value).snapshots() // Obtener un Stream de QuerySnapshot
+      .map((snapshot) => snapshot.docs.isNotEmpty ? snapshot.docs.first : null);
+}
+
 
   ///Filtrar documentos por un campo específico
   Stream<List<Map<String, dynamic>>> queryCollectionStream(
