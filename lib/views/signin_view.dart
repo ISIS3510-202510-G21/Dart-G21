@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dart_g21/core/colors.dart';
+import 'package:dart_g21/services/auth_service.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({Key? key}) : super(key: key);
@@ -62,7 +63,7 @@ class _SignInScreenState extends State<SignInScreen> {
   Widget _buildLogo() {
     return Center(
       child: Image.asset(
-        'lib/assets/logosignin.png', // Logo de la app
+        'lib/assets/logosignin.png', 
         width: 128,
         height: 128,
         fit: BoxFit.contain,
@@ -103,7 +104,7 @@ class _SignInScreenState extends State<SignInScreen> {
       decoration: InputDecoration(
         prefixIcon: Icon(icon, color: Color(0xFFE6E6E6)),
         hintText: hintText,
-        hintStyle: const TextStyle(color: Color(0xFF8D8D8D)), // Gris más oscuro
+        hintStyle: const TextStyle(color: Color(0xFF8D8D8D)),
         border: _buildInputBorder(),
         enabledBorder: _buildInputBorder(),
         focusedBorder: _buildInputBorder(),
@@ -118,7 +119,7 @@ class _SignInScreenState extends State<SignInScreen> {
       decoration: InputDecoration(
         prefixIcon: const Icon(Icons.lock, color: Color(0xFFE6E6E6)),
         hintText: hintText,
-        hintStyle: const TextStyle(color: Color(0xFF8D8D8D)), // Gris más oscuro
+        hintStyle: const TextStyle(color: Color(0xFF8D8D8D)), 
         border: _buildInputBorder(),
         enabledBorder: _buildInputBorder(),
         focusedBorder: _buildInputBorder(),
@@ -151,38 +152,43 @@ class _SignInScreenState extends State<SignInScreen> {
   }
 
   Widget _buildSignInButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: ElevatedButton(
-        onPressed: () async {
-          // TODO: Implement login logic
-          //Navigator.pushNamed(context, '/home'); //HABILITARLO PARA Redirigir al home
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.secondary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'SIGN IN',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
-          ],
+  return SizedBox(
+    width: double.infinity,
+    height: 48,
+    child: ElevatedButton(
+      onPressed: () async {
+        //validación de campos vacíos
+        await AuthService().signIn(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.secondary,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
         ),
       ),
-    );
-  }
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text(
+            'SIGN IN',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(width: 10),
+          const Icon(Icons.login, color: Colors.white, size: 20),
+        ],
+      ),
+    ),
+  );
+}
+
+
 
   Widget _buildDivider() {
     return const Center(

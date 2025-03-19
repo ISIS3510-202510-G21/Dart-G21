@@ -165,8 +165,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   OutlineInputBorder _buildInputBorder() {
     return const OutlineInputBorder(
-      borderRadius: BorderRadius.all(Radius.circular(12)), // Bordes más redondeados
-      borderSide: BorderSide(color: Color(0xFFE6E6E6), width: 2), // Borde de color gris claro
+      borderRadius: BorderRadius.all(Radius.circular(12)), 
+      borderSide: BorderSide(color: Color(0xFFE6E6E6), width: 2), 
     );
   }
 
@@ -176,13 +176,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
     height: 48,
     child: ElevatedButton(
       onPressed: () async {
-         AuthService().SignUpScreen(
-            name: _nameController.text, 
-            email:_emailController.text, 
-            password:_passwordController.text
-            );
-        // TODO: Implementar lógica de registro
-        //Navigator.pushNamed(context, '/home'); // HABILITARLOOO PARA ir a Home después de registrarse
+        //signUp con validaciones
+        await AuthService().signUp(
+          name: _nameController.text,
+          email: _emailController.text,
+          password: _passwordController.text,
+          confirmPassword: _confirmPasswordController.text,
+        );
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.secondary,
@@ -208,7 +208,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     ),
   );
 }
-
 
   Widget _buildDivider() {
     return const Center(
