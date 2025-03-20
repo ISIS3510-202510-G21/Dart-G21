@@ -17,7 +17,7 @@ class Profile {
   // Convertir objeto a Map para Firestore
   Map<String, dynamic> toMap() {
     return {
-      'picture': picture,
+      'profile_picture': picture,
       'description': description,
       'headline': headline,
       'events_associated': events_associated,  
@@ -32,7 +32,7 @@ class Profile {
   factory Profile.fromMap(Map<String, dynamic> map, String id) {
     return Profile(
       id: id,
-      picture: map['picture'] ?? '',
+      picture: map['profile_picture'] ?? '',
       description: map['description'] ?? '',
       headline: map['headline'] ?? '',
       events_associated: List<String>.from(map['events_associated'] ?? []),
