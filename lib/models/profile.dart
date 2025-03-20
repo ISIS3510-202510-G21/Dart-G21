@@ -31,7 +31,7 @@ class Profile {
       'profile_picture': picture,
       'description': description,
       'headline': headline,
-      'events_associated': events_associated
+      'events_asociated': events_associated
           .map((id) => _db.collection("events").doc(id)) 
           .toList(),
       'followers': followers
@@ -54,7 +54,7 @@ class Profile {
       picture: map['profile_picture'] ?? '',
       description: map['description'] ?? '',
       headline: map['headline'] ?? '',
-      events_associated: (map['events_associated'] as List<dynamic>?)
+      events_associated: (map['events_asociated'] as List<dynamic>?)
               ?.map((e) => e is DocumentReference ? e.id : e.toString())
               .toList() ??
           [],

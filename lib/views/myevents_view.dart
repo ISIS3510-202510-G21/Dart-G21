@@ -2,6 +2,7 @@ import 'package:dart_g21/controllers/event_controller.dart';
 import 'package:dart_g21/controllers/profile_controller.dart';
 import 'package:dart_g21/controllers/user_controller.dart';
 import 'package:dart_g21/models/event.dart';
+import 'package:dart_g21/models/profile.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/core/colors.dart';
 import 'package:dart_g21/widgets/navigation_bar_host.dart';
@@ -16,64 +17,68 @@ class MyEventsPage extends StatefulWidget {
 }
 
 class _MyEventsPageState extends State<MyEventsPage> {
-  ProfileController _profileController = ProfileController();
-  EventController _eventController = EventController();
-  UserController _userController = UserController();
+  final ProfileController _profileController = ProfileController();
+  final EventController _eventController = EventController();
+  final UserController _userController = UserController();
+
   int selectedIndex = 2; // Índice del ícono seleccionado (My Events)
   List<Event> upcomingEvents = [];
   List<Event> previousEvents = [];
   String profileId = "";
 
-  Future<void> _loadProfileAndEvents() async {
-    try {
-      final profile = await _profileController.getProfileByUserId(widget.userId).first;
-      if (profile != null) {
-        List<Event> events = await _eventController.getEventsByIds(profile.events_associated);
-        List<List<Event>> classifiedEvents = _eventController.classifyEvents(events);
-        setState(() {
-          upcomingEvents = classifiedEvents[0];
-          previousEvents = classifiedEvents[1];
-          profileId = profile.id;
-        });
-      }
-    } catch (e) {
-      throw e;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: [
-            Text("My Events", style: TextStyle(fontSize: 24, color: AppColors.textPrimary)),
-          ],
-        ),
+        title: Text("My Events", style: TextStyle(fontSize: 24, color: AppColors.textPrimary)),
       ),
 
       // Cuerpo con lista de eventos
-      body: FutureBuilder(
-        future: _loadProfileAndEvents(),
+      body: StreamBuilder<Profile?>(
+        stream: _profileController.getProfileByUserId(widget.userId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data == null) {
+            return Center(child: Text('No profile found'));
           } else {
-            return ListView(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              children: [
-                //  Sección de Upcoming Events
-                buildSectionTitle("Upcoming Events"),
-                ...upcomingEvents.map((event) => buildEventCard(event, profileId)).toList(),
+            final profile = snapshot.data!;
+            print("Profile: ${profile.events_associated}");
+            return FutureBuilder<List<List<Event>>>(
+              future: _eventController.getEventsByIds(profile.events_associated).then((events) {
+                return _eventController.classifyEvents(events);
+              }),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (!snapshot.hasData) {
+                  return Center(child: Text('No events found'));
+                } else {
+                  final classifiedEvents = snapshot.data!;
+                  upcomingEvents = classifiedEvents[0];
+                  previousEvents = classifiedEvents[1];
+                  profileId = profile.id;
 
-                SizedBox(height: 20),
+                  return ListView(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    children: [
+                      //  Sección de Upcoming Events
+                      buildSectionTitle("Upcoming Events"),
+                      ...upcomingEvents.map((event) => buildEventCard(event, profileId)).toList(),
 
-                //  Sección de Previous Events
-                buildSectionTitle("Previous Events"),
-                ...previousEvents.map((event) => buildEventCard(event, profileId)).toList(),
-              ],
+                      SizedBox(height: 20),
+
+                      //  Sección de Previous Events
+                      buildSectionTitle("Previous Events"),
+                      ...previousEvents.map((event) => buildEventCard(event, profileId)).toList(),
+                    ],
+                  );
+                }
+              },
             );
           }
         },
@@ -175,22 +180,31 @@ class _MyEventsPageState extends State<MyEventsPage> {
                       Spacer(),
                       IconButton(
                         icon: Icon(Icons.delete_outline, color: AppColors.textPrimary),
-                        onPressed: () {
-                          print("Eliminar evento: ${event.name}");
+                        onPressed: () async {
+                          print("Eliminando evento: ${event.name}");
 
-                          //  Eliminar evento de la lista de eventos asociados del perfil
-                          _profileController.removeEventFromProfile(profileId, event.id);
+                          try {
+                            await _profileController.removeEventFromProfile(profileId, event.id);
+                            setState(() {
+                              upcomingEvents.removeWhere((e) => e.id == event.id);
+                              previousEvents.removeWhere((e) => e.id == event.id);
+                            });
 
-                          //  Actualizar la lista de eventos
-                          _loadProfileAndEvents();
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text("Event removed from My Events"),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("✅ Evento eliminado de My Events"),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          } catch (e) {
+                            print("Error al eliminar evento: $e");
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("Error eliminando evento"),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          }
                         },
                       ),
                     ],
