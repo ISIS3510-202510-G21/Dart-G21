@@ -39,11 +39,30 @@ class FirestoreService {
       return snapshot.docs.map((doc) => {"id": doc.id, ...doc.data() as Map<String, dynamic>}).toList();
     });
   }
+Stream<Map<String, dynamic>?> getDocumentByField(
+    String collectionPath, String field, String value, String collectionRef) {
+  
+  // Convertir el String en un DocumentReference
+  DocumentReference ref = _db.collection(collectionRef).doc(value);
+  
+  print("Buscando en $collectionPath donde $field == ${ref.path}");
 
-  //Obtener un documento por un campo específico
-  Stream<DocumentSnapshot?> getDocumentByField(String collectionPath, String field, dynamic value) {
-  return _db.collection(collectionPath).where(field, isEqualTo: value).snapshots() // Obtener un Stream de QuerySnapshot
-      .map((snapshot) => snapshot.docs.isNotEmpty ? snapshot.docs.first : null);
+  return _db
+      .collection(collectionPath)
+      .where(field, isEqualTo: ref)
+      .snapshots()
+      .map((snapshot) {
+        if (snapshot.docs.isNotEmpty) {
+          print(" Documento encontrado: ${snapshot.docs.first.data()}");
+          var doc = snapshot.docs.first;
+          return {"id": doc.id, ...doc.data() as Map<String, dynamic>}; 
+        } else {
+          print(" No se encontró ningún documento con $field == ${ref.path}");
+          return null;
+        }
+      }).handleError((error) {
+        print("Error en Firestore: $error");
+      });
 }
 
 
@@ -55,3 +74,4 @@ class FirestoreService {
     });
   }
 }
+
