@@ -1,8 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dart_g21/models/category.dart';
-import 'package:dart_g21/models/location.dart';
-import 'package:dart_g21/models/user.dart';
-import 'package:flutter/foundation.dart';
+
 
 class Event {
   String id;
@@ -12,15 +9,27 @@ class Event {
   DateTime end_date;
   String image;
   int cost;
-  String location_id;
-  String category;
-  List<String> attendees;
+  String location_id;  // Se almacena como referencia en Firestore
+  String category;     // Se almacena como referencia en Firestore
+  List<String> attendees; // Lista de referencias a usuarios en Firestore
 
-  Event({required this.id, required this.name, required this.description, required this.start_date, required this.end_date, required this.image, required this.cost, required this.location_id, required this.category, required this.attendees});
+  Event({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.start_date,
+    required this.end_date,
+    required this.image,
+    required this.cost,
+    required this.location_id,
+    required this.category,
+    required this.attendees,
+  });
 
-
-  // Convertir objeto a Map para Firestore
+  // Convertir objeto a Map para Firestore (guardando referencias)
   Map<String, dynamic> toMap() {
+    FirebaseFirestore db = FirebaseFirestore.instance;
+
     return {
       'name': name,
       'description': description,
@@ -28,25 +37,32 @@ class Event {
       'end_date': end_date.toUtc(),
       'image': image,
       'cost': cost,
-      'location_id': location_id,
-      'category': category,
-      'attendees': attendees
+      'location_id': db.collection("locations").doc(location_id), 
+      'category': db.collection("categories").doc(category), 
+      'attendees': attendees.map((id) => db.collection("users").doc(id)).toList(), 
     };
   }
 
-  // Convertir Firestore Map a objeto User
+  //Convertir Firestore Map a objeto Event (extrayendo los IDs de las referencias)
   factory Event.fromMap(Map<String, dynamic> map, String id) {
     return Event(
       id: id,
-      name: map['name'],
-      description: map['description'],
+      name: map['name'] ?? '',
+      description: map['description'] ?? '',
       start_date: (map['start_date'] as Timestamp).toDate(),
-      end_date: (map['start_date'] as Timestamp).toDate(),
-      image: map['image'],
-      cost: map['cost'],
-      location_id: map['location_id'] ?? '',
-      category: map['category'] ?? '',
-      attendees: List<String>.from(map['attendees'] ?? []),
+      end_date: (map['end_date'] as Timestamp).toDate(),
+      image: map['image'] ?? '',
+      cost: map['cost'] ?? 0,
+      location_id: (map['location_id'] is DocumentReference)
+          ? (map['location_id'] as DocumentReference).id
+          : map['location_id'] ?? '',
+      category: (map['category'] is DocumentReference)
+          ? (map['category'] as DocumentReference).id
+          : map['category'] ?? '',
+      attendees: (map['attendees'] as List<dynamic>?)
+              ?.map((e) => e is DocumentReference ? e.id : e.toString())
+              .toList() ??
+          [],
     );
   }
 }
