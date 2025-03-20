@@ -32,10 +32,18 @@ class _ProfilePageState extends State<ProfilePage> {
         title: Text("Profile", style: TextStyle(color: AppColors.textPrimary, fontSize: 24)),
       ),
       body: StreamBuilder<Profile?>(
+        
         stream: _profileController.getProfileByUserId(widget.userId),  // Conexión con Firestore
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return Center(child: CircularProgressIndicator());  // Cargando datos
+          if (snapshot.connectionState == ConnectionState.waiting) {
+      return Center(child: CircularProgressIndicator()); 
+          } 
+          if (snapshot.hasError) {
+            return Center(child: Text("Error: ${snapshot.error}"));
+          }
+          if (!snapshot.hasData || snapshot.data == null) {
+            
+            return Center(child: Text("No se encontró el perfil")); 
           }
           
           Profile profile = snapshot.data!;

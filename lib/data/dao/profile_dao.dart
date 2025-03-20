@@ -23,11 +23,8 @@ class ProfileDAO {
 
 // Obtener un perfil por ID de usuario
  Stream<Profile?> getProfileByUserId(String userId) {
-  return _firestore
-      .getDocumentByField(collectionPath, "user_ref", userId)
-      .map((doc) => doc != null ? Profile.fromMap(doc.data() as Map<String, dynamic>, doc.id) : null);
+  return _firestore.getDocumentByField(collectionPath, 'user_ref', userId, 'users').map((doc) => doc != null ? Profile.fromMap(doc as Map<String, dynamic>, doc["id"]) : null);
 }
- 
 
 
   // Agregar un perfil
