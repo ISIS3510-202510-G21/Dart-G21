@@ -37,4 +37,11 @@ class UserDAO {
   Future<void> deleteUser(String userId) async {
     await _firestore.deleteDocument(collectionPath, userId);
   }
+
+  // Obtener un usuario por email de usuario
+  Stream<User?> getUserByEmail(String email) {
+    return _firestore
+        .getDocumentByFieldOnce(collectionPath, "email", email)
+        .map((doc) => doc != null ? User.fromMap(doc as Map<String, dynamic>, doc["id"]) : null);
+  }
 }

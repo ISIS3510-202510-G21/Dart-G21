@@ -24,4 +24,8 @@ class UserRepository {
   Future<void> deleteUser(String userId) async {
     await _userDao.deleteUser(userId);
   }
+
+  Stream<User?> getUserByEmail(String email) {
+  return _userDao.getUserByEmail(email); 
+}
 }
