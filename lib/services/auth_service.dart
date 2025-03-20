@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -6,7 +6,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 class AuthService {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  //final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   //validación de Email
   bool isValidEmail(String email) {
@@ -65,6 +65,8 @@ class AuthService {
         return null;
       }
 
+      print("Intentando registrar usuario en Firebase Authentication...");
+
 /*    guardo el UID del usuario para almacenar datos en firestore
       el UID lo uso para crear los documentos en users/UID y profiles/UID en firestore
  */
@@ -73,9 +75,10 @@ class AuthService {
         email: email,
         password: password,
       );
-      String userId = userCredential.user!.uid; // ✅ Obtener UID del usuario
+      String userId = userCredential.user!.uid; //Obtener UID del usuario
+      print("Usuario registrado con UID: $userId");
 
-      //guardar datos en Firestore (colección `users`)
+      /* //guardar datos en Firestore (colección `users`)
       await _firestore.collection("users").doc(userId).set({
         "email": email,
         "name": name,
@@ -93,7 +96,8 @@ class AuthService {
         "interests": [],
         "user_ref": userId,
       });
-     
+      */
+
       //mostrar mensaje de éxito
       Fluttertoast.showToast(
         msg: "Account created successfully!",
@@ -103,6 +107,7 @@ class AuthService {
         textColor: Colors.white,
         fontSize: 14.0,
       );
+      return userId;
 
     } on FirebaseAuthException catch (e) {
       String message = '';
@@ -114,6 +119,8 @@ class AuthService {
         message = "Error: ${e.message}";
       }
 
+      print("Error en Firebase Authentication: $message");
+
       Fluttertoast.showToast(
         msg: message,
         toastLength: Toast.LENGTH_LONG,
@@ -122,6 +129,7 @@ class AuthService {
         textColor: Colors.white,
         fontSize: 14.0,
       );
+      return null;
     }
   }
 

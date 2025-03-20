@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dart_g21/core/colors.dart';
 import 'package:dart_g21/services/auth_service.dart';
+import '../controllers/auth_controller.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
@@ -10,6 +11,7 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
+  final AuthController _authController = AuthController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -29,6 +31,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _confirmPasswordController.dispose();
     super.dispose();
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -178,17 +181,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
     height: 48,
     child: ElevatedButton(
       onPressed: () async {
-        //signUp con validaciones
-        /* await AuthService().signUp(
-          name: _nameController.text,
-          email: _emailController.text,
-          password: _passwordController.text,
-          confirmPassword: _confirmPasswordController.text,
-        ); */
         //Navigator.pushNamed(context, '/home'); // HABILITARLOOO PARA ir a Home después de registrarse
-        await AuthService().signUp(
-          _nameController.text,
+        await _authController.signUp(
           _emailController.text,
+          _nameController.text,
           _passwordController.text,
           _confirmPasswordController.text,
           selectedUserType ?? "attendee",
