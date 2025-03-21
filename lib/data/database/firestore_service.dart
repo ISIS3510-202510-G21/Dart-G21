@@ -73,5 +73,25 @@ Stream<Map<String, dynamic>?> getDocumentByField(
       return snapshot.docs.map((doc) => {"id": doc.id, ...doc.data() as Map<String, dynamic>}).toList();
     });
   }
+
+  ///Obtener un documento por un campo específico
+  Stream<Map<String, dynamic>?> getDocumentByFieldOnce(String collectionPath, String field, dynamic value) {
+    return _db.collection(collectionPath).where(field, isEqualTo: value).snapshots().map((snapshot) {
+        if (snapshot.docs.isNotEmpty) {
+          print(" Documento encontrado: ${snapshot.docs.first.data()}");
+          var doc = snapshot.docs.first;
+          return {"id": doc.id, ...doc.data() as Map<String, dynamic>}; 
+        } else {
+          print(" No se encontró ningún documento con $field == ${value}");
+          return null;
+        }
+      }).handleError((error) {
+        print("Error en Firestore: $error");
+      });
+  }
+
+
+
+
 }
 
