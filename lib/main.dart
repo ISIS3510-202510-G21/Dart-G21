@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: HomePage(userId: "0sdmsZHcOIhErg6UyEE9"),
+      home: MapView(),
     );
   }
 }
