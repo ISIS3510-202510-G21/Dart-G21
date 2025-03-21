@@ -78,42 +78,108 @@ class EventController {
   }
 
   Future<String> _getUserCity() async {
-    Position? position;
     try {
-      position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-    } catch (e) {
-      print("❌ Error obteniendo ubicación: $e");
-      return "Desconocido";
-    }
-
-    if (position == null) return "Desconocido";
-
-    try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
-      if (placemarks.isNotEmpty) {
-        String city = placemarks.first.locality ?? "Desconocido";
-        print("📍 Ciudad detectada: $city");
-        return city;
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        print("❌ Servicios de ubicación desactivados.");
+        return "Desconocido"; // 🔹 Retornar "Desconocido" si el GPS está apagado
       }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          print("❌ Permiso de ubicación denegado.");
+          return "Desconocido"; // 🔹 Si no hay permisos, retornar "Desconocido"
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        print("⚠️ Permisos de ubicación bloqueados permanentemente.");
+        return "Desconocido"; // 🔹 Si el permiso está bloqueado, retornar "Desconocido"
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks.first;
+        String city = place.locality ?? place.subAdministrativeArea ?? place.administrativeArea ?? "";
+
+        if (city.isNotEmpty) {
+          print("📍 Ciudad detectada: $city");
+          return city;
+        }
+      }
+
+      print("⚠ No se pudo determinar la ciudad del usuario.");
+      return "Desconocido"; // 🔹 Si no encuentra la ciudad, retornar "Desconocido"
     } catch (e) {
       print("❌ Error al obtener la ciudad: $e");
+      return "Desconocido"; // 🔹 Manejo de error: retornar "Desconocido"
     }
-
-    return "Desconocido";
   }
 
 
-  Future<List<Event>> getTop10NearbyEvents() async {
-    String userCity = await _getUserCity(); // Obtener ciudad del usuario
+  Stream<List<Event>> getTop10NearbyEventsStream() async* {
+    try {
+      String userCity = await _getUserCity();
 
-    if (userCity == "Desconocido") {
-      print("⚠ No se pudo determinar la ciudad del usuario.");
-      return [];
+      if (userCity == "Desconocido") {
+        yield await _getBogotaEvents();
+        return;
+      }
+
+      List<Event> events = await _eventRepository.getEventsStream().firstWhere(
+            (eventList) => eventList.isNotEmpty,
+        orElse: () => [],
+      );
+
+      if (events.isEmpty) {
+        yield [];
+        return;
+      }
+
+      List<Event> cityEvents = [];
+
+      for (Event event in events) {
+        if (event.location_id == null || event.location_id.isEmpty) continue;
+
+        app_models.Location? eventLocation = await _locationController.getLocationById(event.location_id);
+        if (eventLocation == null || eventLocation.city == null) continue;
+
+        if (eventLocation.city!.toLowerCase().trim() == userCity.toLowerCase().trim()) {
+          cityEvents.add(event);
+        }
+      }
+
+      if (cityEvents.isEmpty) {
+        yield await _getBogotaEvents();
+        return;
+      }
+
+      yield cityEvents.take(10).toList();
+    } catch (error) {
+      print("❌ Error en getTop10NearbyEventsStream: $error");
+      yield [];
     }
+  }
 
-    List<Event> events = await _eventRepository.getEventsStream().first;
-    List<Event> cityEvents = [];
-    List<Event> otherEvents = [];
+
+
+  Future<List<Event>> _getBogotaEvents() async {
+    List<Event> events = await _eventRepository.getEventsStream().firstWhere(
+          (eventList) => eventList.isNotEmpty,
+      orElse: () => [],
+    );
+
+    List<Event> bogotaEvents = [];
 
     for (Event event in events) {
       if (event.location_id == null || event.location_id.isEmpty) continue;
@@ -121,25 +187,22 @@ class EventController {
       app_models.Location? eventLocation = await _locationController.getLocationById(event.location_id);
       if (eventLocation == null) continue;
 
-      // 🔹 Normalizar nombres para evitar problemas de comparación
-      String eventCity = eventLocation.city.toLowerCase().trim();
-      String userCityNormalized = userCity.toLowerCase().trim();
-
-      if (eventCity.contains(userCityNormalized)) {
-        cityEvents.add(event);
-      } else {
-        otherEvents.add(event);
+      if (eventLocation.city.toLowerCase().trim() == "bogota") {
+        bogotaEvents.add(event);
       }
+
+      if (bogotaEvents.length >= 10) break;
     }
 
-    // 🔹 Tomar los 10 eventos más cercanos por fecha
-    List<Event> sortedEvents = [...cityEvents, ...otherEvents]
-        .where((event) => event.start_date.isAfter(DateTime.now()))
-        .toList();
-    sortedEvents.sort((a, b) => a.start_date.compareTo(b.start_date));
+    print("Eventos encontrados en Bogotá: ${bogotaEvents.length}");
 
-    return sortedEvents.take(10).toList();
+    if (bogotaEvents.isEmpty) {
+      print("⚠️ No se encontraron eventos en Bogotá.");
+    }
+
+    return bogotaEvents;
   }
+
 
 
 }

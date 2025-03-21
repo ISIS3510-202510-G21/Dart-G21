@@ -26,6 +26,7 @@ class HomePage extends StatefulWidget {
 class _HomePage extends State<HomePage> {
   final CategoryController _categoryController = CategoryController();
   final UserController _userController = UserController();
+  final EventController _eventController = EventController();
   final List<Color> colors = [
     AppColors.buttonRed,
     AppColors.buttonOrange,
@@ -91,10 +92,10 @@ class _HomePage extends State<HomePage> {
             _buildBarCategories(),
             SizedBox(height:10),
             _buildSectionTitle("Upcoming Events"),
-            buildUpcomingEventsList(),
+            _buildUpcomingEventsList(),
 
             _buildSectionTitle("Nearby Events"),
-            buildNearbyEventsList(),
+            _buildNearbyEventsList(),
             _buildNavigationBar(),
           ],
         ),
@@ -445,7 +446,7 @@ class _HomePage extends State<HomePage> {
     );
   }
 
-  Widget buildUpcomingEventsList() {
+  Widget _buildUpcomingEventsList() {
     return SizedBox(
       height: 220,
       child: StreamBuilder<List<Event>>(
@@ -478,20 +479,26 @@ class _HomePage extends State<HomePage> {
     );
   }
 
-  Widget buildNearbyEventsList() {
+  Widget _buildNearbyEventsList() {
     return SizedBox(
       height: 220,
-      child: FutureBuilder<List<Event>>(
-        future: EventController().getTop10NearbyEvents(),
+      child: StreamBuilder<List<Event>>(
+        stream: EventController().getTop10NearbyEventsStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return const Center(child: Text("Error loading events"));
+            return Center(
+              child: Text(
+                "Error al cargar eventos cercanos: ${snapshot.error}",
+                style: TextStyle(color: Colors.red),
+              ),
+            );
           }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text("No events available"));
+          // ✅ Validar correctamente si snapshot tiene datos
+          if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) {
+            return const Center(child: Text("No hay eventos cercanos disponibles"));
           }
 
           List<Event> events = snapshot.data!;
@@ -510,6 +517,8 @@ class _HomePage extends State<HomePage> {
       ),
     );
   }
+
+
 
 
 }
