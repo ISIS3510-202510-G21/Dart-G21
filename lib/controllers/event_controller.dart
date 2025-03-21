@@ -211,6 +211,7 @@ class EventController {
     }
   }
 
+
 //Obtener los eventos recomendados para un usuario (user_id) a partir de la colección "recommendations" que tiene como id los user_id y como atributo events (lista de ids de eventos en String)
 Stream<List<Event>> getRecommendedEventsStreamForUser(String userId) {
   return _eventRepository.getRecommendedEventsStreamForUser(userId);
