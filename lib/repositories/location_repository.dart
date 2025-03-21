@@ -25,4 +25,8 @@ class LocationRepository {
   Future<void> deleteLocation(String locationId) async {
     await _locationDao.deleteLocation(locationId);
   }
+
+  Stream<Location?> getLocationByAddress(String address) {
+  return _locationDao.getLocationByAddress(address); 
+}
 }

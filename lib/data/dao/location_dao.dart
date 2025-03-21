@@ -35,4 +35,11 @@ class LocationDAO {
   Future<void> deleteLocation(String locationId) async {
     await _firestore.deleteDocument(collectionPath, locationId);
   }
+
+  // Obtener un ubicación por dirección de usuario
+  Stream<Location?> getLocationByAddress(String address) {
+    return _firestore
+        .getDocumentByFieldOnce(collectionPath, "address", address)
+        .map((doc) => doc != null ? Location.fromMap(doc as Map<String, dynamic>, doc["id"]) : null);
+  }
 }

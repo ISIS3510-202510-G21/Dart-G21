@@ -23,4 +23,8 @@ class LocationController {
   Future<void> deleteLocation(String locationId) async {
     await _locationRepository.deleteLocation(locationId);
   }
+
+  Stream<Location?> getLocationByAddress(String address) {
+    return _locationRepository.getLocationByAddress(address);
+  }
 }
