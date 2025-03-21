@@ -57,48 +57,56 @@ class _HomePage extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.primary,
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: 200,
-              decoration: const BoxDecoration(
-                color: AppColors.secondary,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(40),
-                  bottomRight: Radius.circular(40),
-                ),
+      bottomNavigationBar: _buildNavigationBar(),
+      body: Column(
+        children: [
+          Container(
+            height: 200,
+            decoration: const BoxDecoration(
+              color: AppColors.secondary,
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(40),
+                bottomRight: Radius.circular(40),
               ),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  const SizedBox(height: 25),
-                  _buildUpBar(),
-                  const SizedBox(height: 25),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _buildSearchBar(),
-                      _buildFilterButton(),
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                const SizedBox(height: 25),
+                _buildUpBar(),
+                const SizedBox(height: 25),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildSearchBar(),
+                    _buildFilterButton(),
+                  ],
+                ),
+              ],
+            ),
+          ),
 
-                    ],
-                  ),
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: 10),
+                  _buildBarCategories(),
+                  SizedBox(height: 10),
+                  _buildSectionTitle("Upcoming Events"),
+                  _buildUpcomingEventsList(),
+                  _buildSectionTitle("Nearby Events"),
+                  _buildNearbyEventsList(),
+                  _buildSectionTitle("You Might Like"),
+                  _buildNearbyEventsList(),
+                  SizedBox(height: 20),
                 ],
               ),
             ),
-            SizedBox(height:10),
-            _buildBarCategories(),
-            SizedBox(height:10),
-            _buildSectionTitle("Upcoming Events"),
-            _buildUpcomingEventsList(),
-
-            _buildSectionTitle("Nearby Events"),
-            _buildNearbyEventsList(),
-            _buildNavigationBar(),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -389,7 +397,6 @@ class _HomePage extends State<HomePage> {
                     ),
                     const SizedBox(height: 5),
 
-                    /// 🔹 FutureBuilder para obtener la dirección desde `LocationController`
                     Row(
                       children: [
                         const Icon(Icons.location_on, size: 16, color: AppColors.secondaryText),
@@ -431,7 +438,6 @@ class _HomePage extends State<HomePage> {
     );
   }
 
-
   /// title section for events
   Widget _buildSectionTitle(String title) {
     return Padding(
@@ -446,6 +452,7 @@ class _HomePage extends State<HomePage> {
     );
   }
 
+  /// upcoming events list
   Widget _buildUpcomingEventsList() {
     return SizedBox(
       height: 220,
@@ -479,11 +486,12 @@ class _HomePage extends State<HomePage> {
     );
   }
 
+  /// nearby events list
   Widget _buildNearbyEventsList() {
     return SizedBox(
       height: 220,
       child: StreamBuilder<List<Event>>(
-        stream: EventController().getTop10NearbyEventsStream(),
+        stream: EventController().getTopNearbyEventsStream(), // 🔹 Usa la nueva función Stream
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -496,7 +504,6 @@ class _HomePage extends State<HomePage> {
               ),
             );
           }
-          // ✅ Validar correctamente si snapshot tiene datos
           if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) {
             return const Center(child: Text("No hay eventos cercanos disponibles"));
           }
@@ -517,6 +524,7 @@ class _HomePage extends State<HomePage> {
       ),
     );
   }
+
 
 
 

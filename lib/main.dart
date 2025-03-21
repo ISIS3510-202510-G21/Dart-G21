@@ -1,3 +1,4 @@
+import 'package:dart_g21/views/map_view.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:dart_g21/views/home_view.dart';
@@ -22,7 +23,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: HomePage(userId: "3FJyFST96OhKZ2qr7Amg"), // Aquí coloca un userId válido
+      home: HomePage(userId: "0sdmsZHcOIhErg6UyEE9"),
     );
   }
 }
