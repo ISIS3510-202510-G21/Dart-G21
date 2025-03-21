@@ -25,4 +25,8 @@ class EventRepository {
   Future<void> deleteEvent(String eventId) async {
     await _eventDao.deleteEvent(eventId);
   } 
+
+  Stream<List<Event>> getRecommendedEventsStreamForUser(String userId) {
+    return _eventDao.getRecommendedEventsStreamForUser(userId);
+  }
 }
