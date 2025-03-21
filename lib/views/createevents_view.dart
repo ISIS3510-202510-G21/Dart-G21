@@ -1,6 +1,12 @@
+import 'package:dart_g21/controllers/category_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/core/colors.dart';
 import 'package:flutter/services.dart';
+import 'package:dart_g21/controllers/event_controller.dart';
+import 'package:dart_g21/controllers/location_controller.dart';
+import 'package:dart_g21/models/event.dart';
+import 'package:dart_g21/models/category.dart';
+import 'package:dart_g21/models/location.dart';
 
 class CreateEventScreen extends StatefulWidget {
   const CreateEventScreen({Key? key}) : super(key: key);
@@ -10,19 +16,96 @@ class CreateEventScreen extends StatefulWidget {
 }
 
 class _CreateEventScreenState extends State<CreateEventScreen> {
+  final EventController _eventController = EventController();
+  final CategoryController _categoryController = CategoryController();
+  final LocationController _locationController = LocationController();
+
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _costController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _detailsController = TextEditingController();
+  final TextEditingController _imageUrlController = TextEditingController();
   
   String? selectedCategory;
+  String? categoryId; 
   DateTime? fromDate;
   DateTime? toDate;
   TimeOfDay? fromTime;
   TimeOfDay? toTime;
 
-  @override
+  //Crear el evento y enviarlo al Controller
+  void _saveEvent() async {
+
+    DateTime startDateTime = DateTime(
+      fromDate?.year ?? DateTime.now().year,
+      fromDate?.month ?? DateTime.now().month,
+      fromDate?.day ?? DateTime.now().day,
+      fromTime?.hour ?? 0,
+      fromTime?.minute ?? 0,
+    );
+
+    DateTime endDateTime = DateTime(
+      toDate?.year ?? DateTime.now().year,
+      toDate?.month ?? DateTime.now().month,
+      toDate?.day ?? DateTime.now().day,
+      toTime?.hour ?? 0,
+      toTime?.minute ?? 0,
+    );
+
+    if (selectedCategory == null || _nameController.text.isEmpty || _addressController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Please complete all fields")),
+      );
+      return;
+    }
+
+  //Dividir la dirección en address y city
+    List<String> addressParts = _addressController.text.split(",");
+    if (addressParts.length < 2) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Incorrect format. Use: Address, City")),
+      );
+      return;
+    }
+    String address = addressParts[0].trim();
+    String city = addressParts[1].trim();
+
+    //Crear la ubicación en Firestore
+    String? locationId = await _locationController.addLocationAndReturnId(Location(
+      id: "", //Firestore generará el ID
+      address: address,
+      details: _detailsController.text,
+      city: city,
+      university: true, 
+    ));
+
+    Location? location = await _locationController.getLocationByAddress(address).first;
+    String? id_location = location?.id;
+
+    //Crear el objeto Event
+    Event newEvent = Event(
+      id: "", //Firestore generará el ID automáticamente
+      name: _nameController.text,
+      cost: int.tryParse(_costController.text) ?? 0,
+      category: categoryId ?? "", //Guardar la referencia de categoría
+      description: _descriptionController.text,
+      start_date: startDateTime,
+      end_date: endDateTime,
+      location_id: id_location ?? "", //Guardar la referencia de location
+      image: _imageUrlController.text,
+      attendees: [], //Lista vacía al inicio
+    );
+
+
+    await _eventController.addEvent(newEvent);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Event created successfully")),
+    );
+    Navigator.pop(context); // Volver a la pantalla anterior
+  }
+
+  /* @override
   void dispose() {
     _nameController.dispose();
     _costController.dispose();
@@ -30,7 +113,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     _addressController.dispose();
     _detailsController.dispose();
     super.dispose();
-  }
+  } */
 
   void _showErrorDialog(String message) {
     showDialog(
@@ -136,11 +219,11 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   const SizedBox(height: 15),
                   _buildLabeledTimePickers(),
                   const SizedBox(height: 15),
-                  _buildLabeledInputField("Address", _addressController, 'Write the address of your event', Icons.location_on),
+                  _buildLabeledInputField("Address", _addressController, 'Write the address of your event (Address, City)', Icons.location_on),
                   const SizedBox(height: 15),
-                  _buildLabeledInputField("Details", _detailsController, 'Write the details of your event', Icons.info),
+                  _buildLabeledInputField("Details", _detailsController, 'Write the details of the address', Icons.info),
                   const SizedBox(height: 30),
-                  _buildUploadImageButton(),
+                  _buildLabeledInputField("Image URL", _imageUrlController, 'URL of the image', Icons.image),
                   const SizedBox(height: 30),
                   _buildCreateEventButton(),
                 ],
@@ -257,26 +340,51 @@ Widget _buildTimeField(String label, TimeOfDay? time, bool isFromTime) {
   }
 
   Widget _buildCategoryDropdown() {
-    return DropdownButtonFormField<String>(
-      decoration: InputDecoration(
-        prefixIcon: const Icon(Icons.category, color: Color(0xFFE6E6E6)),
-        border: _buildInputBorder(),
-      ),
-      value: selectedCategory,
-      hint: const Text("Choose the category of your event"),
-      items: ["Workshop", "Networking", "Hackathon", "Sports"].map((String type) {
-        return DropdownMenuItem<String>(
-          value: type,
-          child: Text(type),
-        );
-      }).toList(),
-      onChanged: (String? newValue) {
-        setState(() {
-          selectedCategory = newValue!;
-        });
-      },
-    );
-  }
+  return StreamBuilder<List<Category_event>>(
+    stream: _categoryController.getCategoriesStream(),
+    builder: (context, snapshot) {
+      if (!snapshot.hasData) {
+        return CircularProgressIndicator(); //Muestra un loader mientras se carga
+      }
+
+      final categoryList = snapshot.data!;
+
+      return DropdownButtonFormField<String>(
+        decoration: InputDecoration(
+          prefixIcon: Icon(Icons.category, color: Color(0xFFE6E6E6)),
+          border: _buildInputBorder(),
+        ),
+        value: selectedCategory,
+        hint: const Text("Choose the category of your event"),
+        items: categoryList.map((category) {
+          return DropdownMenuItem<String>(
+            value: category.id, //Guardas el ID directamente
+            child: Text(category.name),
+          );
+        }).toList(),
+        onChanged: (String? newValue) {
+            setState(() {
+              selectedCategory = newValue!;
+              print("🔍 Usuario seleccionó: $newValue");
+              print("🔍 Categorías disponibles: ${categoryList.map((c) => c.name).toList()}");
+              categoryId = newValue; // ✅ el ID ya viene del value del dropdown
+            });
+
+        /* onChanged: (String? newValue) {
+          setState(() {
+            selectedCategory = newValue!;
+            print("🔍 Usuario seleccionó: $newValue");
+            print("🔍 Categorías disponibles: ${categoryList.map((c) => c.name).toList()}");
+            categoryId = snapshot.data!
+            .firstWhere((c) => c.name == newValue, orElse: () => Category_event(id: '', name: ''))
+            .id;
+          }); */
+        },
+      );
+    },
+  );
+}
+
 
   Widget _buildLabeledDatePickers() {
   return Column(
@@ -329,19 +437,19 @@ Widget _buildTimeField(String label, TimeOfDay? time, bool isFromTime) {
   }
 
   Widget _buildCreateEventButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: ElevatedButton(
-        onPressed: () {
-          //Navigator.pushNamed(context, '/home'); // habilitar cuando este todooo
-        },
-        style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondary),
-        child: const Text("Create Event", style: TextStyle(color: Colors.white, fontSize: 16)),
-      ),
-    );
-  }
+  return SizedBox(
+    width: double.infinity,
+    height: 48,
+    child: ElevatedButton(
+      onPressed: _saveEvent, // 🔥 Ahora llama a `_saveEvent()`
+      style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondary),
+      child: const Text("Create Event", style: TextStyle(color: Colors.white, fontSize: 16)),
+    ),
+  );
+}
 
+//Navigator.pushNamed(context, '/home'); // habilitar cuando este todooo
+        
   Widget _buildLabeledCostField() {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
