@@ -1,8 +1,89 @@
-import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const MyApp());
+import 'package:dart_g21/views/chatbot_view.dart';
+import 'package:dart_g21/views/createevents_view.dart';
+import 'package:dart_g21/views/map_view.dart';
+import 'package:dart_g21/views/myevents_view.dart';
+import 'package:dart_g21/views/profile_view.dart';
+import 'package:flutter/material.dart';
+import 'package:dart_g21/views/signup_view.dart';
+import 'package:dart_g21/views/signin_view.dart';
+import 'package:dart_g21/views/home_view.dart';
+import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+
+
+void main() async {
+
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+
+  runApp(MaterialApp(
+
+
+    debugShowCheckedModeBanner: false,
+    initialRoute: '/signin', // La app inicia en la pantalla de Sign In
+    routes: {
+      '/signin': (context) => SignInScreen(),  // Pantalla de inicio de sesión
+      '/signup': (context) => SignUpScreen(),  // Pantalla de registro
+      '/home': (context) => HomePage(userId: "19NXOGaPHxCjtZsl4PIA"),      // Pantalla principal (Home)
+      '/profile': (context) => ProfilePage(userId: "19NXOGaPHxCjtZsl4PIA",),  // Pantalla de perfil
+      '/myEvents': (context) => MyEventsPage(userId: "19NXOGaPHxCjtZsl4PIA"),  // Pantalla de eventos
+      '/chatBot': (context) => ChatBotPage(title:"ChatBot"),  // Pantalla de chatbot
+      '/mapa': (context) => MapView(),  // Pantalla de mapa
+      '/createEvent': (context) => CreateEventScreen(),  // Pantalla de creación de evento
+    },
+  ));
+
+  /* initialRoute: '/',
+    routes: {
+      '/': (context) => SignUpScreen(),
+      '/profile': (context) => SignUpScreen(),
+    },
+  )); */
+
 }
+
+
+
+class AppInitializer extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder(
+      future: Firebase.initializeApp(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return MaterialApp(
+            home: Scaffold(
+              body: Center(child: CircularProgressIndicator()), //  Muestra un loader mientras Firebase carga
+            ),
+          );
+        } else if (snapshot.hasError) {
+          return MaterialApp(
+            home: Scaffold(
+              body: Center(child: Text("Error al cargar Firebase: ${snapshot.error}")),
+            ),
+          );
+        } else {
+          return MaterialApp(
+            initialRoute: '/',
+            routes: {
+              '/': (context) => SignUpScreen(), //  Mantenemos la pantalla inicial que ya te funcionaba
+              '/profile': (context) => SignUpScreen(),
+            },
+          );
+        }
+      },
+    );
+  }
+}
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
