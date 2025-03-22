@@ -24,4 +24,8 @@ class UserController {
   Future<void> deleteUser(String userId) async {
     await _userRepo.deleteUser(userId);
   }
+
+  Stream<User?> getUserByEmail(String email) {
+    return _userRepo.getUserByEmail(email);
+  }
 }

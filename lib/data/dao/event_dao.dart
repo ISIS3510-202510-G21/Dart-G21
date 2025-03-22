@@ -35,4 +35,27 @@ class EventDAO {
   Future<void> deleteEvent(String eventId) async {
     await _firestore.deleteDocument(collectionPath, eventId);
   }
+
+  // Obtener eventos recomendados para un usuario
+  Stream<List<Event>> getRecommendedEventsStreamForUser(String userId) {
+  return _firestore
+      .getDocumentById("recommendations", userId)
+      .asStream()
+      .asyncMap((doc) async {
+        if (!doc.exists || doc.data() == null) {
+          return [];
+        }
+
+        // Obtener lista de IDs de eventos
+        final List<String> eventIds = List<String>.from((doc.data() as Map<String, dynamic>)["events"] ?? []);
+
+        // Obtener detalles de los eventos en paralelo
+        List<Event?> events = await Future.wait(
+          eventIds.map((eventId) async => await getEventById(eventId)),
+        );
+
+        return events.whereType<Event>().toList(); // Filtrar eventos válidos
+      });
+}
+
 }
