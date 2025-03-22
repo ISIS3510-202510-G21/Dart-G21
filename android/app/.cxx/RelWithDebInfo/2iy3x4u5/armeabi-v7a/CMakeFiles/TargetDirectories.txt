@@ -1,0 +1,2 @@
+C:/Users/d.camachom/Documents/Octavo Semestre/GrowHub/Dart-G21/android/app/.cxx/RelWithDebInfo/2iy3x4u5/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/d.camachom/Documents/Octavo Semestre/GrowHub/Dart-G21/android/app/.cxx/RelWithDebInfo/2iy3x4u5/armeabi-v7a/CMakeFiles/rebuild_cache.dir
