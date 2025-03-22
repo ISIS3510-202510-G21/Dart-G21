@@ -36,9 +36,72 @@ class _HomePage extends State<HomePage> {
     AppColors.buttonPurple
   ];
 
+  /// main view
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.primary,
+      bottomNavigationBar: _buildNavigationBar(),
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              Container(
+                height: 200,
+                decoration: const BoxDecoration(
+                  color: AppColors.secondary,
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(40),
+                    bottomRight: Radius.circular(40),
+                  ),
+                ),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 25),
+                    _buildUpBar(),
+                    const SizedBox(height: 25),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildSearchBar(),
+                        _buildFilterButton(),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 10),
+                      _buildBarCategories(),
+                      SizedBox(height: 10),
+                      _buildSectionTitle("Upcoming Events"),
+                      _buildUpcomingEventsList(),
+                      _buildSectionTitle("Nearby Events"),
+                      _buildNearbyEventsList(),
+                      _buildSectionTitle("You Might Like"),
+                      _buildNearbyEventsRecommend(),
+                      SizedBox(height: 20),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          _buildChatbotButton(), // Botón flotante del chatbot
+        ],
+      ),
+    );
+  }
   int _selectedIndex = 0;
-  String _location = "Loading location...";
 
+
+  String _location = "Loading location...";
 
   @override
   void initState() {
@@ -50,65 +113,6 @@ class _HomePage extends State<HomePage> {
     setState(() {
       _selectedIndex = index;
     });
-  }
-
-  /// main view
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.primary,
-      bottomNavigationBar: _buildNavigationBar(),
-      body: Column(
-        children: [
-          Container(
-            height: 200,
-            decoration: const BoxDecoration(
-              color: AppColors.secondary,
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(40),
-                bottomRight: Radius.circular(40),
-              ),
-            ),
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                const SizedBox(height: 25),
-                _buildUpBar(),
-                const SizedBox(height: 25),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildSearchBar(),
-                    _buildFilterButton(),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          Expanded(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: 10),
-                  _buildBarCategories(),
-                  SizedBox(height: 10),
-                  _buildSectionTitle("Upcoming Events"),
-                  _buildUpcomingEventsList(),
-                  _buildSectionTitle("Nearby Events"),
-                  _buildNearbyEventsList(),
-                  _buildSectionTitle("You Might Like"),
-                  _buildNearbyEventsRecommend(),
-                  SizedBox(height: 20),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   /// bottom navigation bar
@@ -563,6 +567,26 @@ class _HomePage extends State<HomePage> {
     );
   }
 
+  Widget _buildChatbotButton() {
+    return Positioned(
+      bottom: 20,
+      right: 20,
+      child: FloatingActionButton(
+        backgroundColor: AppColors.secondary,
+        onPressed: () {
+          //Navigator.push(
+            //context,
+            //MaterialPageRoute(builder: (context) => ChatBotView()), // Abrir la vista del chatbot
+          //);
+        },
+        child: Image.asset(
+          'lib/assets/chatBot.png',
+          width: 40,
+          height: 40,
+        ),
+      ),
+    );
+  }
 
 
 }
