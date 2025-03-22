@@ -27,6 +27,26 @@ class LocationController {
     await _locationRepository.deleteLocation(locationId);
   }
 
+   Stream<Location?> getLocationByAddress(String address) {
+    return _locationRepository.getLocationByAddress(address);
+  }
+
+   Future<String?> addLocationAndReturnId(Location location) async {
+  await addLocation(location);
+  Location? createdLocation = await getLocationByAddressAndCity(location.address, location.city);
+  return createdLocation?.id; 
+}
+
+Future<Location?> getLocationByAddressAndCity(String address, String city) async {
+    Stream<List<Location>> locationsStream = getLocationsStream();
+    List<Location> locations = await locationsStream.first;
+    try {
+      return locations.firstWhere((loc) => loc.address == address && loc.city == city);
+    } catch (e) {
+      print("No se encontró la ubicación en Firestore: $e");
+      return null;
+    }
+  }
   /// Obtener coordenadas a partir de una dirección
   Future<LatLng?> getCoordinatesFromLocationId(String locationId) async {
     try {
