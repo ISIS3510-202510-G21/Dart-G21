@@ -79,6 +79,7 @@ void main() async {
   }
 }
 
+
 void testFirestoreRead() async {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
 
@@ -124,7 +125,6 @@ class AppInitializer extends StatelessWidget {
     );
   }
 }
-
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
