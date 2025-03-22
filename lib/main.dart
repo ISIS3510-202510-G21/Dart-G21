@@ -1,12 +1,14 @@
+
+import 'package:flutter/material.dart';
+import 'package:dart_g21/views/signup_view.dart';
+import 'package:dart_g21/views/signin_view.dart';
 import 'package:dart_g21/views/home_view.dart';
 import 'package:flutter/material.dart';
-
-
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
+import 'services/firestore_service.dart';
 
 //import 'package:dart_g21/screens/home/head.dart';
 
@@ -53,6 +55,7 @@ void main() async {
       '/profile': (context) => SignUpScreen(),
     },
   )); */
+
 }
 
 //Revisarrrrrrrrrrrrr
@@ -125,6 +128,77 @@ class AppInitializer extends StatelessWidget {
     );
   }
 }
+
+//Revisarrrrrrrrrrrrr
+/* void testFirestoreWrite() async {
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
+  User? user = FirebaseAuth.instance.currentUser;
+
+  if (user == null) {
+    print("No hay usuario autenticado, no se puede escribir en Firestore.");
+    return;
+  }
+
+  try {
+    await firestore.collection("events").add({
+      "name": "Evento de Prueba",
+      "description": "Este es un evento de prueba desde Flutter.",
+      "timestamp": FieldValue.serverTimestamp(),
+      "host_id": user.uid, // Ahora usa el usuario autenticado
+    });
+
+    print("Datos escritos correctamente en Firestore.");
+  } catch (e) {
+    print("Error al escribir en Firestore: $e");
+  }
+}
+
+void testFirestoreRead() async {
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+  try {
+    var snapshot = await firestore.collection("events").get();
+    for (var doc in snapshot.docs) {
+      print("Documento leído: ${doc.data()}");
+    }
+  } catch (e) {
+    print("Error al leer Firestore: $e");
+  }
+} */
+
+
+class AppInitializer extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder(
+      future: Firebase.initializeApp(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return MaterialApp(
+            home: Scaffold(
+              body: Center(child: CircularProgressIndicator()), //  Muestra un loader mientras Firebase carga
+            ),
+          );
+        } else if (snapshot.hasError) {
+          return MaterialApp(
+            home: Scaffold(
+              body: Center(child: Text("Error al cargar Firebase: ${snapshot.error}")),
+            ),
+          );
+        } else {
+          return MaterialApp(
+            initialRoute: '/',
+            routes: {
+              '/': (context) => SignUpScreen(), //  Mantenemos la pantalla inicial que ya te funcionaba
+              '/profile': (context) => SignUpScreen(),
+            },
+          );
+        }
+      },
+    );
+  }
+}
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
