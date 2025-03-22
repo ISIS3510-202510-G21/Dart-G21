@@ -1,3 +1,6 @@
+import 'package:dart_g21/controllers/user_controller.dart';
+import 'package:dart_g21/models/user.dart';
+import 'package:dart_g21/views/home_view.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/core/colors.dart';
 import 'package:dart_g21/services/auth_service.dart';
@@ -15,6 +18,7 @@ class _SignInScreenState extends State<SignInScreen> {
   
   bool _isPasswordVisible = false;
   bool _rememberMe = false;
+  final _userController = UserController(); // Add this line
 
   @override
   void dispose() {
@@ -162,7 +166,16 @@ class _SignInScreenState extends State<SignInScreen> {
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
-        //Navigator.pushNamed(context, '/home'); // HABILITARLOOO PARA ir a Home después de registrarse
+        User? user = await _userController.getUserByEmail(_emailController.text).first;
+        String? user_id = user?.id;
+        print(user_id);
+        Navigator.push(
+        context,
+        MaterialPageRoute(
+
+          builder: (context) => HomePage(userId: user_id!),
+        ),
+      );
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.secondary,

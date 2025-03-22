@@ -112,16 +112,16 @@ class EventController {
         String city = place.locality ?? place.subAdministrativeArea ?? place.administrativeArea ?? "";
 
         if (city.isNotEmpty) {
-          print("📍 Ciudad detectada: $city");
+          print("Ciudad detectada: $city");
           return city;
         }
       }
 
       print("⚠ No se pudo determinar la ciudad del usuario.");
-      return "Desconocido"; // 🔹 Si no encuentra la ciudad, retornar "Desconocido"
+      return "Desconocido"; 
     } catch (e) {
-      print("❌ Error al obtener la ciudad: $e");
-      return "Desconocido"; // 🔹 Manejo de error: retornar "Desconocido"
+      print("Error al obtener la ciudad: $e");
+      return "Desconocido"; 
     }
   }
 
@@ -212,7 +212,7 @@ class EventController {
   }
 
 
-//Obtener los eventos recomendados para un usuario (user_id) a partir de la colección "recommendations" que tiene como id los user_id y como atributo events (lista de ids de eventos en String)
+//Obtener los eventos recomendados para un usuario (user_id) 
 Stream<List<Event>> getRecommendedEventsStreamForUser(String userId) {
   return _eventRepository.getRecommendedEventsStreamForUser(userId);
 }

@@ -1,3 +1,4 @@
+import 'package:dart_g21/views/chatbot_view.dart';
 import 'package:flutter/material.dart';
 import '../controllers/category_controller.dart';
 import '../controllers/event_controller.dart';
@@ -131,9 +132,9 @@ class _HomePage extends State<HomePage> {
         }
 
         User user = snapshot.data!;
-        return user.userType == "host"
-            ? BottomNavBarHost(selectedIndex: _selectedIndex, onItemTapped: _onItemTapped)
-            : BottomNavBarAttendant(selectedIndex: _selectedIndex, onItemTapped: _onItemTapped);
+        return user.userType == "Host"
+            ? BottomNavBarHost(selectedIndex: _selectedIndex, onItemTapped: _onItemTapped, id_user: widget.userId)
+            : BottomNavBarAttendant(selectedIndex: _selectedIndex, onItemTapped: _onItemTapped, id_user: widget.userId);
       },
     );
   }
@@ -495,7 +496,7 @@ class _HomePage extends State<HomePage> {
     return SizedBox(
       height: 220,
       child: StreamBuilder<List<Event>>(
-        stream: EventController().getTopNearbyEventsStream(), // 🔹 Usa la nueva función Stream
+        stream: EventController().getTopNearbyEventsStream(), 
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -529,43 +530,81 @@ class _HomePage extends State<HomePage> {
     );
   }
 
-  Widget _buildNearbyEventsRecommend() {
-    return SizedBox(
-      height: 220,
-      child: StreamBuilder<List<Event>>(
-        stream: EventController().getRecommendedEventsStreamForUser(widget.userId), // 🔹 Usa la nueva función Stream
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                "Error al cargar eventos cercanos: ${snapshot.error}",
-                style: TextStyle(color: Colors.red),
-              ),
-            );
-          }
-          if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) {
-            return const Center(child: Text("No hay eventos cercanos disponibles"));
-          }
+ Widget _buildNearbyEventsRecommend() {
+  return SizedBox(
+    height: 220,
+    child: StreamBuilder<List<Event>>(
+      stream: EventController().getRecommendedEventsStreamForUser(widget.userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(
+            child: Text(
+              "Error al cargar eventos cercanos: ${snapshot.error}",
+              style: TextStyle(color: Colors.red),
+            ),
+          );
+        }
 
-          List<Event> events = snapshot.data!;
+        List<Event> events = snapshot.data ?? []; 
 
-          return ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: events.length,
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: const EdgeInsets.only(left: 5.0),
-                child: _buildEventCard(events[index]),
+        if (events.isEmpty) {
+          // 🔹 Si no hay eventos recomendados, mostrar 10 eventos generales
+          return StreamBuilder<List<Event>>(
+            stream: EventController().getEventsStream(), 
+            builder: (context, allSnapshot) {
+              if (allSnapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (allSnapshot.hasError) {
+                return Center(
+                  child: Text(
+                    "Error al cargar eventos: ${allSnapshot.error}",
+                    style: TextStyle(color: Colors.red),
+                  ),
+                );
+              }
+
+              List<Event> allEvents = allSnapshot.data ?? [];
+
+              if (allEvents.isEmpty) {
+                return const Center(child: Text("No hay eventos disponibles"));
+              }
+
+              // 🔹 Tomar solo los primeros 10 eventos
+              allEvents = allEvents.take(10).toList();
+
+              return ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: allEvents.length,
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(left: 5.0),
+                    child: _buildEventCard(allEvents[index]),
+                  );
+                },
               );
             },
           );
-        },
-      ),
-    );
-  }
+        }
+
+        return ListView.builder(
+          scrollDirection: Axis.horizontal,
+          itemCount: events.length,
+          itemBuilder: (context, index) {
+            return Padding(
+              padding: const EdgeInsets.only(left: 5.0),
+              child: _buildEventCard(events[index]),
+            );
+          },
+        );
+      },
+    ),
+  );
+}
+
 
   Widget _buildChatbotButton() {
     return Positioned(
@@ -574,10 +613,10 @@ class _HomePage extends State<HomePage> {
       child: FloatingActionButton(
         backgroundColor: AppColors.secondary,
         onPressed: () {
-          //Navigator.push(
-            //context,
-            //MaterialPageRoute(builder: (context) => ChatBotView()), // Abrir la vista del chatbot
-          //);
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => ChatBotPage(title: "ChatBot",)), 
+          );
         },
         child: Image.asset(
           'lib/assets/chatBot.png',

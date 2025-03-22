@@ -1,3 +1,6 @@
+import 'package:dart_g21/controllers/user_controller.dart';
+import 'package:dart_g21/models/user.dart';
+import 'package:dart_g21/views/home_view.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/core/colors.dart';
 import 'package:dart_g21/services/auth_service.dart';
@@ -12,6 +15,7 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final AuthController _authController = AuthController();
+  final UserController _userController = UserController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -181,7 +185,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     height: 48,
     child: ElevatedButton(
       onPressed: () async {
-        //Navigator.pushNamed(context, '/home'); // HABILITARLOOO PARA ir a Home después de registrarse
+       
         await _authController.signUp(
           _emailController.text,
           _nameController.text,
@@ -189,6 +193,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
           _confirmPasswordController.text,
           selectedUserType ?? "attendee",
         );
+      User? user = await _userController.getUserByEmail(_emailController.text.trim()).first;
+        String? user_id = user?.id;
+        Navigator.push(
+        context,
+        MaterialPageRoute(
+
+          builder: (context) => HomePage(userId: user_id!),
+        ),
+      );
+
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.secondary,
