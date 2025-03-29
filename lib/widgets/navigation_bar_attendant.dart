@@ -1,7 +1,3 @@
-import 'package:dart_g21/views/createevents_view.dart';
-import 'package:dart_g21/views/map_view.dart';
-import 'package:dart_g21/views/myevents_view.dart';
-import 'package:dart_g21/views/profile_view.dart';
 import 'package:flutter/material.dart';
 import '../core/colors.dart';
 
@@ -26,14 +22,14 @@ class BottomNavBarAttendant extends StatelessWidget {
       color: AppColors.primary,
       shadowColor: AppColors.icons,
       child: SizedBox(
+        height: 60,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _buildNavItem(Icons.home, "Home", 0),
-            _buildNavItemRoute(Icons.map, "Map", MapView(), context),
-          
-            _buildNavItemRoute(Icons.event, "My events", MyEventsPage(userId: id_user), context),
-            _buildNavItemRoute(Icons.account_circle_outlined, "Profile", ProfilePage(userId: id_user), context),
+            _buildNavItem(Icons.map, "Map", 1),
+            _buildNavItem(Icons.event, "My events", 2),
+            _buildNavItem(Icons.account_circle_outlined, "Profile", 3),
           ],
         ),
       ),
@@ -45,62 +41,24 @@ class BottomNavBarAttendant extends StatelessWidget {
       onTap: () => onItemTapped(index),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           Icon(
             icon,
             color: selectedIndex == index ? AppColors.secondary : AppColors.icons,
-            size: 32,
+            size: 28,
           ),
-          SizedBox(height: 0),
-          Flexible(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: selectedIndex == index ? AppColors.secondary : AppColors.icons,
-              ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: selectedIndex == index ? AppColors.secondary : AppColors.icons,
             ),
           ),
         ],
       ),
     );
   }
-
-
- Widget _buildNavItemRoute(IconData icon, String label, Widget page, BuildContext context) {
-  return GestureDetector(
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => page, // Página dinámica
-        ),
-      );
-    },
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Icon(
-          icon,
-          color: selectedIndex == label ? AppColors.secondary : AppColors.icons,
-          size: 32,
-        ),
-        SizedBox(height: 0),
-        Flexible(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: selectedIndex == label ? AppColors.secondary : AppColors.icons,
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-
 }
