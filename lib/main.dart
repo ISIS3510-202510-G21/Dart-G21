@@ -32,7 +32,10 @@ void main() async {
     routes: {
       '/signin': (context) => SignInScreen(),  // Pantalla de inicio de sesión
       '/signup': (context) => SignUpScreen(),  // Pantalla de registro
-      '/home': (context) => HomePage(userId: "19NXOGaPHxCjtZsl4PIA"),      // Pantalla principal (Home)
+      '/home': (context) {
+      final args = ModalRoute.of(context)!.settings.arguments as String;
+      return HomePage(userId: args);
+      },      // Pantalla principal (Home)
       '/profile': (context) => ProfilePage(userId: "19NXOGaPHxCjtZsl4PIA",),  // Pantalla de perfil
       '/myEvents': (context) => MyEventsPage(userId: "19NXOGaPHxCjtZsl4PIA"),  // Pantalla de eventos
       '/chatBot': (context) => ChatBotPage(title:"ChatBot"),  // Pantalla de chatbot

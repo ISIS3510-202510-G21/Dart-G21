@@ -1,4 +1,8 @@
+import 'dart:collection';
+
 import 'package:dart_g21/views/chatbot_view.dart';
+import 'package:dart_g21/views/map_view.dart';
+import 'package:dart_g21/views/profile_view.dart';
 import 'package:flutter/material.dart';
 import '../controllers/category_controller.dart';
 import '../controllers/event_controller.dart';
@@ -13,6 +17,7 @@ import '../core/colors.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:dart_g21/models/location.dart' as app_models;
+import 'myevents_view.dart';
 
 
 class HomePage extends StatefulWidget {
@@ -45,61 +50,75 @@ class _HomePage extends State<HomePage> {
       bottomNavigationBar: _buildNavigationBar(),
       body: Stack(
         children: [
-          Column(
+          IndexedStack(
+            index: _selectedIndex,
             children: [
-              Container(
-                height: 200,
-                decoration: const BoxDecoration(
-                  color: AppColors.secondary,
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(40),
-                    bottomRight: Radius.circular(40),
-                  ),
-                ),
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 25),
-                    _buildUpBar(),
-                    const SizedBox(height: 25),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildSearchBar(),
-                        _buildFilterButton(),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(height: 10),
-                      _buildBarCategories(),
-                      SizedBox(height: 10),
-                      _buildSectionTitle("Upcoming Events"),
-                      _buildUpcomingEventsList(),
-                      _buildSectionTitle("Nearby Events"),
-                      _buildNearbyEventsList(),
-                      _buildSectionTitle("You Might Like"),
-                      _buildNearbyEventsRecommend(),
-                      SizedBox(height: 20),
-                    ],
-                  ),
-                ),
-              ),
+              _buildMainContent(),
+              MapView(),
+              MyEventsPage(userId: widget.userId),
+              ProfilePage(userId: widget.userId),
             ],
           ),
-          _buildChatbotButton(), // Botón flotante del chatbot
+          if (_selectedIndex == 0) _buildChatbotButton(),
         ],
       ),
+
     );
   }
   int _selectedIndex = 0;
+
+
+  Widget _buildMainContent() {
+    return Column(
+      children: [
+        Container(
+          height: 200,
+          decoration: const BoxDecoration(
+            color: AppColors.secondary,
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(40),
+              bottomRight: Radius.circular(40),
+            ),
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              const SizedBox(height: 25),
+              _buildUpBar(),
+              const SizedBox(height: 25),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildSearchBar(),
+                  _buildFilterButton(),
+                ],
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: 10),
+                _buildBarCategories(),
+                SizedBox(height: 10),
+                _buildSectionTitle("Upcoming Events"),
+                _buildUpcomingEventsList(),
+                _buildSectionTitle("Nearby Events"),
+                _buildNearbyEventsList(),
+                _buildSectionTitle("You Might Like"),
+                _buildNearbyEventsRecommend(),
+                SizedBox(height: 20),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
 
   String _location = "Loading location...";
@@ -551,7 +570,6 @@ class _HomePage extends State<HomePage> {
         List<Event> events = snapshot.data ?? []; 
 
         if (events.isEmpty) {
-          // 🔹 Si no hay eventos recomendados, mostrar 10 eventos generales
           return StreamBuilder<List<Event>>(
             stream: EventController().getEventsStream(), 
             builder: (context, allSnapshot) {
@@ -573,7 +591,6 @@ class _HomePage extends State<HomePage> {
                 return const Center(child: Text("No hay eventos disponibles"));
               }
 
-              // 🔹 Tomar solo los primeros 10 eventos
               allEvents = allEvents.take(10).toList();
 
               return ListView.builder(
@@ -626,6 +643,10 @@ class _HomePage extends State<HomePage> {
       ),
     );
   }
+
+
+
+
 
 
 }
