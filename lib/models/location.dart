@@ -24,7 +24,7 @@ class Location{
       address: map['address'],
       city: map['city'],
       details: map['details'],
-      university: map['university'],
+      university: map['university'] ?? true,
     );
   }
 
