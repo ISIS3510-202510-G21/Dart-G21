@@ -242,9 +242,9 @@ class _HomePage extends State<HomePage> {
   /// head bar with location
   Widget _buildUpBar() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.menu, color: AppColors.primary, size: 28),
+        //const Icon(Icons.menu, color: AppColors.primary, size: 28),
         Column(
           children: [
             const Text(
@@ -264,7 +264,7 @@ class _HomePage extends State<HomePage> {
             ),
           ],
         ),
-        const Icon(Icons.account_circle_outlined, color: AppColors.primary, size: 28),
+        //const Icon(Icons.account_circle_outlined, color: AppColors.primary, size: 28),
       ],
     );
   }
