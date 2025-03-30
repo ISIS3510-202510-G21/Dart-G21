@@ -134,65 +134,61 @@ class AuthService {
   }
 
   //función para iniciar sesión 
-  Future<void> signIn({
-    required String email,
-    required String password,
-  }) async {
-    try {
-      //verificar si los campos están vacíos
-      if (email.isEmpty || password.isEmpty) {
-        Fluttertoast.showToast(
-          msg: "All fields are required.",
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-          fontSize: 14.0,
-        );
-        return;
-      }
-
-      //validar el email
-      if (!isValidEmail(email)) return;
-
-      //intentar iniciar sesión con FirebaseAuth
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      //mensaje cuando se inicia sesión correctamente
+  Future<bool> signIn({
+  required String email,
+  required String password,
+}) async {
+  try {
+    if (email.isEmpty || password.isEmpty) {
       Fluttertoast.showToast(
-        msg: "Login successful!",
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.green,
-        textColor: Colors.white,
-        fontSize: 14.0,
-      );
-
-    } on FirebaseAuthException catch (e) {
-      String message = '';
-
-      if (e.code == 'user-not-found') {
-        message = 'No user found for that email.';
-      } else if (e.code == 'wrong-password') {
-        message = 'Wrong password provided for that user.';
-      } else if (e.code == 'invalid-credential') {
-      message = 'The password is incorrect. Please try again.';
-      } else {
-        message = "Error: ${e.message}";
-      }
-
-      //msstrar error específico con Fluttertoast
-      Fluttertoast.showToast(
-        msg: message,
+        msg: "All fields are required.",
         toastLength: Toast.LENGTH_LONG,
         gravity: ToastGravity.BOTTOM,
         backgroundColor: Colors.red,
         textColor: Colors.white,
         fontSize: 14.0,
       );
+      return false;
     }
+
+    if (!isValidEmail(email)) return false;
+
+    await FirebaseAuth.instance.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+
+    Fluttertoast.showToast(
+      msg: "Login successful!",
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: Colors.green,
+      textColor: Colors.white,
+      fontSize: 14.0,
+    );
+    return true;
+
+  } on FirebaseAuthException catch (e) {
+    String message = '';
+    if (e.code == 'user-not-found') {
+      message = 'No user found for that email.';
+    } else if (e.code == 'wrong-password') {
+      message = 'Wrong password provided for that user.';
+    } else if (e.code == 'invalid-credential') {
+      message = 'The password is incorrect. Please try again.';
+    } else {
+      message = "Error: ${e.message}";
+    }
+
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: Colors.red,
+      textColor: Colors.white,
+      fontSize: 14.0,
+    );
+    return false;
   }
+}
 }
