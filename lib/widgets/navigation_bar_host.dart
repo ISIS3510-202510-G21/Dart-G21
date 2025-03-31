@@ -36,7 +36,7 @@ class BottomNavBarHost extends StatelessWidget {
               },
               backgroundColor: AppColors.secondary,
               shape: const CircleBorder(),
-              elevation: 10,
+              elevation: 0,
               child: const Icon(
                 Icons.add,
                 color: AppColors.primary,
