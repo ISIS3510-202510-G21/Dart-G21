@@ -74,7 +74,7 @@ class EventController {
 
       sortedEvents.sort((a, b) => a.start_date.compareTo(b.start_date));
 
-      return sortedEvents.take(5).toList();
+      return sortedEvents.take(10).toList();
     });
   }
 
