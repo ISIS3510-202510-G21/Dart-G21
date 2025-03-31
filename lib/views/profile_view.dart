@@ -27,40 +27,55 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Profile", style: TextStyle(color: AppColors.textPrimary, fontSize: 24)),
-      ),
-      body: StreamBuilder<Profile?>(
-        
-        stream: _profileController.getProfileByUserId(widget.userId),  // Conexión con Firestore
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-      return Center(child: CircularProgressIndicator()); 
-          } 
-          if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
-          }
-          if (!snapshot.hasData || snapshot.data == null) {
-            
-            return Center(child: Text("No se encontró el perfil")); 
-          }
-          
-          Profile profile = snapshot.data!;
-          return ListView(
-            padding: EdgeInsets.zero,
-            children: <Widget>[
-              buildTop(profile), 
-              buildContent(profile), 
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16),
+          child: Row(
+            children: const [
+              Text(
+                "Profile",
+                style: TextStyle(
+                  fontSize: 24,
+                  color: Colors.black,
+                  fontWeight: FontWeight.normal,
+                ),
+              ),
             ],
-          );
-        },
-      ),
+          ),
+        ),
+        Expanded(
+          child: StreamBuilder<Profile?>(
+            stream: _profileController.getProfileByUserId(widget.userId),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Center(child: Text("Error: ${snapshot.error}"));
+              }
+              if (!snapshot.hasData || snapshot.data == null) {
+                return const Center(child: Text("No se encontró el perfil"));
+              }
+
+              Profile profile = snapshot.data!;
+              return ListView(
+                padding: EdgeInsets.zero,
+                children: <Widget>[
+                  buildTop(profile),
+                  buildContent(profile),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
 
- Widget buildTop(Profile profile) {
+
+  Widget buildTop(Profile profile) {
    final bottom = 200.0;
    final top = 20.0;
    return Stack (

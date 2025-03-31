@@ -27,11 +27,14 @@ class _MapView extends State<MapView> {
 
   /// Carga los eventos y coloca marcadores en el mapa
   Future<void> _loadEventsAndMarkers() async {
-    List<Event> events = await _eventController.getTopNearbyEventsStream().first;
+    List<Event> events = await _eventController
+        .getTopNearbyEventsStream()
+        .first;
     List<Marker> markerList = [];
 
     for (Event event in events) {
-      final coordinates = await _locationController.getCoordinatesFromLocationId(event.location_id);
+      final coordinates = await _locationController
+          .getCoordinatesFromLocationId(event.location_id);
       if (coordinates != null) {
         markerList.add(
           Marker(
@@ -39,7 +42,8 @@ class _MapView extends State<MapView> {
             position: coordinates,
             infoWindow: InfoWindow(
               title: event.name,
-              snippet: "${event.start_date.day}/${event.start_date.month}/${event.start_date.year}",
+              snippet: "${event.start_date.day}/${event.start_date
+                  .month}/${event.start_date.year}",
             ),
           ),
         );
@@ -54,7 +58,8 @@ class _MapView extends State<MapView> {
 
   /// Mueve la cámara al evento seleccionado
   Future<void> _moveCameraToEvent(String locationId) async {
-    final coordinates = await _locationController.getCoordinatesFromLocationId(locationId);
+    final coordinates = await _locationController.getCoordinatesFromLocationId(
+        locationId);
     if (coordinates != null) {
       _mapController.animateCamera(CameraUpdate.newLatLng(coordinates));
     }
@@ -62,39 +67,59 @@ class _MapView extends State<MapView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Events Close To You"),backgroundColor: AppColors.primary,),
-      body: Column(
-        children: [
-          Expanded(
-            flex: 1,
-            child: GoogleMap(
-              initialCameraPosition: const CameraPosition(
-                target: LatLng(4.6097, -74.0817),
-                zoom: 12,
+    return Column(
+      children: [
+        // 🔹 Título personalizado (reemplaza AppBar)
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+          decoration: const BoxDecoration(
+            color: AppColors.primary,
+          ),
+          child: const Text(
+            "Events Close To You",
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 20,
+            ),
+          ),
+        ),
+
+        Expanded(
+          child: Column(
+            children: [
+              Expanded(
+                flex: 1,
+                child: GoogleMap(
+                  initialCameraPosition: const CameraPosition(
+                    target: LatLng(4.6097, -74.0817), // Bogotá
+                    zoom: 12,
+                  ),
+                  markers: _markers,
+                  onMapCreated: (GoogleMapController controller) {
+                    _mapController = controller;
+                  },
+                ),
               ),
-              markers: _markers,
-              onMapCreated: (GoogleMapController controller) {
-                _mapController = controller;
-              },
-            ),
+              Expanded(
+                flex: 1,
+                child: _events.isEmpty
+                    ? const Center(child: Text("charging----"))
+                    : ListView.builder(
+                  itemCount: _events.length,
+                  itemBuilder: (context, index) {
+                    return EventCard(
+                      event: _events[index],
+                      onTap: () =>
+                          _moveCameraToEvent(_events[index].location_id),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
-          Expanded(
-            flex: 1,
-            child: _events.isEmpty
-                ? const Center(child: Text("charging----"))
-                : ListView.builder(
-              itemCount: _events.length,
-              itemBuilder: (context, index) {
-                return EventCard(
-                  event: _events[index],
-                  onTap: () => _moveCameraToEvent(_events[index].location_id),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
