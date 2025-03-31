@@ -69,7 +69,7 @@ class _MapView extends State<MapView> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // 🔹 Título personalizado (reemplaza AppBar)
+        SizedBox(height: 40,),
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
@@ -80,7 +80,7 @@ class _MapView extends State<MapView> {
             "Events Close To You",
             style: TextStyle(
               color: AppColors.textPrimary,
-              fontSize: 20,
+              fontSize: 24,
             ),
           ),
         ),

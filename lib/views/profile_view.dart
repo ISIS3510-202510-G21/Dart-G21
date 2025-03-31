@@ -29,6 +29,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        SizedBox(height: 40,),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16),
           child: Row(

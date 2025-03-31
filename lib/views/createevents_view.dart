@@ -219,7 +219,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   const SizedBox(height: 15),
                   _buildLabeledTimePickers(),
                   const SizedBox(height: 15),
-                  _buildLabeledInputField("Address", _addressController, 'Write the address of your event (Address, City)', Icons.location_on),
+                  _buildLabeledInputField("Address", _addressController, 'Write the address(Address, City)', Icons.location_on),
                   const SizedBox(height: 15),
                   _buildLabeledInputField("Details", _detailsController, 'Write the details of the address', Icons.info),
                   const SizedBox(height: 30),
@@ -237,6 +237,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
   Widget _buildHeader(BuildContext context) {
     return Row(
+      //mainAxisAlignment: MainAxisAlignment.start,
       children: [
         IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black, size: 28),
@@ -246,9 +247,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         const Text(
           'Create Event',
           style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
+            fontSize: 24,
+            color: AppColors.textPrimary,
           ),
         ),
       ],
@@ -355,7 +355,7 @@ Widget _buildTimeField(String label, TimeOfDay? time, bool isFromTime) {
           border: _buildInputBorder(),
         ),
         value: selectedCategory,
-        hint: const Text("Choose the category of your event"),
+        hint: const Text("Choose the category", style: TextStyle(color: AppColors.secondaryText)),
         items: categoryList.map((category) {
           return DropdownMenuItem<String>(
             value: category.id, //Guardas el ID directamente
@@ -365,16 +365,16 @@ Widget _buildTimeField(String label, TimeOfDay? time, bool isFromTime) {
         onChanged: (String? newValue) {
             setState(() {
               selectedCategory = newValue!;
-              print("🔍 Usuario seleccionó: $newValue");
-              print("🔍 Categorías disponibles: ${categoryList.map((c) => c.name).toList()}");
-              categoryId = newValue; // ✅ el ID ya viene del value del dropdown
+              print(" Usuario seleccionó: $newValue");
+              print(" Categorías disponibles: ${categoryList.map((c) => c.name).toList()}");
+              categoryId = newValue; // el ID ya viene del value del dropdown
             });
 
         /* onChanged: (String? newValue) {
           setState(() {
             selectedCategory = newValue!;
-            print("🔍 Usuario seleccionó: $newValue");
-            print("🔍 Categorías disponibles: ${categoryList.map((c) => c.name).toList()}");
+            print(" Usuario seleccionó: $newValue");
+            print(" Categorías disponibles: ${categoryList.map((c) => c.name).toList()}");
             categoryId = snapshot.data!
             .firstWhere((c) => c.name == newValue, orElse: () => Category_event(id: '', name: ''))
             .id;
@@ -441,7 +441,7 @@ Widget _buildTimeField(String label, TimeOfDay? time, bool isFromTime) {
     width: double.infinity,
     height: 48,
     child: ElevatedButton(
-      onPressed: _saveEvent, // 🔥 Ahora llama a `_saveEvent()`
+      onPressed: _saveEvent, // Ahora llama a `_saveEvent()`
       style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondary),
       child: const Text("Create Event", style: TextStyle(color: Colors.white, fontSize: 16)),
     ),

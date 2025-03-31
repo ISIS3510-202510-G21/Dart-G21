@@ -10,6 +10,7 @@ import 'package:dart_g21/views/signin_view.dart';
 import 'package:dart_g21/views/home_view.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/services.dart';
 import 'firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -22,6 +23,11 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown, // opcional: también permite girar el celular boca abajo
+  ]);
 
 
   runApp(MaterialApp(

@@ -29,11 +29,14 @@ class _MyEventsPageState extends State<MyEventsPage> {
   @override
   Widget build(BuildContext context) {
     return Column(
+      
       children: [
+        SizedBox(height: 40,),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16),
           child: Row(
             children: const [
+              
               Text(
                 "My Events",
                 style: TextStyle(
