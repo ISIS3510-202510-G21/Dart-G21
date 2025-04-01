@@ -27,7 +27,7 @@ class AuthController {
       if (id_user != null) {
         print("Usuario autenticado con UID: $id_user");
         //Crear usuario en la colección "users"
-        User newUser = User(id: id_user, name: name, email: email, userType: userType);
+        User newUser = User(id: id_user, name: name, email: email, userType: userType, recommendedEvents: []);
         await _userController.addUser(newUser);
         print("Usuario guardado en `users` en Firestore");
        
