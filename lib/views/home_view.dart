@@ -267,7 +267,7 @@ class _HomePage extends State<HomePage> {
         Column(
           children: [
             const Text(
-              "Current Location ▼",
+              "Current Location",
               style: TextStyle(
                 color: AppColors.primary,
                 fontSize: 12,
@@ -482,7 +482,11 @@ class _HomePage extends State<HomePage> {
       height: 220,
       child: StreamBuilder<List<Event>>(
         stream: EventController().getTop10UpcomingEventsStream(),
+
         builder: (context, snapshot) {
+
+          print('!!!!1');
+          print(EventController().getTop10UpcomingEventsStream());
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }

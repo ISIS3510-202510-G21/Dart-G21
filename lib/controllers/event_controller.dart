@@ -177,25 +177,26 @@ class EventController {
   ///Obtner eventos en Bogota
   Stream<List<Event>> getBogotaEventsStream() async* {
     try {
-      yield await _eventRepository.getEventsStream().asyncMap((events) async {
+      await for (List<Event> events in _eventRepository.getEventsStream()) {
         List<Event> bogotaEvents = [];
 
         for (Event event in events) {
           try {
-            app_models.Location? eventLocation =
-            await _locationController.getLocationById(event.location_id);
+            final eventLocation = await _locationController.getLocationById(event.location_id);
 
-            if (eventLocation == null || eventLocation.city == null) {
+            if (eventLocation == null) {
               print("Ubicación no encontrada para el evento ${event.id}");
               continue;
             }
 
-            bool esBogota = eventLocation.city?.toLowerCase().trim() == "bogotá";
+            final city = eventLocation.city;
 
-            if (esBogota) {
+            if (city is String && city.toLowerCase().trim() == "bogotá") {
               bogotaEvents.add(event);
             }
+
           } catch (error) {
+            print("Error al procesar ubicación de evento ${event.id}: $error");
             continue;
           }
         }
@@ -203,13 +204,15 @@ class EventController {
         if (bogotaEvents.isEmpty) {
           print("No se encontraron eventos en Bogotá.");
         }
-        return bogotaEvents;
-      }).first;
+
+        yield bogotaEvents;
+      }
     } catch (error) {
       print("Error general en getBogotaEventsStream: $error");
       yield [];
     }
   }
+
 
 
 //Obtener los eventos recomendados para un usuario (user_id) 

@@ -10,6 +10,7 @@ class Profile {
   List<String> following;
   List<String> interests;
   String user_ref;
+  List<String> skills;
 
   Profile({
     required this.id,
@@ -21,6 +22,7 @@ class Profile {
     required this.following,
     required this.interests,
     required this.user_ref,
+    required this.skills,
   });
 
   // Convertir objeto a Map para Firestore, guardando referencias
@@ -43,7 +45,10 @@ class Profile {
       'interests': interests
           .map((id) => _db.collection("interests").doc(id)) 
           .toList(),
-      'user_ref': _db.collection("users").doc(user_ref), 
+      'user_ref': _db.collection("users").doc(user_ref),
+      'skills': skills
+          .map((id) => _db.collection("interests").doc(id))
+          .toList(),
     };
   }
 
@@ -73,6 +78,9 @@ class Profile {
       user_ref: map['user_ref'] is DocumentReference
           ? (map['user_ref'] as DocumentReference).id
           : map['user_ref'] ?? '',
+      skills: (map['skills'] as List<dynamic>?)
+          ?.map((e) => e is DocumentReference ? e.id : e.toString())
+          .toList() ?? [],
     );
   }
 }

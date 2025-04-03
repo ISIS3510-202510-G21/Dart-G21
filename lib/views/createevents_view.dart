@@ -95,6 +95,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       location_id: id_location ?? "", //Guardar la referencia de location
       image: _imageUrlController.text,
       attendees: [], //Lista vacía al inicio
+      skills: []
     );
 
 

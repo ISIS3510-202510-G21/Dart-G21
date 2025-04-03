@@ -45,6 +45,7 @@ class AuthController {
           followers: [],
           following: [],
           interests: [],
+          skills: [],
         );
 
         await _profileController.addProfile(newProfile);
