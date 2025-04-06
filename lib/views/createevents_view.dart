@@ -9,7 +9,10 @@ import 'package:dart_g21/models/category.dart';
 import 'package:dart_g21/models/location.dart';
 
 class CreateEventScreen extends StatefulWidget {
-  const CreateEventScreen({Key? key}) : super(key: key);
+  final String userId; // ID del usuario que crea el evento
+ 
+  const CreateEventScreen({Key? key, required this.userId}) : super(key: key);
+
 
   @override
   State<CreateEventScreen> createState() => _CreateEventScreenState();
@@ -95,7 +98,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       location_id: id_location ?? "", //Guardar la referencia de location
       image: _imageUrlController.text,
       attendees: [], //Lista vacía al inicio
-      skills: []
+      skills: [],
+      creator_id: widget.userId, // ID del creador del evento
     );
 
 
