@@ -29,4 +29,9 @@ class EventRepository {
   Stream<List<Event>> getRecommendedEventsStreamForUser(String userId) {
     return _eventDao.getRecommendedEventsStreamForUser(userId);
   }
+
+  Future<List<Event>> getFirstNEvents(int n) async {
+  return await _eventDao.getFirstNEvents(n);
+}
+
 }
