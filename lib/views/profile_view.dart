@@ -1,3 +1,4 @@
+import 'package:dart_g21/controllers/category_controller.dart';
 import 'package:dart_g21/controllers/interest_controller.dart';
 import 'package:dart_g21/controllers/profile_controller.dart';
 import 'package:dart_g21/controllers/user_controller.dart';
@@ -21,7 +22,7 @@ class ProfilePage extends StatefulWidget {
  
 class _ProfilePageState extends State<ProfilePage> {
   final ProfileController _profileController = ProfileController();
-  final SkillController _skillController = SkillController();
+  final CategoryController _categoryController = CategoryController();
   final UserController _userController = UserController();
   final double coverHeight = 200;
   final double profileHeight = 180;
@@ -267,14 +268,14 @@ class _ProfilePageState extends State<ProfilePage> {
             runSpacing: 10,
             children: [
 
-              for (var skill in profile.skills)
+              for (var interest in profile.interests)
 
                 FutureBuilder(
-                  future: _skillController.getSkillById(skill),
+                  future: _categoryController.getCategoryById(interest),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.done) {
                       if (snapshot.hasData) {
-                        return buildInterestChip(snapshot.data!.name, colors[skill.hashCode % colors.length]);
+                        return buildInterestChip(snapshot.data!.name, colors[interest.hashCode % colors.length]);
                       } else {
                         return Text('Interest not found');
                       }
