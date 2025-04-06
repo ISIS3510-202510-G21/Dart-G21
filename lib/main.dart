@@ -46,7 +46,7 @@ await SystemChrome.setPreferredOrientations([
       '/myEvents': (context) => MyEventsPage(userId: "19NXOGaPHxCjtZsl4PIA"),  // Pantalla de eventos
       '/chatBot': (context) => ChatBotPage(title:"ChatBot"),  // Pantalla de chatbot
       '/mapa': (context) => MapView(),  // Pantalla de mapa
-      '/createEvent': (context) => CreateEventScreen(),  // Pantalla de creación de evento
+      '/createEvent': (context) => CreateEventScreen(userId: "19NXOGaPHxCjtZsl4PIA"),  // Pantalla de creación de evento
     },
   ));
 
