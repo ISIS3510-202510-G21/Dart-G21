@@ -1,5 +1,6 @@
 import 'package:dart_g21/models/profile.dart';
 import '../database/firestore_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; //esta bien??
 
 class ProfileDAO {
   final FirestoreService _firestore = FirestoreService();
@@ -41,4 +42,15 @@ class ProfileDAO {
   Future<void> deleteProfile(String profileId) async {
     await _firestore.deleteDocument(collectionPath, profileId);
   }
+
+  Future<void> updateUserCategories(String userId, List<String> categoryIds) async {
+  final List<DocumentReference> categoryRefs = categoryIds
+      .map((id) => _firestore.getCollection("categories").doc(id))
+      .toList();
+
+    await _firestore.updateDocument("profiles", userId, {
+      "categories": categoryRefs,
+    });
+  }
+
 }

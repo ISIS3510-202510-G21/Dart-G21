@@ -36,4 +36,9 @@ class ProfileController {
       await updateProfile(profile);
     }
   }
+
+  Future<void> updateUserCategories(String userId, List<String> categoryIds) async {
+    await _profileRepository.updateUserCategories(userId, categoryIds);
+  }
+
 }

@@ -41,6 +41,7 @@ dependencies:
   google_fonts: ^6.2.1
   dash_chat_2: ^0.0.20
   chat_gpt_sdk: ^2.2.5
+  lucide_icons: 0.257.0
   
  
  
