@@ -1,3 +1,4 @@
+import 'package:dart_g21/views/createevents_view.dart';
 import 'package:flutter/material.dart';
 import '../core/colors.dart';
 
@@ -32,7 +33,12 @@ class BottomNavBarHost extends StatelessWidget {
             // Botón flotante central para crear eventos
             FloatingActionButton(
               onPressed: () {
-                Navigator.pushNamed(context, '/createEvent');
+                Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CreateEventScreen(userId: id_user), 
+                ),
+          );
               },
               backgroundColor: AppColors.secondary,
               shape: const CircleBorder(),
