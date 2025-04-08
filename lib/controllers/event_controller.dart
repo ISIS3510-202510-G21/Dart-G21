@@ -117,7 +117,7 @@ class EventController {
         }
       }
 
-      print("⚠ No se pudo determinar la ciudad del usuario.");
+      print("No se pudo determinar la ciudad del usuario.");
       return "Desconocido"; 
     } catch (e) {
       print("Error al obtener la ciudad: $e");
@@ -219,6 +219,11 @@ class EventController {
 Stream<List<Event>> getRecommendedEventsStreamForUser(String userId) {
   return _eventRepository.getRecommendedEventsStreamForUser(userId);
 }
+
+ Future<List<Event>> getFirstNEvents(int n) async {
+  return await _eventRepository.getFirstNEvents(n);
+}
+
 
 
 
