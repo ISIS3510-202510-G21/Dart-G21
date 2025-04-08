@@ -17,6 +17,7 @@ import '../core/colors.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:dart_g21/models/location.dart' as app_models;
+import 'categoriesfilter_view.dart';
 import 'myevents_view.dart';
 
 
@@ -90,7 +91,6 @@ class _HomePage extends State<HomePage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   _buildSearchBar(),
-                  _buildFilterButton(),
                 ],
               ),
             ],
@@ -183,7 +183,14 @@ class _HomePage extends State<HomePage> {
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 5),
                   child: ElevatedButton(
-                    onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CategoriesFilter(categoryId: category.id),
+                          ),
+                        );
+                      },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colors[categories.indexOf(category) % colors.length],
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -291,7 +298,7 @@ class _HomePage extends State<HomePage> {
   /// search bar
   Widget _buildSearchBar() {
     return SizedBox(
-      width: 240,
+      width: 340,
       height: 55,
       child: TextField(
         decoration: InputDecoration(
@@ -316,48 +323,6 @@ class _HomePage extends State<HomePage> {
           ),
         ),
         style: const TextStyle(color: Colors.white),
-      ),
-    );
-  }
-
-  /// filter button
-  Widget _buildFilterButton() {
-    return SizedBox(
-      height: 55,
-      width: 120,
-      child: ElevatedButton.icon(
-        onPressed: () {
-          // Acción cuando se presiona el botón
-        },
-        icon: Container(
-          width: 31,
-          height: 31,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: AppColors.primary.withOpacity(0.7), width: 2),
-            color: Colors.transparent,
-          ),
-          child: Center(
-            child: Icon(
-              Icons.filter_list,
-              color: AppColors.primary.withOpacity(0.7),
-              size: 24,
-            ),
-          ),
-        ),
-        label: const Text(
-          "Filters",
-          style: TextStyle(
-            color: AppColors.primary,
-            fontSize: 14,
-          ),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.secondaryButton,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
       ),
     );
   }

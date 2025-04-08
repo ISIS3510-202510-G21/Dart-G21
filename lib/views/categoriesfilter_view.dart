@@ -1,0 +1,204 @@
+import 'package:flutter/material.dart';
+import 'package:dart_g21/core/colors.dart';
+import '../controllers/category_controller.dart';
+import '../controllers/event_controller.dart';
+import '../models/category.dart';
+import '../models/event.dart';
+import '../widgets/eventcard_view.dart';
+
+class CategoriesFilter extends StatefulWidget {
+  final String categoryId;
+  const CategoriesFilter({Key? key, required this.categoryId}) : super(key: key);
+
+  @override
+  _CategoriesFilter createState() => _CategoriesFilter();
+}
+
+class _CategoriesFilter extends State<CategoriesFilter> {
+  final CategoryController _categoryController = CategoryController();
+  final EventController _eventController = EventController();
+
+  List<Event>? _allEvents;
+  Category_event? _category;
+  List<Event>? _events;
+  List<bool> isSelected = [false, false];
+  String selectedSort = "Soonest to Latest";
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCategoryEvents();
+  }
+
+  Future<void> _loadCategoryEvents() async {
+    List<Event> events = await _eventController.getEventsByCategory(widget.categoryId).first;
+    final category = await _categoryController.getCategoryById(widget.categoryId);
+    setState(() {
+      _category = category;
+      _allEvents = events;
+      _events = events;
+    });
+  }
+
+  void _handleSelection(int index) async {
+    if (isSelected[index]) {
+      setState(() {
+        isSelected = [false, false];
+        _events = _allEvents;
+      });
+      return;
+    }
+
+    setState(() {
+      isSelected = List.generate(isSelected.length, (i) => i == index);
+    });
+
+    if (_allEvents != null) {
+      List<Event> filtered;
+      if (index == 0) {
+        filtered = await _eventController.getFreeEventsStream(_allEvents!).first;
+      } else {
+        filtered = await _eventController.getPaidEventsStream(_allEvents!).first;
+      }
+
+      setState(() {
+        _events = filtered;
+      });
+    }
+  }
+
+
+
+  void _handleSort(String sortOption) async {
+    setState(() {
+      selectedSort = sortOption;
+    });
+
+    if (_events != null) {
+      _events = await _eventController.getEventsSortedByDate(_events!, sortOption).first;
+      setState(() {});
+    }
+  }
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: Text(
+            _category?.name ?? "Category",
+            style: const TextStyle(color: AppColors.textPrimary, fontSize: 24),
+          ),
+        ),
+      body: Column(
+        children: [
+          _buildFilterBar(),
+          Expanded(
+            flex: 1,
+            child: _events == null
+                ? const Center(child: CircularProgressIndicator())
+                : _events!.isEmpty
+                ? const Center(child: Text("No events found"))
+                : ListView.builder(
+              itemCount: _events!.length,
+              itemBuilder: (context, index) {
+                return EventCard(
+                  event: _events![index],
+                  onTap: () => _showDetailEvent(_events![index].location_id),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterBar() {
+    return Padding(
+      padding: const EdgeInsets.all(10.0),
+      child: Row(
+        children: [
+          // Botón: Free Events
+          _buildFilterButton("Free Events", 0),
+          const SizedBox(width: 5),
+          _buildFilterButton("Paid Events", 1),
+          const SizedBox(width: 5),
+          _buildSortMenu(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterButton(String label, int index) {
+    final bool selected = isSelected[index];
+
+    return GestureDetector(
+      onTap: () => _handleSelection(index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.secondary : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.grey.shade300, width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.15),
+              blurRadius: 4,
+              offset: const Offset(2, 2),
+            ),
+          ],
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+            color: selected ? AppColors.primary : AppColors.textPrimary,
+          ),
+        ),
+      ),
+    );
+  }
+
+
+  Widget _buildSortMenu() {
+    return Container(
+      height: 40,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade300, width: 1.5),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.15),
+            blurRadius: 4,
+            offset: const Offset(2, 2),
+          ),
+        ],
+      ),
+      child: PopupMenuButton<String>(
+        onSelected: _handleSort,
+        itemBuilder: (context) => const [
+          PopupMenuItem(value: "Soonest to Latest", child: Text("Soonest to Latest")),
+          PopupMenuItem(value: "Latest to Soonest", child: Text("Latest to Soonest")),
+        ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Row(
+            children: [
+              Text(selectedSort, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              const Icon(Icons.arrow_drop_down),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+
+
+  Future<void> _showDetailEvent(String idEvent) async {
+    // TODO: Navegar al detalle del evento
+  }
+}
