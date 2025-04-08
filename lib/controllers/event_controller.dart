@@ -258,6 +258,45 @@ Stream<List<Event>> getRecommendedEventsStreamForUser(String userId) {
     }
   }
 
+  //Obtener las cosas filtradas filterEvents
+  Future<List<Event>> filterEvents({
+    required List<Event> allEvents,
+    String? selectedType,
+    String? selectedCategoryId,
+    String? selectedSkillId,
+    String? selectedLocation,
+    DateTime? selectedStartDate,
+    DateTime? selectedEndDate,
+  }) async {
+    List<Event> result = allEvents;
+
+    if (selectedType != null) {
+      result = result.where((e) => selectedType == 'free' ? e.cost == 0 : e.cost > 0).toList();
+    }
+    if (selectedCategoryId != null) {
+      result = result.where((e) => e.category == selectedCategoryId).toList();
+    }
+    if (selectedSkillId != null) {
+      result = result.where((e) => e.skills.contains(selectedSkillId)).toList();
+    }
+    if (selectedLocation != null) {
+      List<String> matchingLocationIds = await _locationController.getLocationIdsByUniversity(
+        selectedLocation == 'university');
+      result = result.where((e) => matchingLocationIds.contains(e.location_id)).toList();
+    }
+    if (selectedStartDate != null && selectedEndDate != null) {
+      result = result.where((e) =>
+        e.start_date.isAfter(selectedStartDate.subtract(const Duration(days: 0))) &&
+        e.start_date.isBefore(selectedEndDate.add(const Duration(days: 1)))
+      ).toList();
+    }
+
+    result.sort((a, b) => a.start_date.compareTo(b.start_date));
+    return result;
+  }
+  
+
+
 
 
 }

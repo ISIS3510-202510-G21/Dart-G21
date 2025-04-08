@@ -48,30 +48,16 @@ class _SearchEventViewState extends State<SearchEventView> {
   }
 
   void applyFilters() async {
-    List<Event> result = allEvents;
+    final result = await _eventController.filterEvents(
+      allEvents: allEvents,
+      selectedType: selectedType,
+      selectedCategoryId: selectedCategoryId,
+      selectedSkillId: selectedSkillId,
+      selectedLocation: selectedLocation,
+      selectedStartDate: selectedStartDate,
+      selectedEndDate: selectedEndDate,
+    );
 
-    if (selectedType != null) {
-      result = result.where((e) => selectedType == 'free' ? e.cost == 0 : e.cost > 0).toList();
-    }
-    if (selectedCategoryId != null) {
-      result = result.where((e) => e.category == selectedCategoryId).toList();
-    }
-    if (selectedSkillId != null) {
-      result = result.where((e) => e.skills.contains(selectedSkillId)).toList();
-    }
-    if (selectedLocation != null) {
-      List<String> matchingLocationIds = await _locationController.getLocationIdsByUniversity(
-        selectedLocation == 'university');
-      result = result.where((e) => matchingLocationIds.contains(e.location_id)).toList();
-    }
-    if (selectedStartDate != null && selectedEndDate != null) {
-      result = result.where((e) =>
-        e.start_date.isAfter(selectedStartDate!.subtract(const Duration(days: 0))) &&
-        e.start_date.isBefore(selectedEndDate!.add(const Duration(days: 1)))
-      ).toList();
-    }
-
-    result.sort((a, b) => a.start_date.compareTo(b.start_date));
     setState(() {
       filteredEvents = result;
     });
@@ -316,12 +302,12 @@ class _SearchEventViewState extends State<SearchEventView> {
       child: InkWell(
         onTap: () {
           print("Evento seleccionado: \${event.name}");
-          Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => DetailEventScreen(eventId: event.id), 
-                ),
-          );
+          // Navigator.push(
+          //       context,
+          //       MaterialPageRoute(
+          //         builder: (context) => DetailEventScreen(eventId: event.id), 
+          //       ),
+          // );
         },
         borderRadius: BorderRadius.circular(12),
         splashColor: Colors.blue.withOpacity(0.2),
