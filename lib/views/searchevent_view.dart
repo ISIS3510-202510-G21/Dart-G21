@@ -1,5 +1,3 @@
-// 🔍 SEARCH EVENT VIEW - CON DROPDOWNS ESTILO FLAT BUTTON
-
 import 'package:flutter/material.dart';
 import 'package:dart_g21/controllers/event_controller.dart';
 import 'package:dart_g21/controllers/category_controller.dart';
@@ -286,7 +284,7 @@ class _SearchEventViewState extends State<SearchEventView> {
                 itemCount: filteredEvents.length,
                 itemBuilder: (context, index) {
                   final event = filteredEvents[index];
-                  return buildEventCard(event);
+                  return buildEventCard(event, context);
                 },
               ),
             )
@@ -312,12 +310,18 @@ class _SearchEventViewState extends State<SearchEventView> {
     return months[month - 1];
   }
 
-  Widget buildEventCard(Event event) {
+  Widget buildEventCard(Event event, BuildContext context) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
           print("Evento seleccionado: \${event.name}");
+          Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DetailEventScreen(eventId: event.id), 
+                ),
+          );
         },
         borderRadius: BorderRadius.circular(12),
         splashColor: Colors.blue.withOpacity(0.2),
