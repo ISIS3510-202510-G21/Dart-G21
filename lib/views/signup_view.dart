@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dart_g21/controllers/user_controller.dart';
 import 'package:dart_g21/models/user.dart';
 import 'package:dart_g21/views/home_view.dart';
@@ -5,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:dart_g21/core/colors.dart';
 import 'package:dart_g21/services/auth_service.dart';
 import '../controllers/auth_controller.dart';
+import 'package:image_picker/image_picker.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
@@ -20,6 +23,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _headlineController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  
+  XFile? _profileImage;
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickImage() async {
+  final XFile? image = await _picker.pickImage(source: ImageSource.gallery); // o ImageSource.camera
+  if (image != null) {
+    setState(() {
+      _profileImage = image;
+    });
+  }
+}
+
 
 //para hacer dinamico cuando el usuario este creando su password hy le muestre que falta
   bool hasUpper = false;
@@ -81,6 +99,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _headlineController.dispose(); // nuevo
+    _descriptionController.dispose(); // nuevo
     super.dispose();
   }
 
@@ -103,6 +123,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   const SizedBox(height: 30),
                   _buildTitle(),
                   const SizedBox(height: 40),
+                  Center(
+                    child: GestureDetector(
+                      onTap: _pickImage,
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundColor: Colors.grey[300],
+                        backgroundImage: _profileImage != null ? FileImage(File(_profileImage!.path)) : null,
+                        child: _profileImage == null
+                            ? Icon(Icons.camera_alt, size: 40, color: Colors.white)
+                            : null,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                   _buildFormFields(),
                   const SizedBox(height: 38),
                   _buildSignUpButton(),
@@ -161,6 +195,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
             _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
           });
         }),
+        const SizedBox(height: 23),
+        _buildInputField(_headlineController, 'Your headline (e.g. Marketing Student)', Icons.title),
+        const SizedBox(height: 23),
+        TextField(
+          controller: _descriptionController,
+          maxLines: 3,
+          decoration: InputDecoration(
+            prefixIcon: Icon(Icons.description, color: Color(0xFFE6E6E6)),
+            hintText: 'Short bio or description...',
+            border: _buildInputBorder(),
+            enabledBorder: _buildInputBorder(),
+            focusedBorder: _buildInputBorder(),
+          ),
+        ),
       ],
     );
   }
@@ -314,6 +362,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
         password,
         confirmPassword,
         selectedUserType!,
+        _headlineController.text.trim(),
+        _descriptionController.text.trim(),
+        _profileImage?.path ?? "", // si no hay imagen seleccionada, queda vacío
       );
 
       User? user = await _userController.getUserByEmail(email).first;
