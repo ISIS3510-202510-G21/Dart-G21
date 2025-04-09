@@ -127,6 +127,7 @@ class _SearchEventViewState extends State<SearchEventView> {
               ),
               onChanged: (value) {
                 setState(() {
+                  clearFilters();
                   filteredEvents = allEvents
                     .where((e) => e.name.toLowerCase().contains(value.toLowerCase()))
                     .toList();
