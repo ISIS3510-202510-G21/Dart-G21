@@ -1,3 +1,4 @@
+import 'package:dart_g21/widgets/eventcard_view.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/controllers/event_controller.dart';
 import 'package:dart_g21/controllers/category_controller.dart';
@@ -295,7 +296,16 @@ Widget styledDropdown<T>({
                 itemCount: filteredEvents.length,
                 itemBuilder: (context, index) {
                   final event = filteredEvents[index];
-                  return buildEventCard(event, context);
+                  //return buildEventCard(event, context);
+                  return EventCard(event: event, onTap: () {
+                    print("Evento seleccionado: ${event.name}");
+                    // Navigator.push(
+                    //       context,
+                    //       MaterialPageRoute(
+                    //         builder: (context) => DetailEventScreen(eventId: event.id), 
+                    //       ),
+                    // );
+                  });
                 },
               ),
             )
@@ -305,88 +315,4 @@ Widget styledDropdown<T>({
     );
   }
 
-  String _formatDate(DateTime date) {
-    return "${_monthName(date.month)}, ${date.day}";
-  }
-
-  String _formatTime(DateTime date) {
-    final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
-    final amPm = date.hour >= 12 ? 'PM' : 'AM';
-    final minute = date.minute.toString().padLeft(2, '0');
-    return "$hour:$minute $amPm";
-  }
-
-  String _monthName(int month) {
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    return months[month - 1];
-  }
-
-  Widget buildEventCard(Event event, BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          print("Evento seleccionado: \${event.name}");
-          // Navigator.push(
-          //       context,
-          //       MaterialPageRoute(
-          //         builder: (context) => DetailEventScreen(eventId: event.id), 
-          //       ),
-          // );
-        },
-        borderRadius: BorderRadius.circular(12),
-        splashColor: Colors.blue.withOpacity(0.2),
-        highlightColor: Colors.blue.withOpacity(0.1),
-        child: Card(
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          elevation: 4,
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          event.image,
-                          width: 90,
-                          height: 90,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                    ],
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 10),
-                        Text(
-                          "${_formatDate(event.start_date)} - ${_formatTime(event.start_date)}",
-                          style: const TextStyle(fontSize: 12, color: AppColors.secondary),
-                        ),
-                        const SizedBox(height: 15),
-                        Text(
-                          event.name,
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
