@@ -86,7 +86,7 @@ class _SearchEventViewState extends State<SearchEventView> {
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.secondary,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(20),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 10),
         child: DropdownButtonHideUnderline(
@@ -205,7 +205,7 @@ class _SearchEventViewState extends State<SearchEventView> {
                   style: TextButton.styleFrom(
                     backgroundColor: AppColors.secondary,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     minimumSize: const Size(130, 48.5),
                   ),
                   onPressed: () async {
@@ -255,7 +255,7 @@ class _SearchEventViewState extends State<SearchEventView> {
                   style: TextButton.styleFrom(
                     backgroundColor: AppColors.buttonGreen,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     minimumSize: const Size(130, 48.5),
                   ),
                   icon: const Icon(Icons.clear, color: Colors.white),
