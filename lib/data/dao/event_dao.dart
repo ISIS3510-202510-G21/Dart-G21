@@ -58,4 +58,10 @@ class EventDAO {
       });
 }
 
+Future<List<Event>> getFirstNEvents(int n) async {
+  final snapshot = await _firestore.getCollection("events").limit(n).get();
+  return snapshot.docs.map((doc) => Event.fromMap(doc.data() as Map<String, dynamic>, doc.id)).toList();
+}
+
+
 }
