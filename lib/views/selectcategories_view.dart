@@ -91,11 +91,14 @@ class _SelectCategoriesScreenState extends State<SelectCategoriesScreen> {
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Choose up to 5 categories you're interested in",
-              textAlign: TextAlign.left,
-              style: TextStyle(fontSize: 20),
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "Choose up to 5 categories you're interested in",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+              ),
             ),
             const SizedBox(height: 24),
             Expanded(
@@ -108,7 +111,8 @@ class _SelectCategoriesScreenState extends State<SelectCategoriesScreen> {
                   final categories = snapshot.data!;
                   return GridView.count(
                     crossAxisCount: 2,
-                    childAspectRatio: 1.1,
+                    //Aca podemos ajustar tamaño de los cuadros
+                    childAspectRatio: 1.0,
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
                     children: categories.map((category) {
@@ -130,12 +134,14 @@ class _SelectCategoriesScreenState extends State<SelectCategoriesScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(icon, size: 90, color: AppColors.secondary),
+                              //Aca podemos ajustar tamaño de los cuadros
+                              Icon(icon, size: 75, color: AppColors.secondary),
                               const SizedBox(height: 10),
                               Text(
                                 category.name,
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+                                //Aca podemos ajustar tamaño de los cuadros
+                                style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w500),
                               ),
                             ],
                           ),
