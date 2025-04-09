@@ -319,10 +319,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
       User? user = await _userController.getUserByEmail(email).first;
       String? user_id = user?.id;
 
-      Navigator.push(
+      //Cambie esto sprint 3!!!!
+      Navigator.pushReplacementNamed(context, '/selectCategories', arguments: user_id);
+      /* Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => HomePage(userId: user_id!)),
-      );
+      ); */
 
 
        

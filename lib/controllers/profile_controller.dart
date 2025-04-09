@@ -38,7 +38,15 @@ class ProfileController {
   }
 
   Future<void> updateUserCategories(String userId, List<String> categoryIds) async {
-    await _profileRepository.updateUserCategories(userId, categoryIds);
+    print("Saving categories for userId: $userId");
+    print("Selected categories: $categoryIds");
+    try {
+      await _profileRepository.updateCategoriesByUserId(userId, categoryIds);
+      print("Categorías actualizadas correctamente");
+    } catch (e) {
+      print("Error saving categories: $e");
+      rethrow;
+    }
   }
 
 }

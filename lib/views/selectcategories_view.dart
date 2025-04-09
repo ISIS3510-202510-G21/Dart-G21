@@ -32,8 +32,21 @@ class _SelectCategoriesScreenState extends State<SelectCategoriesScreen> {
     "Finance": LucideIcons.piggyBank,
     "Public Speaking": LucideIcons.mic,
     "Data Science": LucideIcons.barChart3,
-    "Engineering": LucideIcons.settings,
+    
     "Leadership": LucideIcons.userCheck,
+    "Sports": LucideIcons.activity,
+    "Hackatons & Competitions": LucideIcons.trophy,
+    "Workshops": LucideIcons.laptop,
+    "Career Fairs": LucideIcons.briefcase,
+    "Technology & Innovation": LucideIcons.cpu,
+    "Science": LucideIcons.beaker,
+    "Sustainability & Environment": LucideIcons.leaf,
+    "Engineering": LucideIcons.settings,
+    "Networking": LucideIcons.users,
+    "Research": LucideIcons.search,
+    "Entrepreneurship": LucideIcons.briefcase, 
+    "SW Develop": LucideIcons.code2,
+    "Psychology": LucideIcons.brain,
   };
 
   void toggleSelection(String categoryId) {
@@ -47,33 +60,44 @@ class _SelectCategoriesScreenState extends State<SelectCategoriesScreen> {
   }
 
   Future<void> _saveSelection() async {
-    try {
-      await _profileController.updateUserCategories(widget.userId, selectedCategories);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Categories saved successfully")),
-      );
-      Navigator.pop(context);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error saving categories")),
-      );
-    }
+  try {
+    print("Saving categories for userId: ${widget.userId}");
+    print("Selected categories: $selectedCategories");
+
+    await _profileController.updateUserCategories(widget.userId, selectedCategories);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Categories saved successfully")),
+    );
+    Navigator.pushReplacementNamed(context, '/home', arguments: widget.userId);
+  } catch (e) {
+    print("⛔ Error saving categories: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Error saving categories")),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Select Categories", style: TextStyle(color: AppColors.textPrimary)),
+        title: const Text(""),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        toolbarHeight: 0, //ocultar la appbar visualmente
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         child: Column(
           children: [
-            const Text("Choose up to 5 categories you're interested in:",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 20),
+            const Text(
+              "Choose up to 5 categories you're interested in",
+              textAlign: TextAlign.left,
+              style: TextStyle(fontSize: 20),
+            ),
+            const SizedBox(height: 24),
             Expanded(
               child: StreamBuilder<List<Category_event>>(
                 stream: _categoryController.getCategoriesStream(),
@@ -84,34 +108,34 @@ class _SelectCategoriesScreenState extends State<SelectCategoriesScreen> {
                   final categories = snapshot.data!;
                   return GridView.count(
                     crossAxisCount: 2,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
+                    childAspectRatio: 1.1,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
                     children: categories.map((category) {
                       final isSelected = selectedCategories.contains(category.id);
                       final icon = categoryIconMapper[category.name] ?? LucideIcons.tag;
+
                       return GestureDetector(
                         onTap: () => toggleSelection(category.id),
                         child: Container(
-                          constraints: BoxConstraints(maxWidth: 480),
-                          alignment: Alignment.center,
                           decoration: BoxDecoration(
                             border: Border.all(
                               color: isSelected ? AppColors.secondary : Colors.grey.shade300,
                               width: 2,
                             ),
                             borderRadius: BorderRadius.circular(12),
-                            color: isSelected ? AppColors.secondary.withOpacity(0.2) : Colors.white,
+                            color: isSelected ? AppColors.secondary.withOpacity(0.1) : Colors.white,
                           ),
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                          padding: const EdgeInsets.all(10),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(icon, size: 40, color: AppColors.secondary),
-                              const SizedBox(height: 8),
+                              Icon(icon, size: 90, color: AppColors.secondary),
+                              const SizedBox(height: 10),
                               Text(
                                 category.name,
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
                               ),
                             ],
                           ),
@@ -122,13 +146,20 @@ class _SelectCategoriesScreenState extends State<SelectCategoriesScreen> {
                 },
               ),
             ),
+            const SizedBox(height: 10),
             ElevatedButton(
               onPressed: selectedCategories.isEmpty ? null : _saveSelection,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.secondary,
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                padding: const EdgeInsets.symmetric(horizontal: 200, vertical: 20),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
               ),
-              child: const Text("Continue", style: TextStyle(color: Colors.white, fontSize: 16)),
+              child: const Text(
+                "Continue",
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
             ),
           ],
         ),

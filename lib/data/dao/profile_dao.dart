@@ -43,14 +43,33 @@ class ProfileDAO {
     await _firestore.deleteDocument(collectionPath, profileId);
   }
 
-  Future<void> updateUserCategories(String userId, List<String> categoryIds) async {
-  final List<DocumentReference> categoryRefs = categoryIds
-      .map((id) => _firestore.getCollection("categories").doc(id))
-      .toList();
+  //actualizar categorías de usuario NUEVOO
+  Future<void> updateCategoriesByUserId(String userId, List<String> categoryIds) async {
+    try {
+      //buscar el doc de perfil cuyo user_ref apunte al usuario con ese ID
+      final snapshot = await _firestore
+          .getCollection(collectionPath)
+          .where("user_ref", isEqualTo: FirebaseFirestore.instance.collection("users").doc(userId))
+          .get();
 
-    await _firestore.updateDocument("profiles", userId, {
-      "categories": categoryRefs,
-    });
+      if (snapshot.docs.isEmpty) {
+        throw Exception("Perfil no encontrado para el usuario $userId");
+      }
+
+      final docId = snapshot.docs.first.id;
+
+      //actualizar campo interests con referencias a categorías
+      await _firestore.updateDocument(collectionPath, docId, {
+        "interests": categoryIds
+            .map((id) => FirebaseFirestore.instance.collection("categories").doc(id))
+            .toList(),
+      });
+
+    } catch (e) {
+      print("Error en ProfileDAO: $e");
+      rethrow;
+    }
   }
 
 }
+
