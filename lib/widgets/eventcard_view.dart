@@ -13,6 +13,7 @@ class EventCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Card(
+        color: Colors.white,
         elevation: 3,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -35,7 +36,7 @@ class EventCard extends StatelessWidget {
                       width: 79,
                       height: 92,
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: AppColors.primary,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(Icons.image_not_supported, size: 40, color: Colors.grey),

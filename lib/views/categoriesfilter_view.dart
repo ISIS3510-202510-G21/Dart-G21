@@ -84,7 +84,9 @@ class _CategoriesFilter extends State<CategoriesFilter> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        backgroundColor: AppColors.primary,
         appBar: AppBar(
+          backgroundColor: AppColors.primary,
           title: Text(
             _category?.name ?? "Category",
             style: const TextStyle(color: AppColors.textPrimary, fontSize: 24),
@@ -119,7 +121,6 @@ class _CategoriesFilter extends State<CategoriesFilter> {
       padding: const EdgeInsets.all(10.0),
       child: Row(
         children: [
-          // Botón: Free Events
           _buildFilterButton("Free Events", 0),
           const SizedBox(width: 5),
           _buildFilterButton("Paid Events", 1),
