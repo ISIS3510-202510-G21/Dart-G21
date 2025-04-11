@@ -110,7 +110,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final bool hasImage = imagePath != null && imagePath.isNotEmpty;
 
     return CircleAvatar(
-      radius: 60,
+      radius: 90,
       backgroundColor: Colors.grey.shade300,
       backgroundImage: hasImage ? FileImage(File(imagePath)) : null,
       child: hasImage
