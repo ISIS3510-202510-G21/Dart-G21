@@ -1,9 +1,12 @@
 
+import 'package:dart_g21/views/categoriesfilter_view.dart';
 import 'package:dart_g21/views/chatbot_view.dart';
 import 'package:dart_g21/views/createevents_view.dart';
 import 'package:dart_g21/views/map_view.dart';
 import 'package:dart_g21/views/myevents_view.dart';
 import 'package:dart_g21/views/profile_view.dart';
+import 'package:dart_g21/views/searchevent_view.dart';
+import 'package:dart_g21/views/selectcategories_view.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/views/signup_view.dart';
 import 'package:dart_g21/views/signin_view.dart';
@@ -42,16 +45,34 @@ await SystemChrome.setPreferredOrientations([
       final args = ModalRoute.of(context)!.settings.arguments as String;
       return HomePage(userId: args);
       },      // Pantalla principal (Home)
-      '/profile': (context) => ProfilePage(userId: "19NXOGaPHxCjtZsl4PIA",),  // Pantalla de perfil
-      '/myEvents': (context) => MyEventsPage(userId: "19NXOGaPHxCjtZsl4PIA"),  // Pantalla de eventos
+      '/profile': (context){
+      final args = ModalRoute.of(context)!.settings.arguments as String;
+      return ProfilePage(userId: args);
+      },  // Pantalla de perfil
+      '/myEvents': (context) {
+      final args = ModalRoute.of(context)!.settings.arguments as String;
+      return MyEventsPage(userId: args);
+      },  // Pantalla de eventos
       '/chatBot': (context) => ChatBotPage(title:"ChatBot"),  // Pantalla de chatbot
       '/mapa': (context) => MapView(),  // Pantalla de mapa
-      '/createEvent': (context) => CreateEventScreen(userId: "19NXOGaPHxCjtZsl4PIA"),  // Pantalla de creación de evento
+      '/createEvent': (context) {
+      final args = ModalRoute.of(context)!.settings.arguments as String;
+      return CreateEventScreen(userId: args);
+      },  // Pantalla de creación de evento
+      '/searchEvents': (context) => SearchEventView(),  // Pantalla de búsqueda de eventos
+      '/filterCategory': (context) {
+      final args = ModalRoute.of(context)!.settings.arguments as String;
+      return CategoriesFilter(categoryId: args);
+      },  // Pantalla de filtro por categoría
+      'selectCategories': (context)  {
+      final args = ModalRoute.of(context)!.settings.arguments as String;
+      return SelectCategoriesScreen(userId: args);
+      }
     },
   ));
 
   /* initialRoute: '/',
-    routes: {
+    routes: 
       '/': (context) => SignUpScreen(),
       '/profile': (context) => SignUpScreen(),
     },

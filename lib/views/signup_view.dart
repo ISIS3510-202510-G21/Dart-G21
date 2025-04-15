@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dart_g21/controllers/user_controller.dart';
 import 'package:dart_g21/models/user.dart';
 import 'package:dart_g21/views/home_view.dart';
+import 'package:dart_g21/views/selectcategories_view.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/core/colors.dart';
 import 'package:dart_g21/services/auth_service.dart';
@@ -349,13 +350,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
         return;
       }
 
-      // ⚠️ Confirmación de contraseña
+      // ⚠ Confirmación de contraseña
       if (password != confirmPassword) {
         showToast("The passwords do not match.");
         return;
       }
 
-      // ✅ Si todo pasa, continuar con el registro
+      //  Si todo pasa, continuar con el registro
       await _authController.signUp(
         email,
         name,
@@ -371,11 +372,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
       String? user_id = user?.id;
 
       //Cambie esto sprint 3!!!!
-      Navigator.pushReplacementNamed(context, '/selectCategories', arguments: user_id);
-      /* Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => HomePage(userId: user_id!)),
-      ); */
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SelectCategoriesScreen(userId: user_id!),
+            ),
+          );
 
 
        
@@ -455,8 +457,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
           ),
         ),
       ),
-    ],
-  );
+],
+);
 }
 
 }
