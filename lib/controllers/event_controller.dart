@@ -117,7 +117,7 @@ class EventController {
         }
       }
 
-      print("⚠ No se pudo determinar la ciudad del usuario.");
+      print("No se pudo determinar la ciudad del usuario.");
       return "Desconocido"; 
     } catch (e) {
       print("Error al obtener la ciudad: $e");
@@ -219,6 +219,44 @@ class EventController {
 Stream<List<Event>> getRecommendedEventsStreamForUser(String userId) {
   return _eventRepository.getRecommendedEventsStreamForUser(userId);
 }
+
+ Future<List<Event>> getFirstNEvents(int n) async {
+  return await _eventRepository.getFirstNEvents(n);
+}
+
+  ///Obtener eventos por categoria (categoryId)
+  Stream<List<Event>> getEventsByCategory(String categoryId) {
+    return getEventsStream().map((events) {
+      List<Event> eventsByCategory = events
+          .where((event) => event.category==categoryId)
+          .toList();
+
+      return eventsByCategory;
+    });
+  }
+
+  ///Clasificar eventos de una categoria gratis
+  Stream<List<Event>> getFreeEventsStream(List<Event> eventsCategory) {
+    return Stream.value(eventsCategory.where((event) => event.cost == 0).toList());
+  }
+
+  ///Clasificar eventos de una categoria con costo
+  Stream<List<Event>> getPaidEventsStream(List<Event> eventsCategory) {
+    return Stream.value(eventsCategory.where((event) => event.cost > 0).toList());
+  }
+
+  ///Ordenar eventos de una categoria por fecha
+  Stream<List<Event>> getEventsSortedByDate(List<Event> events, String order) {
+    if (order == "Soonest to Latest") {
+      return Stream.value(events.toList()..sort((a, b) => a.start_date.compareTo(b.start_date)));
+    }
+    else if (order == "Latest to Soonest") {
+      return Stream.value(events.toList()..sort((a, b) => b.start_date.compareTo(a.start_date)));
+    }
+    else {
+      return Stream.value(events);
+    }
+  }
 
 
 
