@@ -9,6 +9,8 @@ import 'package:dart_g21/controllers/location_controller.dart';
 import 'package:dart_g21/models/event.dart';
 import 'package:dart_g21/models/category.dart';
 import 'package:dart_g21/models/location.dart';
+import 'package:google_maps_webservice/geocoding.dart' as geo;
+
 
 
 class CreateEventScreen extends StatefulWidget {
@@ -33,7 +35,10 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _detailsController = TextEditingController();
   final TextEditingController _imageUrlController = TextEditingController();
-  
+
+  final geo.GoogleMapsGeocoding _geocoding = geo.GoogleMapsGeocoding(apiKey: 'AIzaSyD8RLt3b-cIdme2mgw0xqGk-SjdD2kqqa0');
+
+
   List<String> selectedSkills = [];
   final int maxSkillSelection = 3;
   
@@ -45,8 +50,11 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   TimeOfDay? toTime;
   String? selectedCity;
   bool? isUniversity;
+  bool _isAddressValid = true;
+  bool _isCheckingAddress = false;
 
-  //Método para mostrar el listado de skills
+
+  //Metodo para mostrar el listado de skills
   void toggleSkillSelection(String skillId) {
   setState(() {
     if (selectedSkills.contains(skillId)) {
@@ -236,7 +244,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   const SizedBox(height: 15),
                   _buildLabeledTimePickers(),
                   const SizedBox(height: 15),
-                  _buildLabeledInputField("Address", _addressController, 'Write the address', Icons.location_on),
+                  _buildLabeledAddressField(),
                   const SizedBox(height: 15),
                   _buildLabeledCityDropdown("City"),
                   const SizedBox(height: 15),
@@ -540,11 +548,14 @@ Widget _buildCostField() {
   }
 
   Widget _buildCityDropdown() {
-  final cities = [
-    "Bogotá", "Medellín", "Cali", "Barranquilla", "Cartagena",
-    "Bucaramanga", "Pereira", "Manizales", "Cúcuta", "Santa Marta",
-    // Puedes agregar más si deseas
-  ];
+    final cities = [
+      "Bogotá", "Medellín", "Cali", "Barranquilla", "Cartagena",
+      "Bucaramanga", "Pereira", "Manizales", "Cúcuta", "Santa Marta",
+      "Ibagué", "Villavicencio", "Neiva", "Pasto", "Armenia",
+      "Montería", "Sincelejo", "Valledupar", "Tunja", "Popayán",
+      "Riohacha", "Florencia", "Quibdó", "Mocoa", "San José del Guaviare",
+      "Yopal", "Leticia", "Mitú", "Puerto Carreño"
+    ];
 
   return DropdownButtonFormField<String>(
     decoration: InputDecoration(
@@ -608,6 +619,62 @@ Widget _buildLabeledUniversityDropdown(String label) {
     ],
   );
 }
+
+  Widget _buildLabeledAddressField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Address", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
+        const SizedBox(height: 5),
+        TextField(
+          controller: _addressController,
+          onChanged: (value) => _validateAddressRealtime(value),
+          decoration: InputDecoration(
+            prefixIcon: const Icon(Icons.location_on, color: Color(0xFFE6E6E6)),
+            suffixIcon: _addressController.text.trim().isEmpty
+                ? null
+                : _isCheckingAddress
+                ? const Padding(
+              padding: EdgeInsets.all(10),
+              child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+            )
+                : Icon(
+              _isAddressValid ? Icons.check_circle : Icons.error,
+              color: _isAddressValid ? Colors.green : Colors.red,
+            ),
+            hintText: "Write the address",
+            hintStyle: const TextStyle(color: Color(0xFF8D8D8D)),
+            border: _buildInputBorder(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _validateAddressRealtime(String address) async {
+    if (address.trim().isEmpty) {
+      setState(() {
+        _isCheckingAddress = false;
+        _isAddressValid = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isCheckingAddress = true;
+      _isAddressValid = false;
+    });
+
+    final response = await _geocoding.searchByAddress(address);
+
+    setState(() {
+      _isCheckingAddress = false;
+      _isAddressValid = response.isOkay && response.results.isNotEmpty;
+    });
+  }
+
+
+
 
 
 }
