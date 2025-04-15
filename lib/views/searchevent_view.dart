@@ -59,6 +59,7 @@ class _SearchEventViewState extends State<SearchEventView> {
       selectedEndDate: selectedEndDate,
     );
 
+
     setState(() {
       filteredEvents = result;
     });
@@ -127,6 +128,7 @@ Widget styledDropdown<T>({
     ),
   );
 }
+
 
 
   @override
@@ -231,6 +233,7 @@ Widget styledDropdown<T>({
                     foregroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     minimumSize: const Size(157, 48.5),
+
                   ),
                   onPressed: () async {
                     final pickedStart = await showDatePicker(
@@ -267,12 +270,16 @@ Widget styledDropdown<T>({
                       }
                     }
                   },
+
                   icon: const Icon(Icons.date_range, color: AppColors.primary),
+
                   label: Text(
                     selectedStartDate == null || selectedEndDate == null
                       ? "By Date"
                       : "${selectedStartDate!.day}/${selectedStartDate!.month} - ${selectedEndDate!.day}/${selectedEndDate!.month}",
+
                       style: const TextStyle(color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.w500)
+
                   ),
                 ),
                 TextButton.icon(
@@ -285,6 +292,7 @@ Widget styledDropdown<T>({
                   ),
                   icon: const Icon(Icons.clear, color: AppColors.primary),
                   label: const Text("Clear Filters", style: TextStyle(color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.w500)),
+
                 ),
               ],
             ),
@@ -314,5 +322,4 @@ Widget styledDropdown<T>({
       ),
     );
   }
-
 }
