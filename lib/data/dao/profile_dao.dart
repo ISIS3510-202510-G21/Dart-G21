@@ -1,5 +1,6 @@
 import 'package:dart_g21/models/profile.dart';
 import '../database/firestore_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; //esta bien??
 
 class ProfileDAO {
   final FirestoreService _firestore = FirestoreService();
@@ -41,4 +42,34 @@ class ProfileDAO {
   Future<void> deleteProfile(String profileId) async {
     await _firestore.deleteDocument(collectionPath, profileId);
   }
+
+  //actualizar categorías de usuario NUEVOO
+  Future<void> updateCategoriesByUserId(String userId, List<String> categoryIds) async {
+    try {
+      //buscar el doc de perfil cuyo user_ref apunte al usuario con ese ID
+      final snapshot = await _firestore
+          .getCollection(collectionPath)
+          .where("user_ref", isEqualTo: FirebaseFirestore.instance.collection("users").doc(userId))
+          .get();
+
+      if (snapshot.docs.isEmpty) {
+        throw Exception("Perfil no encontrado para el usuario $userId");
+      }
+
+      final docId = snapshot.docs.first.id;
+
+      //actualizar campo interests con referencias a categorías
+      await _firestore.updateDocument(collectionPath, docId, {
+        "interests": categoryIds
+            .map((id) => FirebaseFirestore.instance.collection("categories").doc(id))
+            .toList(),
+      });
+
+    } catch (e) {
+      print("Error en ProfileDAO: $e");
+      rethrow;
+    }
+  }
+
 }
+
