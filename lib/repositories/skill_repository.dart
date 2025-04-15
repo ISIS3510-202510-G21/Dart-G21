@@ -26,4 +26,15 @@ class SkillRepository {
     await _skillDao.deleteSkill(skillId);
   }
 
+  Future<List<String>> getSkillsByIds(List<String> skillIds) async {
+    List<String> skills = [];
+    for (String id in skillIds) {
+      Skill? skill = await getSkillById(id);
+      if (skill != null) {
+        skills.add(skill.name);
+      }
+    }
+    return skills;
+  }
+
 }

@@ -11,7 +11,16 @@ class AuthController {
   final ProfileController _profileController = ProfileController();
 
   //method para registrar usuario y guardar en Firestore
-  Future<void> signUp(String email, String name, String password, String confirmPassword, String userType) async {
+  Future<void> signUp(
+    String email, 
+    String name, 
+    String password, 
+    String confirmPassword, 
+    String userType,
+    String headline,
+    String description,
+    String profileImagePath,
+    ) async {
     try {
       print("Iniciando autenticación...");
 
@@ -37,9 +46,9 @@ class AuthController {
         //Crear perfil en la colección "profiles"
         Profile newProfile = Profile(
           id: id_user,
-          picture: "",
-          headline: "",
-          description: "",
+          picture: profileImagePath,
+          headline: headline,
+          description: description,
           events_associated: [],
           user_ref: user_id!,
           followers: [],
