@@ -1,5 +1,4 @@
-// 🔍 SEARCH EVENT VIEW - CON DROPDOWNS ESTILO FLAT BUTTON
-
+import 'package:dart_g21/widgets/eventcard_view.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/controllers/event_controller.dart';
 import 'package:dart_g21/controllers/category_controller.dart';
@@ -50,30 +49,17 @@ class _SearchEventViewState extends State<SearchEventView> {
   }
 
   void applyFilters() async {
-    List<Event> result = allEvents;
+    final result = await _eventController.filterEvents(
+      allEvents: allEvents,
+      selectedType: selectedType,
+      selectedCategoryId: selectedCategoryId,
+      selectedSkillId: selectedSkillId,
+      selectedLocation: selectedLocation,
+      selectedStartDate: selectedStartDate,
+      selectedEndDate: selectedEndDate,
+    );
 
-    if (selectedType != null) {
-      result = result.where((e) => selectedType == 'free' ? e.cost == 0 : e.cost > 0).toList();
-    }
-    if (selectedCategoryId != null) {
-      result = result.where((e) => e.category == selectedCategoryId).toList();
-    }
-    if (selectedSkillId != null) {
-      result = result.where((e) => e.skills.contains(selectedSkillId)).toList();
-    }
-    if (selectedLocation != null) {
-      List<String> matchingLocationIds = await _locationController.getLocationIdsByUniversity(
-        selectedLocation == 'university');
-      result = result.where((e) => matchingLocationIds.contains(e.location_id)).toList();
-    }
-    if (selectedStartDate != null && selectedEndDate != null) {
-      result = result.where((e) =>
-        e.start_date.isAfter(selectedStartDate!.subtract(const Duration(days: 0))) &&
-        e.start_date.isBefore(selectedEndDate!.add(const Duration(days: 1)))
-      ).toList();
-    }
 
-    result.sort((a, b) => a.start_date.compareTo(b.start_date));
     setState(() {
       filteredEvents = result;
     });
@@ -91,35 +77,59 @@ class _SearchEventViewState extends State<SearchEventView> {
     });
   }
 
-  Widget styledDropdown<T>({
-    required T? value,
-    required String hint,
-    required List<DropdownMenuItem<T>> items,
-    required Function(T?) onChanged,
-  }) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minWidth: 120, maxWidth: 180, minHeight: 34, maxHeight: 40), 
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.secondary,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<T>(
-            isExpanded: true,
-            dropdownColor: AppColors.secondary,
-            value: value,
-            hint: Text(hint, style: const TextStyle(color: Colors.white, fontSize: 14)),
-            items: items,
-            onChanged: onChanged,
-            iconEnabledColor: Colors.white,
-            style: const TextStyle(color: Colors.white, fontSize: 14),
+Widget styledDropdown<T>({
+  required T? value,
+  required String hint,
+  required List<DropdownMenuItem<T>> items,
+  required Function(T?) onChanged,
+}) {
+  return ConstrainedBox(
+    constraints: const BoxConstraints(minWidth: 120, maxWidth: 150, minHeight: 34, maxHeight: 40), 
+    child: Container(
+      decoration: BoxDecoration(
+        color: AppColors.secondary, 
+        borderRadius: BorderRadius.circular(20),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<T>(
+          isExpanded: true,
+          value: value,
+          dropdownColor: AppColors.primary, 
+          hint: Text(
+            hint,
+            style: const TextStyle(color: AppColors.primary, fontSize: 14),
           ),
+          items: items.map((item) {
+            return DropdownMenuItem<T>(
+              value: item.value,
+              child: DefaultTextStyle(
+                style: const TextStyle(color: Colors.black),
+                child: item.child,
+              ),
+            );
+          }).toList(),
+          onChanged: onChanged,
+          iconEnabledColor: AppColors.primary,
+          style: const TextStyle(color: AppColors.primary, fontSize: 14),
+          selectedItemBuilder: (BuildContext context) {
+            return items.map<Widget>((DropdownMenuItem<T> item) {
+              return Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  item.child is Text ? (item.child as Text).data ?? '' : item.value.toString(),
+                  style: const TextStyle(color: AppColors.primary, fontSize: 14),
+                ),
+              );
+            }).toList();
+          },
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -143,6 +153,7 @@ class _SearchEventViewState extends State<SearchEventView> {
               ),
               onChanged: (value) {
                 setState(() {
+                  clearFilters();
                   filteredEvents = allEvents
                     .where((e) => e.name.toLowerCase().contains(value.toLowerCase()))
                     .toList();
@@ -219,9 +230,10 @@ class _SearchEventViewState extends State<SearchEventView> {
                 TextButton.icon(
                   style: TextButton.styleFrom(
                     backgroundColor: AppColors.secondary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    minimumSize: const Size(130, 48.5),
+                    foregroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    minimumSize: const Size(157, 48.5),
+
                   ),
                   onPressed: () async {
                     final pickedStart = await showDatePicker(
@@ -258,23 +270,29 @@ class _SearchEventViewState extends State<SearchEventView> {
                       }
                     }
                   },
-                  icon: const Icon(Icons.date_range, color: Colors.white),
+
+                  icon: const Icon(Icons.date_range, color: AppColors.primary),
+
                   label: Text(
                     selectedStartDate == null || selectedEndDate == null
                       ? "By Date"
                       : "${selectedStartDate!.day}/${selectedStartDate!.month} - ${selectedEndDate!.day}/${selectedEndDate!.month}",
+
+                      style: const TextStyle(color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.w500)
+
                   ),
                 ),
                 TextButton.icon(
                   onPressed: clearFilters,
                   style: TextButton.styleFrom(
                     backgroundColor: AppColors.buttonGreen,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    minimumSize: const Size(130, 48.5),
+                    foregroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    minimumSize: const Size(157, 48.5),
                   ),
-                  icon: const Icon(Icons.clear, color: Colors.white),
-                  label: const Text("Clear Filters", style: TextStyle(color: AppColors.primary, fontSize: 16, fontWeight: FontWeight.w500)),
+                  icon: const Icon(Icons.clear, color: AppColors.primary),
+                  label: const Text("Clear Filters", style: TextStyle(color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.w500)),
+
                 ),
               ],
             ),
@@ -286,90 +304,20 @@ class _SearchEventViewState extends State<SearchEventView> {
                 itemCount: filteredEvents.length,
                 itemBuilder: (context, index) {
                   final event = filteredEvents[index];
-                  return buildEventCard(event);
+                  //return buildEventCard(event, context);
+                  return EventCard(event: event, onTap: () {
+                    print("Evento seleccionado: ${event.name}");
+                    // Navigator.push(
+                    //       context,
+                    //       MaterialPageRoute(
+                    //         builder: (context) => DetailEventScreen(eventId: event.id), 
+                    //       ),
+                    // );
+                  });
                 },
               ),
             )
           ],
-        ),
-      ),
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    return "${_monthName(date.month)}, ${date.day}";
-  }
-
-  String _formatTime(DateTime date) {
-    final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
-    final amPm = date.hour >= 12 ? 'PM' : 'AM';
-    final minute = date.minute.toString().padLeft(2, '0');
-    return "$hour:$minute $amPm";
-  }
-
-  String _monthName(int month) {
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    return months[month - 1];
-  }
-
-  Widget buildEventCard(Event event) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          print("Evento seleccionado: \${event.name}");
-        },
-        borderRadius: BorderRadius.circular(12),
-        splashColor: Colors.blue.withOpacity(0.2),
-        highlightColor: Colors.blue.withOpacity(0.1),
-        child: Card(
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          elevation: 4,
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          event.image,
-                          width: 90,
-                          height: 90,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                    ],
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 10),
-                        Text(
-                          "${_formatDate(event.start_date)} - ${_formatTime(event.start_date)}",
-                          style: const TextStyle(fontSize: 12, color: AppColors.secondary),
-                        ),
-                        const SizedBox(height: 15),
-                        Text(
-                          event.name,
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
         ),
       ),
     );
