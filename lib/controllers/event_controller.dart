@@ -258,6 +258,7 @@ Stream<List<Event>> getRecommendedEventsStreamForUser(String userId) {
     }
   }
 
+
   //Obtener las cosas filtradas filterEvents
   Future<List<Event>> filterEvents({
     required List<Event> allEvents,

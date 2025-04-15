@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dart_g21/controllers/category_controller.dart';
 import 'package:dart_g21/controllers/interest_controller.dart';
 import 'package:dart_g21/controllers/profile_controller.dart';
@@ -90,7 +92,8 @@ class _ProfilePageState extends State<ProfilePage> {
               child:buildCoverImage() ),
               Positioned(
                 top: top,
-                child:buildProfileImage(profile),
+                //LO CAMBIE
+                child:buildProfileImage(profile.picture),
           )],
           );
   }  
@@ -102,8 +105,25 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-// Widget para la imagen de perfil
-  Widget buildProfileImage(Profile profile) {
+// Widget para la imagen de perfil ACTUALIZADA!
+    Widget buildProfileImage(String? imagePath) {
+    final bool hasImage = imagePath != null && imagePath.isNotEmpty;
+
+    return CircleAvatar(
+      radius: 90,
+      backgroundColor: Colors.grey.shade300,
+      backgroundImage: hasImage ? FileImage(File(imagePath)) : null,
+      child: hasImage
+        ? null
+        : const Icon(
+            Icons.person,
+            size: 60,
+            color: Colors.white,
+          ),
+      );
+    }
+
+  /* Widget buildProfileImage(Profile profile) {
     return CircleAvatar( 
       radius: profileHeight/2,
       backgroundColor: Colors.grey.shade800,
@@ -112,10 +132,7 @@ class _ProfilePageState extends State<ProfilePage> {
         profile.picture,
       ),
     );
-  }
-
-
- 
+  } */
 
 // Widget para el contenido del perfil
   Widget buildContent(Profile profile) {

@@ -30,4 +30,8 @@ class ProfileRepository {
     await _profileDao.deleteProfile(profileId);
   }
 
+  Future<void> updateCategoriesByUserId(String userId, List<String> categoryIds) {
+    return _profileDao.updateCategoriesByUserId(userId, categoryIds);
+  }
+
 }
