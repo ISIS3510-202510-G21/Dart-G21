@@ -6,6 +6,8 @@ import 'package:dart_g21/models/profile.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/core/colors.dart';
 import 'package:dart_g21/widgets/navigation_bar_host.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 class MyEventsPage extends StatefulWidget {
   final String userId;
@@ -29,14 +31,12 @@ class _MyEventsPageState extends State<MyEventsPage> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      
       children: [
         SizedBox(height: 40,),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16),
           child: Row(
             children: const [
-              
               Text(
                 "My Events",
                 style: TextStyle(
@@ -55,7 +55,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               } else if (snapshot.hasError) {
-                return Center(child: Text('Error: ${snapshot.error}'));
+                return Center(child: Text('Error: \${snapshot.error}'));
               } else if (!snapshot.hasData || snapshot.data == null) {
                 return const Center(child: Text('No profile found'));
               }
@@ -71,7 +71,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
                   if (eventSnapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   } else if (eventSnapshot.hasError) {
-                    return Center(child: Text('Error: ${eventSnapshot.error}'));
+                    return Center(child: Text('Error: \${eventSnapshot.error}'));
                   } else if (!eventSnapshot.hasData) {
                     return const Center(child: Text('No events found'));
                   }
@@ -98,8 +98,6 @@ class _MyEventsPageState extends State<MyEventsPage> {
     );
   }
 
-
-  // Widget para los títulos de sección ("Upcoming Events", "Previous Events")
   Widget buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -110,13 +108,12 @@ class _MyEventsPageState extends State<MyEventsPage> {
     );
   }
 
-  //  Widget para cada tarjeta de evento
   Widget buildEventCard(Event event, String profileId) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          print("Evento seleccionado: ${event.name}");
+          print("Evento seleccionado: \${event.name}");
         },
         borderRadius: BorderRadius.circular(12),
         splashColor: Colors.blue.withOpacity(0.2),
@@ -131,17 +128,38 @@ class _MyEventsPageState extends State<MyEventsPage> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  //  Imagen y pago
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          event.image,
+                        child: CachedNetworkImage(
+                          imageUrl: event.image,
                           width: 120,
                           height: 120,
                           fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            width: 120,
+                            height: 120,
+                            color: Colors.grey.shade200,
+                            child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            width: 120,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.image_not_supported, size: 40, color: Colors.grey),
+                          ),
+                          cacheManager: CacheManager(
+                            Config(
+                              'customCacheKeyMyEvents',
+                              stalePeriod: const Duration(days: 7),
+                              maxNrOfCacheObjects: 100,
+                            ),
+                          ),
                         ),
                       ),
                       SizedBox(height: 10),
@@ -152,7 +170,6 @@ class _MyEventsPageState extends State<MyEventsPage> {
 
                   SizedBox(width: 12),
 
-                  //  Detalles del evento alineados arriba
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.start,
@@ -172,7 +189,6 @@ class _MyEventsPageState extends State<MyEventsPage> {
                     ),
                   ),
 
-                  //  Botones de guardar y eliminar bien alineados
                   Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -184,7 +200,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
                       IconButton(
                         icon: Icon(Icons.delete_outline, color: AppColors.textPrimary),
                         onPressed: () async {
-                          print("Eliminando evento: ${event.name}");
+                          print("Eliminando evento: \${event.name}");
 
                           try {
                             await _profileController.removeEventFromProfile(profileId, event.id);
@@ -200,7 +216,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
                               ),
                             );
                           } catch (e) {
-                            print("Error al eliminar evento: $e");
+                            print("Error al eliminar evento: \$e");
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text("Error eliminando evento"),

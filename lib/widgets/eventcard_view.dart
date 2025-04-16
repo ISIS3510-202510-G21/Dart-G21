@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import '../core/colors.dart';
 import '../models/event.dart';
 
@@ -26,26 +28,36 @@ class EventCard extends StatelessWidget {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  event.image,
+                child: CachedNetworkImage(
+                  imageUrl: event.image,
                   width: 79,
                   height: 92,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: 79,
-                      height: 92,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.image_not_supported, size: 40, color: Colors.grey),
-                    );
-                  },
+                  cacheManager: CacheManager(
+                    Config(
+                      'customCacheKey',
+                      stalePeriod: const Duration(days: 7), // Tiempo de expiración
+                      maxNrOfCacheObjects: 100,
+                    ),
+                  ),
+                  placeholder: (context, url) => Container(
+                    width: 79,
+                    height: 92,
+                    color: Colors.grey.shade200,
+                    child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    width: 79,
+                    height: 92,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.image_not_supported, size: 40, color: Colors.grey),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,23 +89,19 @@ class EventCard extends StatelessWidget {
     );
   }
 
-  /// Formatea la fecha en `Day, Month Day`
   String _formatDate(DateTime date) {
     return "${_getWeekday(date.weekday)}, ${_getMonth(date.month)} ${date.day}";
   }
 
-  ///Formatea la hora en `hh:mm AM/PM`
   String _formatTime(DateTime date) {
     return "${date.hour % 12 == 0 ? 12 : date.hour % 12}:${date.minute.toString().padLeft(2, '0')} ${date.hour < 12 ? 'AM' : 'PM'}";
   }
 
-  ///Obtiene el nombre del día en inglés
   String _getWeekday(int day) {
     const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     return weekdays[day - 1];
   }
 
-  ///Obtiene el nombre del mes en inglés
   String _getMonth(int month) {
     const months = [
       "Jan", "Feb", "Mar", "Apr", "May", "Jun",
