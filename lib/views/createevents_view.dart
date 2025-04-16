@@ -9,6 +9,7 @@ import 'package:dart_g21/controllers/location_controller.dart';
 import 'package:dart_g21/models/event.dart';
 import 'package:dart_g21/models/category.dart';
 import 'package:dart_g21/models/location.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_maps_webservice/geocoding.dart' as geo;
 
 
@@ -83,6 +84,19 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       toTime?.hour ?? 0,
       toTime?.minute ?? 0,
     );
+    if (_isCheckingAddress) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Please wait while we verify the address...")),
+      );
+      return;
+    }
+
+    if (!_isAddressValid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Please enter a valid address.")),
+      );
+      return;
+    }
 
     if (selectedCategory == null || _nameController.text.isEmpty || _addressController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -92,12 +106,22 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     }
 
     //Crear la ubicación
+    final coordinates = await getCoordinatesFromAddress(_addressController.text.trim());
+
+    if (coordinates == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("The address is invalid. Please enter a valid address.")),
+      );
+      return;
+    }
     String? locationId = await _locationController.addLocationAndReturnId(Location(
       id: "", // Firestore generará el ID
       address: _addressController.text.trim(),
       details: _detailsController.text.trim(),
       city: selectedCity!,          // ya fue validado
       university: isUniversity!,    // ya fue validado
+      latitude: coordinates.latitude,
+      longitude: coordinates.longitude,
     ));
 
     //Obtener la ubicación para referenciarla en el evento
@@ -553,8 +577,7 @@ Widget _buildCostField() {
       "Bucaramanga", "Pereira", "Manizales", "Cúcuta", "Santa Marta",
       "Ibagué", "Villavicencio", "Neiva", "Pasto", "Armenia",
       "Montería", "Sincelejo", "Valledupar", "Tunja", "Popayán",
-      "Riohacha", "Florencia", "Quibdó", "Mocoa", "San José del Guaviare",
-      "Yopal", "Leticia", "Mitú", "Puerto Carreño"
+      "Florencia", "Quibdó", "Yopal", "Leticia"
     ];
 
   return DropdownButtonFormField<String>(
@@ -673,8 +696,16 @@ Widget _buildLabeledUniversityDropdown(String label) {
     });
   }
 
+  Future<LatLng?> getCoordinatesFromAddress(String address) async {
+    final response = await _geocoding.searchByAddress(address);
 
-
-
+    if (response.isOkay && response.results.isNotEmpty) {
+      final location = response.results.first.geometry.location;
+      return LatLng(location.lat, location.lng);
+    } else {
+      // Retorna null si no se puede geolocalizar
+      return null;
+    }
+  }
 
 }
