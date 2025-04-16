@@ -32,6 +32,10 @@ class EventRepository {
 
   Future<List<Event>> getFirstNEvents(int n) async {
   return await _eventDao.getFirstNEvents(n);
-}
+  }
+
+  Future<void> addAttendeeToEvent(String eventId, String userId) async {
+    await _eventDao.addAttendeeToEvent(eventId, userId);
+  }
 
 }

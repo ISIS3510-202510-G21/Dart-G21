@@ -49,4 +49,14 @@ class ProfileController {
     }
   }
 
+  // Agregar un evento a la lista de eventos asociados de un perfil
+  Future<void> registerEventToProfile(String profileId, String eventId) async {
+    await _profileRepository.registerEventToProfile(profileId, eventId);
+  }
+
+  Future<String?> getProfileIdFromUserId(String userId) async {
+  return await _profileRepository.getProfileIdByUserId(userId);
+  }
+
+
 }

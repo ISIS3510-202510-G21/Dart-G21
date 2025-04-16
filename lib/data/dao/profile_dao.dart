@@ -71,5 +71,32 @@ class ProfileDAO {
     }
   }
 
+    //Agregar un evento a un perfil
+    Future<void> registerEventToProfile(String profileId, String eventId) async {
+      await _firestore.addReferenceToList(
+        collectionPath: "profiles",
+        docId: profileId,
+        field: "events_asociated",
+        referenceCollection: "events",
+        referenceId: eventId,
+      );
+    }
+
+
+  //obtener el ID de perfil a partir del ID de usuario
+  Future<String?> getProfileIdByUserId(String userId) async {
+    final ref = _firestore.getCollection("profiles");
+    final query = await ref.where("user_ref", isEqualTo: _firestore.getCollection("users").doc(userId)).get();
+
+    if (query.docs.isNotEmpty) {
+      return query.docs.first.id; // ID del documento en `profiles`
+    } else {
+      print("No profile found for userId: $userId");
+      return null;
+    }
+  }
+
+
+
 }
 
