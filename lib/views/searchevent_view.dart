@@ -161,128 +161,133 @@ Widget styledDropdown<T>({
               },
             ),
             const SizedBox(height: 10),
+            Align(
+  alignment: Alignment.centerLeft,
+  child: SingleChildScrollView(
+    scrollDirection: Axis.horizontal, // Habilita el desplazamiento horizontal
+    child: Row(
+      children: [
+        styledDropdown<String>(
+          value: selectedType,
+          hint: "By Type",
+          items: const [
+            DropdownMenuItem(value: 'free', child: Text("Free")),
+            DropdownMenuItem(value: 'paid', child: Text("Paid")),
+          ],
+          onChanged: (value) {
+            setState(() => selectedType = value);
+            applyFilters();
+          },
+        ),
+        const SizedBox(width: 8), // Espaciado entre los filtros
+        FutureBuilder(
+          future: _categoryController.getCategoriesStream().first,
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) return const SizedBox();
+            return styledDropdown<String>(
+              value: selectedCategoryId,
+              hint: "By Category",
+              items: snapshot.data!.map((cat) => DropdownMenuItem(
+                value: cat.id,
+                child: Text(cat.name),
+              )).toList(),
+              onChanged: (value) {
+                setState(() => selectedCategoryId = value);
+                applyFilters();
+              },
+            );
+          },
+        ),
+        const SizedBox(width: 8),
+        FutureBuilder(
+          future: _skillController.getSkillsStream().first,
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) return const SizedBox();
+            return styledDropdown<String>(
+              value: selectedSkillId,
+              hint: "By Skill",
+              items: snapshot.data!.map((skill) => DropdownMenuItem(
+                value: skill.id,
+                child: Text(skill.name),
+              )).toList(),
+              onChanged: (value) {
+                setState(() => selectedSkillId = value);
+                applyFilters();
+              },
+            );
+          },
+        ),
+        const SizedBox(width: 8),
+        styledDropdown<String>(
+          value: selectedLocation,
+          hint: "By Location",
+          items: const [
+            DropdownMenuItem(value: 'university', child: Text("University")),
+            DropdownMenuItem(value: 'other', child: Text("Other")),
+          ],
+          onChanged: (value) {
+            setState(() => selectedLocation = value);
+            applyFilters();
+          },
+        ),
+        const SizedBox(width: 8),
+        TextButton.icon(
+          style: TextButton.styleFrom(
+            backgroundColor: AppColors.secondary,
+            foregroundColor: AppColors.primary,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            minimumSize: const Size(150, 40),
+          ),
+          onPressed: () async {
+            final pickedStart = await showDatePicker(
+              context: context,
+              initialDate: selectedStartDate ?? DateTime.now(),
+              firstDate: DateTime(2020),
+              lastDate: DateTime(2100),
+            );
+            if (pickedStart != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Now select the end date")),
+              );
+
+              final pickedEnd = await showDatePicker(
+                context: context,
+                initialDate: pickedStart,
+                firstDate: pickedStart,
+                lastDate: DateTime(2100),
+              );
+              if (pickedEnd != null) {
+                if (pickedStart.isAfter(pickedEnd)) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Start date must be before end date")),
+                  );
+                }
+              }
+
+              if (pickedEnd != null) {
+                setState(() {
+                  selectedStartDate = pickedStart;
+                  selectedEndDate = pickedEnd;
+                });
+                applyFilters();
+              }
+            }
+          },
+          icon: const Icon(Icons.date_range, color: AppColors.primary),
+          label: Text(
+            selectedStartDate == null || selectedEndDate == null
+                ? "By Date"
+                : "${selectedStartDate!.day}/${selectedStartDate!.month} - ${selectedEndDate!.day}/${selectedEndDate!.month}",
+            style: const TextStyle(color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.w500),
+          ),
+        ),
+      ],
+    ),
+  ),
+),
             Align (
               alignment: Alignment.centerLeft,
-              child:Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                styledDropdown<String>(
-                  value: selectedType,
-                  hint: "By Type",
-                  items: const [
-                    DropdownMenuItem(value: 'free', child: Text("Free")),
-                    DropdownMenuItem(value: 'paid', child: Text("Paid")),
-                  ],
-                  onChanged: (value) {
-                    setState(() => selectedType = value);
-                    applyFilters();
-                  },
-                ),
-                FutureBuilder(
-                  future: _categoryController.getCategoriesStream().first,
-                  builder: (context, snapshot) {
-                    if (!snapshot.hasData) return const SizedBox();
-                    return styledDropdown<String>(
-                      value: selectedCategoryId,
-                      hint: "By Category",
-                      items: snapshot.data!.map((cat) => DropdownMenuItem(
-                        value: cat.id,
-                        child: Text(cat.name),
-                      )).toList(),
-                      onChanged: (value) {
-                        setState(() => selectedCategoryId = value);
-                        applyFilters();
-                      },
-                    );
-                  },
-                ),
-                FutureBuilder(
-                  future: _skillController.getSkillsStream().first,
-                  builder: (context, snapshot) {
-                    if (!snapshot.hasData) return const SizedBox();
-                    return styledDropdown<String>(
-                      value: selectedSkillId,
-                      hint: "By Skill",
-                      items: snapshot.data!.map((skill) => DropdownMenuItem(
-                        value: skill.id,
-                        child: Text(skill.name),
-                      )).toList(),
-                      onChanged: (value) {
-                        setState(() => selectedSkillId = value);
-                        applyFilters();
-                      },
-                    );
-                  },
-                ),
-                styledDropdown<String>(
-                  value: selectedLocation,
-                  hint: "By Location",
-                  items: const [
-                    DropdownMenuItem(value: 'university', child: Text("University")),
-                    DropdownMenuItem(value: 'other', child: Text("Other")),
-                  ],
-                  onChanged: (value) {
-                    setState(() => selectedLocation = value);
-                    applyFilters();
-                  },
-                ),
-                TextButton.icon(
-                  style: TextButton.styleFrom(
-                    backgroundColor: AppColors.secondary,
-                    foregroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    minimumSize: const Size(150, 40),
-
-                  ),
-                  onPressed: () async {
-                    final pickedStart = await showDatePicker(
-                      context: context,
-                      initialDate: selectedStartDate ?? DateTime.now(),
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime(2100),
-                    );
-                    if (pickedStart != null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Now select the end date")),
-                      );
-
-                      final pickedEnd = await showDatePicker(
-                        context: context,
-                        initialDate: pickedStart,
-                        firstDate: pickedStart,
-                        lastDate: DateTime(2100),
-                      );
-                      if (pickedEnd != null) {
-                        if (pickedStart.isAfter(pickedEnd)) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Start date must be before end date")),
-                          );
-                        }
-                      }
-
-                      if (pickedEnd != null) {
-                        setState(() {
-                          selectedStartDate = pickedStart;
-                          selectedEndDate = pickedEnd;
-                        });
-                        applyFilters();
-                      }
-                    }
-                  },
-
-                  icon: const Icon(Icons.date_range, color: AppColors.primary),
-
-                  label: Text(
-                    selectedStartDate == null || selectedEndDate == null
-                      ? "By Date"
-                      : "${selectedStartDate!.day}/${selectedStartDate!.month} - ${selectedEndDate!.day}/${selectedEndDate!.month}",
-
-                      style: const TextStyle(color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.w500)
-
-                  ),
-                ),
-                TextButton.icon(
+              child: TextButton.icon(
                   onPressed: clearFilters,
                   style: TextButton.styleFrom(
                     backgroundColor: AppColors.buttonGreen,
@@ -293,9 +298,7 @@ Widget styledDropdown<T>({
                   icon: const Icon(Icons.clear, color: AppColors.primary),
                   label: const Text("Clear Filters", style: TextStyle(color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.w500)),
 
-                ),
-              ],
-            ),
+                )
             ),
 
             const SizedBox(height: 20),
