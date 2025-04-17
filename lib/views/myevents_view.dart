@@ -3,6 +3,7 @@ import 'package:dart_g21/controllers/profile_controller.dart';
 import 'package:dart_g21/controllers/user_controller.dart';
 import 'package:dart_g21/models/event.dart';
 import 'package:dart_g21/models/profile.dart';
+import 'package:dart_g21/models/user.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/core/colors.dart';
 import 'package:dart_g21/widgets/navigation_bar_host.dart';
@@ -26,7 +27,10 @@ class _MyEventsPageState extends State<MyEventsPage> {
   int selectedIndex = 2; // Índice del ícono seleccionado (My Events)
   List<Event> upcomingEvents = [];
   List<Event> previousEvents = [];
+  List<Event> events_created = [];
   String profileId = "";
+  String userType= "";
+
 
   @override
   Widget build(BuildContext context) {
@@ -48,6 +52,26 @@ class _MyEventsPageState extends State<MyEventsPage> {
             ],
           ),
         ),
+      FutureBuilder<User?>(
+      future: _userController.getUserById(widget.userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text("Error al cargar el usuario"));
+        }
+        if (!snapshot.hasData || snapshot.data == null) {
+          return Center(child: Text("Usuario no encontrado"));
+        }
+
+        User user = snapshot.data!;
+        userType = user.userType;
+
+        return SizedBox.shrink(); // Default return to avoid null
+      },
+        ),
+
         Expanded(
           child: StreamBuilder<Profile?>(
             stream: _profileController.getProfileByUserId(widget.userId),
@@ -65,7 +89,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
 
               return FutureBuilder<List<List<Event>>>(
                 future: _eventController.getEventsByIds(profile.events_associated).then(
-                      (events) => _eventController.classifyEvents(events),
+                      (events) => _eventController.classifyEvents(events, widget.userId),
                 ),
                 builder: (context, eventSnapshot) {
                   if (eventSnapshot.connectionState == ConnectionState.waiting) {
@@ -78,6 +102,8 @@ class _MyEventsPageState extends State<MyEventsPage> {
 
                   upcomingEvents = eventSnapshot.data![0];
                   previousEvents = eventSnapshot.data![1];
+                  events_created = eventSnapshot.data![2];
+
 
                   return ListView(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -87,6 +113,12 @@ class _MyEventsPageState extends State<MyEventsPage> {
                       const SizedBox(height: 20),
                       buildSectionTitle("Previous Events"),
                       ...previousEvents.map((event) => buildEventCard(event,profileId)),
+                        const SizedBox(height: 20),
+                      userType == "Attendee"
+                      ? const SizedBox(height: 20)
+                        : buildSectionTitle("Created By Me"),
+                      ...events_created.map((event) => buildEventCard(event, profileId)),
+
                     ],
                   );
                 },
@@ -176,10 +208,13 @@ class _MyEventsPageState extends State<MyEventsPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SizedBox(height: 10),
-                        Text(
-                          event.start_date.toString(),
-                          style: TextStyle(fontSize: 12, color: AppColors.secondary),
-                        ),
+                         Text(
+                      "${_formatDate(event.start_date)} - ${_formatTime(event.start_date)}",
+                      style: const TextStyle(
+                        color: AppColors.secondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                         SizedBox(height: 15),
                         Text(
                           event.name,
@@ -236,4 +271,30 @@ class _MyEventsPageState extends State<MyEventsPage> {
       ),
     );
   }
+
+  // Formatea la fecha en Day, Month Day
+  String _formatDate(DateTime date) {
+    return "${_getWeekday(date.weekday)}, ${_getMonth(date.month)} ${date.day}";
+  }
+
+  ///Formatea la hora en hh:mm AM/PM
+  String _formatTime(DateTime date) {
+    return "${date.hour % 12 == 0 ? 12 : date.hour % 12}:${date.minute.toString().padLeft(2, '0')} ${date.hour < 12 ? 'AM' : 'PM'}";
+  }
+
+  ///Obtiene el nombre del día en inglés
+  String _getWeekday(int day) {
+    const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    return weekdays[day - 1];
+  }
+
+  ///Obtiene el nombre del mes en inglés
+  String _getMonth(int month) {
+    const months = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+    return months[month-1];
+}
+
 }
