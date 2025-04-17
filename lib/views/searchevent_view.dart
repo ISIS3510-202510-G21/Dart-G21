@@ -232,7 +232,7 @@ Widget styledDropdown<T>({
                     backgroundColor: AppColors.secondary,
                     foregroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    minimumSize: const Size(157, 48.5),
+                    minimumSize: const Size(150, 40),
 
                   ),
                   onPressed: () async {
@@ -288,7 +288,7 @@ Widget styledDropdown<T>({
                     backgroundColor: AppColors.buttonGreen,
                     foregroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    minimumSize: const Size(157, 48.5),
+                    minimumSize: const Size(150, 40),
                   ),
                   icon: const Icon(Icons.clear, color: AppColors.primary),
                   label: const Text("Clear Filters", style: TextStyle(color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.w500)),
