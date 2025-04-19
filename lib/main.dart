@@ -14,6 +14,8 @@ import 'package:dart_g21/views/home_view.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -32,6 +34,9 @@ await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitDown, // opcional: también permite girar el celular boca abajo
   ]);
 
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  await Hive.openBox('profileBox');
 
   runApp(MaterialApp(
 
