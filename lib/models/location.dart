@@ -28,5 +28,25 @@ class Location{
     );
   }
 
+  factory Location.fromJson(Map<String, dynamic> json) {
+    return Location(
+      id: json['id'] as String,
+      address: json['address'] as String,
+      city: json['city'] as String,
+      details: json['details'] as String,
+      university: json['university'] as bool,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'address': address,
+      'city': city,
+      'details': details,
+      'university': university,
+    };
+  }
+
 
 }
