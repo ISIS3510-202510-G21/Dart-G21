@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dart_g21/controllers/event_controller.dart';
 import 'package:dart_g21/controllers/profile_controller.dart';
 import 'package:dart_g21/controllers/user_controller.dart';
@@ -9,6 +11,7 @@ import 'package:dart_g21/core/colors.dart';
 import 'package:dart_g21/widgets/navigation_bar_host.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class MyEventsPage extends StatefulWidget {
   final String userId;
@@ -23,124 +26,160 @@ class _MyEventsPageState extends State<MyEventsPage> {
   final ProfileController _profileController = ProfileController();
   final EventController _eventController = EventController();
   final UserController _userController = UserController();
-
-  int selectedIndex = 2; // Índice del ícono seleccionado (My Events)
+  int selectedIndex = 2;
   List<Event> upcomingEvents = [];
   List<Event> previousEvents = [];
-  List<Event> events_created = [];
+  List<Event> eventsCreated = [];
   String profileId = "";
-  String userType= "";
+  String userType = "";
+  bool isConnected = true;
+  late final Connectivity _connectivity;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+  late Box myEventsBox;
+
+  @override
+  void initState() {
+    super.initState();
+    _setupConnectivity();
+    _initHive();
+  }
+
+  Future<void> _initHive() async {
+    await Hive.initFlutter();
+    myEventsBox = await Hive.openBox('myEventsBox');
+  }
+
+void _setupConnectivity() {
+    _connectivity = Connectivity();
+    _connectivitySubscription = _connectivity.onConnectivityChanged.listen((List<ConnectivityResult> results) {
+      final prev = isConnected;
+      setState(() {
+        isConnected = !results.contains(ConnectivityResult.none);
+
+      });
+      if (!prev && isConnected) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text("Connection Restored", style: TextStyle(color: AppColors.primary, fontSize: 16,)),
+            backgroundColor: const Color.fromARGB(255, 37, 108, 39),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+       } 
+      //else if (prev && !isConnected) {
+      //   ScaffoldMessenger.of(context).showSnackBar(
+      //     SnackBar(
+      //       content: const Text("Connection lost, Offline mode activated", style: TextStyle(color: AppColors.primary, fontSize: 16,)),
+      //       backgroundColor: AppColors.buttonRed,
+      //       behavior: SnackBarBehavior.floating,
+      //       shape: RoundedRectangleBorder(
+      //         borderRadius: BorderRadius.circular(12),
+      //       ),
+      //     ),
+      //   );
+      // }
+    });
+  }
 
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        SizedBox(height: 40,),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16),
+        const SizedBox(height: 40),
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 16),
           child: Row(
-            children: const [
-              Text(
-                "My Events",
-                style: TextStyle(
-                  fontSize: 24,
-                  color: Colors.black,
-                  fontWeight: FontWeight.normal,
-                ),
-              ),
+            children: [
+              Text("My Events", style: TextStyle(fontSize: 24, color: Colors.black, fontWeight: FontWeight.normal)),
             ],
           ),
         ),
-      FutureBuilder<User?>(
-      future: _userController.getUserById(widget.userId),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(child: Text("Error al cargar el usuario"));
-        }
-        if (!snapshot.hasData || snapshot.data == null) {
-          return Center(child: Text("Usuario no encontrado"));
-        }
-
-        User user = snapshot.data!;
-        userType = user.userType;
-
-        return SizedBox.shrink(); // Default return to avoid null
-      },
+        FutureBuilder<User?>(
+          future: _userController.getUserById(widget.userId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError || !snapshot.hasData) {
+              return Center(child: Text("Error al cargar el usuario"));
+            }
+            userType = snapshot.data!.userType;
+            return const SizedBox.shrink();
+          },
         ),
-
         Expanded(
-          child: StreamBuilder<Profile?>(
-            stream: _profileController.getProfileByUserId(widget.userId),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              } else if (snapshot.hasError) {
-                return Center(child: Text('Error: \${snapshot.error}'));
-              } else if (!snapshot.hasData || snapshot.data == null) {
-                return const Center(child: Text('No profile found'));
-              }
+          child: isConnected
+              ? StreamBuilder<Profile?>(
+                  stream: _profileController.getProfileByUserId(widget.userId),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) return const Center(child: Text("No profile found"));
+                    final profile = snapshot.data!;
+                    profileId = profile.id;
+                    return FutureBuilder<List<List<Event>>>(
+                      future: _eventController.getEventsByIds(profile.events_associated).then(
+                        (events) => _eventController.classifyEvents(events, widget.userId),
+                      ),
+                      builder: (context, eventSnapshot) {
+                        if (!eventSnapshot.hasData) return const Center(child: Text("No events found"));
+                        upcomingEvents = eventSnapshot.data![0];
+                        previousEvents = eventSnapshot.data![1];
+                        eventsCreated = eventSnapshot.data![2];
+                        // guardar local
+                        myEventsBox.put('${widget.userId}_upcoming', upcomingEvents.map((e) => e.toJson()).toList());
+                        myEventsBox.put('${widget.userId}_previous', previousEvents.map((e) => e.toJson()).toList());
+                        myEventsBox.put('${widget.userId}_created', eventsCreated.map((e) => e.toJson()).toList());
 
-              final profile = snapshot.data!;
-              profileId = profile.id;
-
-              return FutureBuilder<List<List<Event>>>(
-                future: _eventController.getEventsByIds(profile.events_associated).then(
-                      (events) => _eventController.classifyEvents(events, widget.userId),
-                ),
-                builder: (context, eventSnapshot) {
-                  if (eventSnapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (eventSnapshot.hasError) {
-                    return Center(child: Text('Error: \${eventSnapshot.error}'));
-                  } else if (!eventSnapshot.hasData) {
-                    return const Center(child: Text('No events found'));
-                  }
-
-                  upcomingEvents = eventSnapshot.data![0];
-                  previousEvents = eventSnapshot.data![1];
-                  events_created = eventSnapshot.data![2];
-
-
-                  return ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    children: [
-                      buildSectionTitle("Upcoming Events"),
-                      ...upcomingEvents.map((event) => buildEventCard(event,profileId)),
-                      const SizedBox(height: 20),
-                      buildSectionTitle("Previous Events"),
-                      ...previousEvents.map((event) => buildEventCard(event,profileId)),
-                        const SizedBox(height: 20),
-                      userType == "Attendee"
-                      ? const SizedBox(height: 20)
-                        : buildSectionTitle("Created By Me"),
-                      ...events_created.map((event) => buildEventCard(event, profileId)),
-
-                    ],
-                  );
-                },
-              );
-            },
-          ),
+                        return _buildListView();
+                      },
+                    );
+                  },
+                )
+              : _buildOfflineView(),
         ),
       ],
     );
   }
 
-  Widget buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Text(
-        title,
-        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-      ),
+  Widget _buildListView() {
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      children: [
+        buildSectionTitle("Upcoming Events"),
+        ...upcomingEvents.map((event) => buildEventCard(event, profileId)),
+        const SizedBox(height: 20),
+        buildSectionTitle("Previous Events"),
+        ...previousEvents.map((event) => buildEventCard(event, profileId)),
+        if (userType != "Attendee") ...[
+          const SizedBox(height: 20),
+          buildSectionTitle("Created By Me"),
+          ...eventsCreated.map((event) => buildEventCard(event, profileId)),
+        ]
+      ],
     );
   }
 
-  Widget buildEventCard(Event event, String profileId) {
+  Widget _buildOfflineView() {
+    final List<dynamic> u = myEventsBox.get('${widget.userId}_upcoming', defaultValue: []);
+    final List<dynamic> p = myEventsBox.get('${widget.userId}_previous', defaultValue: []);
+    final List<dynamic> c = myEventsBox.get('${widget.userId}_created', defaultValue: []);
+    upcomingEvents = u.map((e) => Event.fromJson(Map<String, dynamic>.from(e))).toList();
+    previousEvents = p.map((e) => Event.fromJson(Map<String, dynamic>.from(e))).toList();
+    eventsCreated = c.map((e) => Event.fromJson(Map<String, dynamic>.from(e))).toList();
+    return _buildListView();
+  }
+
+  Widget buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Text(title, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+    );
+  }
+
+ Widget buildEventCard(Event event, String profileId) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -232,7 +271,8 @@ class _MyEventsPageState extends State<MyEventsPage> {
                         onPressed: () {},
                       ),
                       Spacer(),
-                      IconButton(
+
+                      isConnected? IconButton(
                         icon: Icon(Icons.delete_outline, color: AppColors.textPrimary),
                         onPressed: () async {
                           print("Eliminando evento: \${event.name}");
@@ -260,6 +300,9 @@ class _MyEventsPageState extends State<MyEventsPage> {
                             );
                           }
                         },
+                      ): IconButton(
+                        icon: Icon(Icons.delete_outline, color: AppColors.icons),
+                        onPressed: () async {},
                       ),
                     ],
                   ),
@@ -271,30 +314,8 @@ class _MyEventsPageState extends State<MyEventsPage> {
       ),
     );
   }
-
-  // Formatea la fecha en Day, Month Day
-  String _formatDate(DateTime date) {
-    return "${_getWeekday(date.weekday)}, ${_getMonth(date.month)} ${date.day}";
-  }
-
-  ///Formatea la hora en hh:mm AM/PM
-  String _formatTime(DateTime date) {
-    return "${date.hour % 12 == 0 ? 12 : date.hour % 12}:${date.minute.toString().padLeft(2, '0')} ${date.hour < 12 ? 'AM' : 'PM'}";
-  }
-
-  ///Obtiene el nombre del día en inglés
-  String _getWeekday(int day) {
-    const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    return weekdays[day - 1];
-  }
-
-  ///Obtiene el nombre del mes en inglés
-  String _getMonth(int month) {
-    const months = [
-      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-    ];
-    return months[month-1];
-}
-
+  String _formatDate(DateTime date) => "${_getWeekday(date.weekday)}, ${_getMonth(date.month)} ${date.day}";
+  String _formatTime(DateTime date) => "${date.hour % 12 == 0 ? 12 : date.hour % 12}:${date.minute.toString().padLeft(2, '0')} ${date.hour < 12 ? 'AM' : 'PM'}";
+  String _getWeekday(int day) => ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][day - 1];
+  String _getMonth(int month) => ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][month - 1];
 }

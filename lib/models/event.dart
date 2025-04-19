@@ -78,5 +78,39 @@ class Event {
           : map['creator_id'] ?? '',
     );
   }
+
+  /// Método para convertir el objeto Event en Map
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'image': image,
+    'cost': cost,
+    'category': category,
+    'skills': skills,
+    'location_id': location_id,
+    'start_date': start_date.toIso8601String(),
+    'end_date': end_date.toIso8601String(),
+    'description': description,
+    'attendees': attendees,
+    'creator_id': creator_id,
+
+  };
+
+  /// Método para construir un Event desde Map
+  factory Event.fromJson(Map<String, dynamic> json) => Event(
+    id: json['id'],
+    name: json['name'],
+    image: json['image'],
+    cost: json['cost'],
+    category: json['category'],
+    skills: List<String>.from(json['skills']),
+    location_id: json['location_id'],
+    start_date: DateTime.parse(json['start_date']),
+    end_date: DateTime.parse(json['end_date']),
+    description: json['description'] ?? '',
+    attendees: List<String>.from(json['attendees'] ?? []),
+    creator_id: json['creator_id'] ?? '',
+  );
 }
+
 //
