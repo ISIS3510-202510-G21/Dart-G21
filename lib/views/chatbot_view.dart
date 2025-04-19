@@ -38,40 +38,34 @@ class _ChatBotPageState extends State<ChatBotPage> {
   late final Connectivity _connectivity;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
 
-@override
-void initState() {
-  super.initState();
-
-  _connectivity = Connectivity();
-
- 
-  _connectivitySubscription = _connectivity.onConnectivityChanged.listen((List<ConnectivityResult> results) {
-  final wasConnected = isConnected;
-  final nowConnected = !results.contains(ConnectivityResult.none);
-
-  setState(() => isConnected = nowConnected);
-
-  if (!wasConnected && nowConnected) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text("Connection Restored", style: TextStyle(color: AppColors.primary, fontSize: 16,)),
-        backgroundColor: const Color.fromARGB(255, 37, 108, 39),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-    );
+  @override
+  void initState() {
+    super.initState();
+    _setupConnectivity();
+    _checkInitialConnectivity();
   }
-});
 
-  _checkInitialConnection();
-}
+  void _setupConnectivity() {
+    _connectivity = Connectivity();
+    _connectivitySubscription = _connectivity.onConnectivityChanged.listen((List<ConnectivityResult> results) {
+      final prev = isConnected;
+      setState(() => isConnected = !results.contains(ConnectivityResult.none));
+      if (!prev && isConnected) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text("Connection Restored", style: TextStyle(color: AppColors.primary, fontSize: 16)),
+            backgroundColor: const Color.fromARGB(255, 37, 108, 39),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      } 
+    });
+  }
 
-
-  Future<void> _checkInitialConnection() async {
-    final result = await _connectivity.checkConnectivity();
-    setState(() => isConnected = result != ConnectivityResult.none);
+  Future<void> _checkInitialConnectivity() async {
+    final result = await Connectivity().checkConnectivity();
+    setState(() => isConnected = !result.contains(ConnectivityResult.none));
   }
 
   @override
@@ -92,68 +86,70 @@ void initState() {
         ),
         title: Text("ChatBot", style: TextStyle(color: AppColors.textPrimary, fontSize: 24)),
       ),
-      body: isConnected ? DashChat(
-        currentUser: _currentUser,
-        typingUsers: _typingUsers,
-        onSend: (ChatMessage m) {
-          getChatResponse(m);
-        },
-        messages: _messages,
-        inputOptions: InputOptions(
-          sendButtonBuilder: (Function onSend) {
-            return IconButton(
-              icon: Icon(Icons.send, color: Colors.blue),
-              onPressed: () => onSend(),
-            );
-          },
-        ),
-        messageOptions: MessageOptions(
-          messageRowBuilder: (ChatMessage message, ChatMessage? previousMessage, ChatMessage? nextMessage, bool isAfter, bool isBefore) {
-            bool isCurrentUser = message.user == _currentUser;
-            return Row(
-              mainAxisAlignment: isCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-              children: [
-                SizedBox(width: 8),
-                if (!isCurrentUser)
-                  CircleAvatar(
-                    backgroundImage: NetworkImage(message.user.profileImage ?? ''),
-                    radius: 20,
-                  ),
-                SizedBox(width: 4),
-                Flexible(
-                  child: Container(
-                    padding: EdgeInsets.all(12),
-                    margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                    decoration: BoxDecoration(
-                      color: isCurrentUser ? AppColors.icons : AppColors.secondary,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      message.text.replaceAll('*', ''),
-                      style: TextStyle(fontSize: 16, color: isCurrentUser ? AppColors.textPrimary : AppColors.primary),
-                    ),
-                  ),
-                ),
-                if (isCurrentUser)
-                  CircleAvatar(
-                    backgroundImage: NetworkImage(message.user.profileImage ?? ''),
-                    radius: 20,
-                  ),
-                SizedBox(width: 10),
-              ],
-            );
-          },
-        ),
-      ) : Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.wifi_off, size: 60, color: Colors.grey),
-            SizedBox(height: 10),
-            Text("No internet connection", style: TextStyle(fontSize: 18, color: Colors.grey)),
-          ],
-        ),
-      ),
+      body: isConnected
+          ? DashChat(
+              currentUser: _currentUser,
+              typingUsers: _typingUsers,
+              onSend: (ChatMessage m) {
+                getChatResponse(m);
+              },
+              messages: _messages,
+              inputOptions: InputOptions(
+                sendButtonBuilder: (Function onSend) {
+                  return IconButton(
+                    icon: Icon(Icons.send, color: Colors.blue),
+                    onPressed: () => onSend(),
+                  );
+                },
+              ),
+              messageOptions: MessageOptions(
+                messageRowBuilder: (ChatMessage message, ChatMessage? previousMessage, ChatMessage? nextMessage, bool isAfter, bool isBefore) {
+                  bool isCurrentUser = message.user == _currentUser;
+                  return Row(
+                    mainAxisAlignment: isCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+                    children: [
+                      SizedBox(width: 8),
+                      if (!isCurrentUser)
+                        CircleAvatar(
+                          backgroundImage: NetworkImage(message.user.profileImage ?? ''),
+                          radius: 20,
+                        ),
+                      SizedBox(width: 4),
+                      Flexible(
+                        child: Container(
+                          padding: EdgeInsets.all(12),
+                          margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                          decoration: BoxDecoration(
+                            color: isCurrentUser ? AppColors.icons : AppColors.secondary,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Text(
+                            message.text.replaceAll('*', ''),
+                            style: TextStyle(fontSize: 16, color: isCurrentUser ? AppColors.textPrimary : AppColors.primary),
+                          ),
+                        ),
+                      ),
+                      if (isCurrentUser)
+                        CircleAvatar(
+                          backgroundImage: NetworkImage(message.user.profileImage ?? ''),
+                          radius: 20,
+                        ),
+                      SizedBox(width: 10),
+                    ],
+                  );
+                },
+              ),
+            )
+          : Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(Icons.wifi_off, size: 60, color: Colors.grey),
+                  SizedBox(height: 10),
+                  Text("No internet connection", style: TextStyle(fontSize: 18, color: Colors.grey)),
+                ],
+              ),
+            ),
     );
   }
 
@@ -261,6 +257,6 @@ void initState() {
 
     setState(() {
       _typingUsers.remove(_gptChatUser);
-});
-}
+    });
+  }
 }
