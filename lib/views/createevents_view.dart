@@ -10,7 +10,7 @@ import 'package:dart_g21/models/event.dart';
 import 'package:dart_g21/models/category.dart';
 import 'package:dart_g21/models/location.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:google_maps_webservice/geocoding.dart' as geo;
+import 'package:geocoding/geocoding.dart' as geo;
 
 
 
@@ -36,8 +36,6 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _detailsController = TextEditingController();
   final TextEditingController _imageUrlController = TextEditingController();
-
-  final geo.GoogleMapsGeocoding _geocoding = geo.GoogleMapsGeocoding(apiKey: 'AIzaSyD8RLt3b-cIdme2mgw0xqGk-SjdD2kqqa0');
 
 
   List<String> selectedSkills = [];
@@ -688,23 +686,36 @@ Widget _buildLabeledUniversityDropdown(String label) {
       _isAddressValid = false;
     });
 
-    final response = await _geocoding.searchByAddress(address);
-
-    setState(() {
-      _isCheckingAddress = false;
-      _isAddressValid = response.isOkay && response.results.isNotEmpty;
-    });
-  }
-
-  Future<LatLng?> getCoordinatesFromAddress(String address) async {
-    final response = await _geocoding.searchByAddress(address);
-
-    if (response.isOkay && response.results.isNotEmpty) {
-      final location = response.results.first.geometry.location;
-      return LatLng(location.lat, location.lng);
-    } else {
-      return null;
+    try {
+      List<geo.Location> locations = await geo.locationFromAddress(address);
+      setState(() {
+        _isCheckingAddress = false;
+        _isAddressValid = locations.isNotEmpty;
+      });
+    } catch (e) {
+      print("Address validation error: $e");
+      setState(() {
+        _isCheckingAddress = false;
+        _isAddressValid = false;
+      });
     }
   }
+
+
+  Future<LatLng?> getCoordinatesFromAddress(String address) async {
+    try {
+      List<geo.Location> locations = await geo.locationFromAddress(address);
+
+      if (locations.isNotEmpty) {
+        final location = locations.first;
+        return LatLng(location.latitude, location.longitude);
+      }
+    } catch (e) {
+      print("Error getting coordinates: $e");
+    }
+
+    return null;
+  }
+
 
 }
