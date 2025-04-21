@@ -30,19 +30,25 @@ class EventController {
   }
 
   //Clasificar eventos en una lista de eventos futuros y pasados
-  List<List<Event>> classifyEvents(List<Event> events) {
+  List<List<Event>> classifyEvents(List<Event> events, String? userId) {
     List<Event> upcomingEvents = [];
     List<Event> previousEvents = [];
+    List<Event> userEvents = [];
 
     for (Event event in events) {
       if (event.start_date.isAfter(DateTime.now())) {
         upcomingEvents.add(event);
-      } else {
+        
+      } 
+      if (event.start_date.isBefore(DateTime.now())) {
         previousEvents.add(event);
       }
+      if (userId != null && event.creator_id == userId) {
+          userEvents.add(event);
+        }
     }
 
-    return [upcomingEvents, previousEvents];
+    return [upcomingEvents, previousEvents, userEvents];
   }
 
   //Obtener lista de eventos a partir de una lista de IDs
@@ -60,9 +66,9 @@ class EventController {
   }
 
   //Clasificar eventos en una lista de eventos futuros y pasados a partir de una lista de IDs
-  Future<List<List<Event>>> classifyEventsByIds(List<String> eventIds) async {
+  Future<List<List<Event>>> classifyEventsByIds(List<String> eventIds, String? userId) async {
     List<Event> events = await getEventsByIds(eventIds);
-    return classifyEvents(events);
+    return classifyEvents(events, userId);
   }
 
   ///Obtener eventos proximos a un usuario
@@ -293,8 +299,8 @@ Stream<List<Event>> getRecommendedEventsStreamForUser(String userId) {
 
     result.sort((a, b) => a.start_date.compareTo(b.start_date));
     return result;
-  }
-  
+}
+
 
 
 
