@@ -125,7 +125,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               color: Colors.amber.withOpacity(0.2),
               padding: const EdgeInsets.all(12),
               child: const Text(
-                "Estás sin conexión. Mostrando datos offline",
+                "You are offline. Showing offline data",
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.black87),
               ),
