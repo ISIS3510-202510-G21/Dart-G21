@@ -347,6 +347,7 @@ class _HomePage extends State<HomePage> {
         MaterialPageRoute(
           builder: (context) => EventDetailScreen(
             eventId: event.id,
+            eventOffline: event,
             userId: widget.userId, 
           ),
         ),

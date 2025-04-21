@@ -18,6 +18,8 @@ import 'package:flutter/services.dart';
 import 'firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:dart_g21/models/event.dart';
+
 
 
 
@@ -74,6 +76,7 @@ await SystemChrome.setPreferredOrientations([
         return EventDetailScreen(
           eventId: args['eventId']!,
           userId: args['userId']!,
+          eventOffline: args['eventOffline'] as Event?,
         );
       },  // Pantalla de detalles del evento,
     },
