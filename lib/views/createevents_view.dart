@@ -703,7 +703,6 @@ Widget _buildLabeledUniversityDropdown(String label) {
       final location = response.results.first.geometry.location;
       return LatLng(location.lat, location.lng);
     } else {
-      // Retorna null si no se puede geolocalizar
       return null;
     }
   }
