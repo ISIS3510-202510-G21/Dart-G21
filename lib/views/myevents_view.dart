@@ -28,73 +28,76 @@ class _MyEventsPageState extends State<MyEventsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("My Events", style: TextStyle(fontSize: 24, color: AppColors.textPrimary)),
-      ),
+    return Column(
+      
+      children: [
+        SizedBox(height: 40,),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16),
+          child: Row(
+            children: const [
+              
+              Text(
+                "My Events",
+                style: TextStyle(
+                  fontSize: 24,
+                  color: Colors.black,
+                  fontWeight: FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: StreamBuilder<Profile?>(
+            stream: _profileController.getProfileByUserId(widget.userId),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              } else if (!snapshot.hasData || snapshot.data == null) {
+                return const Center(child: Text('No profile found'));
+              }
 
-      // Cuerpo con lista de eventos
-      body: StreamBuilder<Profile?>(
-        stream: _profileController.getProfileByUserId(widget.userId),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data == null) {
-            return Center(child: Text('No profile found'));
-          } else {
-            final profile = snapshot.data!;
-            print("Profile: ${profile.events_associated}");
-            return FutureBuilder<List<List<Event>>>(
-              future: _eventController.getEventsByIds(profile.events_associated).then((events) {
-                return _eventController.classifyEvents(events);
-              }),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                } else if (!snapshot.hasData) {
-                  return Center(child: Text('No events found'));
-                } else {
-                  final classifiedEvents = snapshot.data!;
-                  upcomingEvents = classifiedEvents[0];
-                  previousEvents = classifiedEvents[1];
-                  profileId = profile.id;
+              final profile = snapshot.data!;
+              profileId = profile.id;
+
+              return FutureBuilder<List<List<Event>>>(
+                future: _eventController.getEventsByIds(profile.events_associated).then(
+                      (events) => _eventController.classifyEvents(events),
+                ),
+                builder: (context, eventSnapshot) {
+                  if (eventSnapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (eventSnapshot.hasError) {
+                    return Center(child: Text('Error: ${eventSnapshot.error}'));
+                  } else if (!eventSnapshot.hasData) {
+                    return const Center(child: Text('No events found'));
+                  }
+
+                  upcomingEvents = eventSnapshot.data![0];
+                  previousEvents = eventSnapshot.data![1];
 
                   return ListView(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     children: [
-                      //  Sección de Upcoming Events
                       buildSectionTitle("Upcoming Events"),
-                      ...upcomingEvents.map((event) => buildEventCard(event, profileId)).toList(),
-
-                      SizedBox(height: 20),
-
-                      //  Sección de Previous Events
+                      ...upcomingEvents.map((event) => buildEventCard(event,profileId)),
+                      const SizedBox(height: 20),
                       buildSectionTitle("Previous Events"),
-                      ...previousEvents.map((event) => buildEventCard(event, profileId)).toList(),
+                      ...previousEvents.map((event) => buildEventCard(event,profileId)),
                     ],
                   );
-                }
-              },
-            );
-          }
-        },
-      ),
-
-      //  Barra de navegación inferior
-      // bottomNavigationBar: BottomNavBarHost(
-      //   selectedIndex: selectedIndex,
-      //   onItemTapped: (index) {
-      //     setState(() {
-      //       selectedIndex = index;
-      //     });
-      //   },
-      // ),
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
+
 
   // Widget para los títulos de sección ("Upcoming Events", "Previous Events")
   Widget buildSectionTitle(String title) {
@@ -102,7 +105,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Text(
         title,
-        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
       ),
     );
   }

@@ -65,4 +65,9 @@ Future<Location?> getLocationByAddressAndCity(String address, String city) async
     }
     return null;
   }
+
+  Future<List<String>> getLocationIdsByUniversity(bool isUniversity) async {
+  return await _locationRepository.getLocationIdsByUniversity(isUniversity);
+}
+
 }

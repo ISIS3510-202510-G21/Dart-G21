@@ -12,6 +12,8 @@ class Event {
   String location_id;  // Se almacena como referencia en Firestore
   String category;     // Se almacena como referencia en Firestore
   List<String> attendees; // Lista de referencias a usuarios en Firestore
+  List<String> skills;
+  String creator_id; // ID del creador del evento
 
   Event({
     required this.id,
@@ -24,6 +26,8 @@ class Event {
     required this.location_id,
     required this.category,
     required this.attendees,
+    required this.skills,
+    required this.creator_id,
   });
 
   // Convertir objeto a Map para Firestore (guardando referencias)
@@ -39,7 +43,9 @@ class Event {
       'cost': cost,
       'location_id': db.collection("locations").doc(location_id), 
       'category': db.collection("categories").doc(category), 
-      'attendees': attendees.map((id) => db.collection("users").doc(id)).toList(), 
+      'attendees': attendees.map((id) => db.collection("users").doc(id)).toList(),
+      'skills': skills.map((id) => db.collection("skills").doc(id)).toList(),
+      'creator_id': db.collection("users").doc(creator_id), 
     };
   }
 
@@ -63,6 +69,14 @@ class Event {
               ?.map((e) => e is DocumentReference ? e.id : e.toString())
               .toList() ??
           [],
+      skills: (map['skills'] as List<dynamic>?)
+          ?.map((e) => e is DocumentReference ? e.id : e.toString())
+          .toList() ??
+          [],
+      creator_id: (map['creator_id'] is DocumentReference)
+          ? (map['creator_id'] as DocumentReference).id
+          : map['creator_id'] ?? '',
     );
   }
 }
+//

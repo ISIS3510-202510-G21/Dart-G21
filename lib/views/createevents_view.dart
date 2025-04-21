@@ -1,4 +1,6 @@
 import 'package:dart_g21/controllers/category_controller.dart';
+import 'package:dart_g21/controllers/skill_controller.dart';
+import 'package:dart_g21/models/skill.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/core/colors.dart';
 import 'package:flutter/services.dart';
@@ -8,8 +10,12 @@ import 'package:dart_g21/models/event.dart';
 import 'package:dart_g21/models/category.dart';
 import 'package:dart_g21/models/location.dart';
 
+
 class CreateEventScreen extends StatefulWidget {
-  const CreateEventScreen({Key? key}) : super(key: key);
+  final String userId; // ID del usuario que crea el evento
+ 
+  const CreateEventScreen({Key? key, required this.userId}) : super(key: key);
+
 
   @override
   State<CreateEventScreen> createState() => _CreateEventScreenState();
@@ -19,7 +25,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   final EventController _eventController = EventController();
   final CategoryController _categoryController = CategoryController();
   final LocationController _locationController = LocationController();
-
+  final SkillController _skillController = SkillController(); //controller de skills
+  
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _costController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
@@ -27,12 +34,28 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   final TextEditingController _detailsController = TextEditingController();
   final TextEditingController _imageUrlController = TextEditingController();
   
+  List<String> selectedSkills = [];
+  final int maxSkillSelection = 3;
+  
   String? selectedCategory;
   String? categoryId; 
   DateTime? fromDate;
   DateTime? toDate;
   TimeOfDay? fromTime;
   TimeOfDay? toTime;
+  String? selectedCity;
+  bool? isUniversity;
+
+  //Método para mostrar el listado de skills
+  void toggleSkillSelection(String skillId) {
+  setState(() {
+    if (selectedSkills.contains(skillId)) {
+      selectedSkills.remove(skillId);
+    } else if (selectedSkills.length < maxSkillSelection) {
+      selectedSkills.add(skillId);
+    }
+  });
+  }
 
   //Crear el evento y enviarlo al Controller
   void _saveEvent() async {
@@ -60,28 +83,19 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       return;
     }
 
-  //Dividir la dirección en address y city
-    List<String> addressParts = _addressController.text.split(",");
-    if (addressParts.length < 2) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Incorrect format. Use: Address, City")),
-      );
-      return;
-    }
-    String address = addressParts[0].trim();
-    String city = addressParts[1].trim();
-
-    //Crear la ubicación en Firestore
+    //Crear la ubicación
     String? locationId = await _locationController.addLocationAndReturnId(Location(
-      id: "", //Firestore generará el ID
-      address: address,
-      details: _detailsController.text,
-      city: city,
-      university: true, 
+      id: "", // Firestore generará el ID
+      address: _addressController.text.trim(),
+      details: _detailsController.text.trim(),
+      city: selectedCity!,          // ya fue validado
+      university: isUniversity!,    // ya fue validado
     ));
 
-    Location? location = await _locationController.getLocationByAddress(address).first;
+    //Obtener la ubicación para referenciarla en el evento
+    Location? location = await _locationController.getLocationByAddress(_addressController.text.trim()).first;
     String? id_location = location?.id;
+
 
     //Crear el objeto Event
     Event newEvent = Event(
@@ -95,6 +109,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       location_id: id_location ?? "", //Guardar la referencia de location
       image: _imageUrlController.text,
       attendees: [], //Lista vacía al inicio
+      skills: selectedSkills, //Guardar la lista de skills seleccionadas
+      creator_id: widget.userId, // ID del creador del evento
     );
 
 
@@ -146,7 +162,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
           fromDate = picked;
           if (toDate != null && picked.isAfter(toDate!)) {
             _showErrorDialog("The end date must be after the start date.");
-            fromDate = null; // reiniciar el campo si es inválido
+            fromDate = null; //reiniciar el campo si es inválido
           }
         } else {
           if (fromDate != null && picked.isBefore(fromDate!)) {
@@ -189,6 +205,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     final int secondMinutes = second.hour * 60 + second.minute;
     return firstMinutes <= secondMinutes;
   }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -219,12 +236,49 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   const SizedBox(height: 15),
                   _buildLabeledTimePickers(),
                   const SizedBox(height: 15),
-                  _buildLabeledInputField("Address", _addressController, 'Write the address of your event (Address, City)', Icons.location_on),
+                  _buildLabeledInputField("Address", _addressController, 'Write the address', Icons.location_on),
+                  const SizedBox(height: 15),
+                  _buildLabeledCityDropdown("City"),
+                  const SizedBox(height: 15),
+                  _buildLabeledUniversityDropdown("Is this a university event?"),
                   const SizedBox(height: 15),
                   _buildLabeledInputField("Details", _detailsController, 'Write the details of the address', Icons.info),
                   const SizedBox(height: 30),
                   _buildLabeledInputField("Image URL", _imageUrlController, 'URL of the image', Icons.image),
                   const SizedBox(height: 30),
+                  Text("Skills (max 3)", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 150,
+                    child: StreamBuilder<List<Skill>>(
+                      stream: _skillController.getSkillsStream(),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) return CircularProgressIndicator();
+                        final skills = snapshot.data!;
+                        return GridView.builder(
+                          itemCount: skills.length,
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 8,
+                            crossAxisSpacing: 8,
+                            childAspectRatio: 3.5,
+                          ),
+                          itemBuilder: (context, index) {
+                            final skill = skills[index];
+                            final isSelected = selectedSkills.contains(skill.id);
+                            return FilterChip(
+                              label: Text(skill.name),
+                              selected: isSelected,
+                              selectedColor: AppColors.secondary.withOpacity(0.2),
+                              checkmarkColor: Colors.white,
+                              onSelected: (_) => toggleSkillSelection(skill.id),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 15),
                   _buildCreateEventButton(),
                 ],
               ),
@@ -237,6 +291,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
   Widget _buildHeader(BuildContext context) {
     return Row(
+      //mainAxisAlignment: MainAxisAlignment.start,
       children: [
         IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black, size: 28),
@@ -246,9 +301,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         const Text(
           'Create Event',
           style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
+            fontSize: 24,
+            color: AppColors.textPrimary,
           ),
         ),
       ],
@@ -339,6 +393,7 @@ Widget _buildTimeField(String label, TimeOfDay? time, bool isFromTime) {
     );
   }
 
+
   Widget _buildCategoryDropdown() {
   return StreamBuilder<List<Category_event>>(
     stream: _categoryController.getCategoriesStream(),
@@ -355,7 +410,7 @@ Widget _buildTimeField(String label, TimeOfDay? time, bool isFromTime) {
           border: _buildInputBorder(),
         ),
         value: selectedCategory,
-        hint: const Text("Choose the category of your event"),
+        hint: const Text("Choose the category", style: TextStyle(color: AppColors.secondaryText)),
         items: categoryList.map((category) {
           return DropdownMenuItem<String>(
             value: category.id, //Guardas el ID directamente
@@ -365,16 +420,16 @@ Widget _buildTimeField(String label, TimeOfDay? time, bool isFromTime) {
         onChanged: (String? newValue) {
             setState(() {
               selectedCategory = newValue!;
-              print("🔍 Usuario seleccionó: $newValue");
-              print("🔍 Categorías disponibles: ${categoryList.map((c) => c.name).toList()}");
-              categoryId = newValue; // ✅ el ID ya viene del value del dropdown
+              print(" Usuario seleccionó: $newValue");
+              print(" Categorías disponibles: ${categoryList.map((c) => c.name).toList()}");
+              categoryId = newValue; // el ID ya viene del value del dropdown
             });
 
         /* onChanged: (String? newValue) {
           setState(() {
             selectedCategory = newValue!;
-            print("🔍 Usuario seleccionó: $newValue");
-            print("🔍 Categorías disponibles: ${categoryList.map((c) => c.name).toList()}");
+            print(" Usuario seleccionó: $newValue");
+            print(" Categorías disponibles: ${categoryList.map((c) => c.name).toList()}");
             categoryId = snapshot.data!
             .firstWhere((c) => c.name == newValue, orElse: () => Category_event(id: '', name: ''))
             .id;
@@ -384,7 +439,6 @@ Widget _buildTimeField(String label, TimeOfDay? time, bool isFromTime) {
     },
   );
 }
-
 
   Widget _buildLabeledDatePickers() {
   return Column(
@@ -436,12 +490,13 @@ Widget _buildTimeField(String label, TimeOfDay? time, bool isFromTime) {
     );
   }
 
+
   Widget _buildCreateEventButton() {
   return SizedBox(
     width: double.infinity,
     height: 48,
     child: ElevatedButton(
-      onPressed: _saveEvent, // 🔥 Ahora llama a `_saveEvent()`
+      onPressed: _saveEvent, // Ahora llama a `_saveEvent()`
       style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondary),
       child: const Text("Create Event", style: TextStyle(color: Colors.white, fontSize: 16)),
     ),
@@ -483,4 +538,76 @@ Widget _buildCostField() {
       borderSide: BorderSide(color: Color(0xFFE6E6E6), width: 2),
     );
   }
+
+  Widget _buildCityDropdown() {
+  final cities = [
+    "Bogotá", "Medellín", "Cali", "Barranquilla", "Cartagena",
+    "Bucaramanga", "Pereira", "Manizales", "Cúcuta", "Santa Marta",
+    // Puedes agregar más si deseas
+  ];
+
+  return DropdownButtonFormField<String>(
+    decoration: InputDecoration(
+      prefixIcon: Icon(Icons.location_city, color: Color(0xFFE6E6E6)),
+      border: _buildInputBorder(),
+      ),
+      value: selectedCity,
+      hint: const Text("Choose a city", style: TextStyle(color: AppColors.secondaryText)),
+      items: cities.map((city) {
+        return DropdownMenuItem<String>(
+          value: city,
+          child: Text(city),
+        );
+      }).toList(),
+      onChanged: (String? newValue) {
+        setState(() {
+          selectedCity = newValue!;
+        });
+      },
+    );
+}
+  
+  Widget _buildLabeledCityDropdown(String label) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
+      const SizedBox(height: 5),
+      _buildCityDropdown(),
+    ],
+  );
+}
+
+  Widget _buildUniversityDropdown() {
+  return DropdownButtonFormField<bool>(
+    decoration: InputDecoration(
+      prefixIcon: Icon(Icons.school, color: Color(0xFFE6E6E6)),
+      border: _buildInputBorder(),
+    ),
+    value: isUniversity,
+    hint: const Text("Is it a university event?", style: TextStyle(color: AppColors.secondaryText)),
+    items: const [
+      DropdownMenuItem(value: true, child: Text("Yes")),
+      DropdownMenuItem(value: false, child: Text("No")),
+    ],
+    onChanged: (bool? newValue) {
+      setState(() {
+        isUniversity = newValue!;
+      });
+    },
+  );
+}
+
+Widget _buildLabeledUniversityDropdown(String label) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
+      const SizedBox(height: 5),
+      _buildUniversityDropdown(),
+    ],
+  );
+}
+
+
 }

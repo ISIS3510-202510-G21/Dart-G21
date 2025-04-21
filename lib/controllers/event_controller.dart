@@ -74,7 +74,7 @@ class EventController {
 
       sortedEvents.sort((a, b) => a.start_date.compareTo(b.start_date));
 
-      return sortedEvents.take(5).toList();
+      return sortedEvents.take(10).toList();
     });
   }
 
@@ -117,7 +117,7 @@ class EventController {
         }
       }
 
-      print("⚠ No se pudo determinar la ciudad del usuario.");
+      print("No se pudo determinar la ciudad del usuario.");
       return "Desconocido"; 
     } catch (e) {
       print("Error al obtener la ciudad: $e");
@@ -177,25 +177,26 @@ class EventController {
   ///Obtner eventos en Bogota
   Stream<List<Event>> getBogotaEventsStream() async* {
     try {
-      yield await _eventRepository.getEventsStream().asyncMap((events) async {
+      await for (List<Event> events in _eventRepository.getEventsStream()) {
         List<Event> bogotaEvents = [];
 
         for (Event event in events) {
           try {
-            app_models.Location? eventLocation =
-            await _locationController.getLocationById(event.location_id);
+            final eventLocation = await _locationController.getLocationById(event.location_id);
 
-            if (eventLocation == null || eventLocation.city == null) {
+            if (eventLocation == null) {
               print("Ubicación no encontrada para el evento ${event.id}");
               continue;
             }
 
-            bool esBogota = eventLocation.city?.toLowerCase().trim() == "bogotá";
+            final city = eventLocation.city;
 
-            if (esBogota) {
+            if (city is String && city.toLowerCase().trim() == "bogotá") {
               bogotaEvents.add(event);
             }
+
           } catch (error) {
+            print("Error al procesar ubicación de evento ${event.id}: $error");
             continue;
           }
         }
@@ -203,8 +204,9 @@ class EventController {
         if (bogotaEvents.isEmpty) {
           print("No se encontraron eventos en Bogotá.");
         }
-        return bogotaEvents;
-      }).first;
+
+        yield bogotaEvents;
+      }
     } catch (error) {
       print("Error general en getBogotaEventsStream: $error");
       yield [];
@@ -212,10 +214,88 @@ class EventController {
   }
 
 
+
 //Obtener los eventos recomendados para un usuario (user_id) 
 Stream<List<Event>> getRecommendedEventsStreamForUser(String userId) {
   return _eventRepository.getRecommendedEventsStreamForUser(userId);
 }
+
+ Future<List<Event>> getFirstNEvents(int n) async {
+  return await _eventRepository.getFirstNEvents(n);
+}
+
+  ///Obtener eventos por categoria (categoryId)
+  Stream<List<Event>> getEventsByCategory(String categoryId) {
+    return getEventsStream().map((events) {
+      List<Event> eventsByCategory = events
+          .where((event) => event.category==categoryId)
+          .toList();
+
+      return eventsByCategory;
+    });
+  }
+
+  ///Clasificar eventos de una categoria gratis
+  Stream<List<Event>> getFreeEventsStream(List<Event> eventsCategory) {
+    return Stream.value(eventsCategory.where((event) => event.cost == 0).toList());
+  }
+
+  ///Clasificar eventos de una categoria con costo
+  Stream<List<Event>> getPaidEventsStream(List<Event> eventsCategory) {
+    return Stream.value(eventsCategory.where((event) => event.cost > 0).toList());
+  }
+
+  ///Ordenar eventos de una categoria por fecha
+  Stream<List<Event>> getEventsSortedByDate(List<Event> events, String order) {
+    if (order == "Soonest to Latest") {
+      return Stream.value(events.toList()..sort((a, b) => a.start_date.compareTo(b.start_date)));
+    }
+    else if (order == "Latest to Soonest") {
+      return Stream.value(events.toList()..sort((a, b) => b.start_date.compareTo(a.start_date)));
+    }
+    else {
+      return Stream.value(events);
+    }
+  }
+
+  //Obtener las cosas filtradas filterEvents
+  Future<List<Event>> filterEvents({
+    required List<Event> allEvents,
+    String? selectedType,
+    String? selectedCategoryId,
+    String? selectedSkillId,
+    String? selectedLocation,
+    DateTime? selectedStartDate,
+    DateTime? selectedEndDate,
+  }) async {
+    List<Event> result = allEvents;
+
+    if (selectedType != null) {
+      result = result.where((e) => selectedType == 'free' ? e.cost == 0 : e.cost > 0).toList();
+    }
+    if (selectedCategoryId != null) {
+      result = result.where((e) => e.category == selectedCategoryId).toList();
+    }
+    if (selectedSkillId != null) {
+      result = result.where((e) => e.skills.contains(selectedSkillId)).toList();
+    }
+    if (selectedLocation != null) {
+      List<String> matchingLocationIds = await _locationController.getLocationIdsByUniversity(
+        selectedLocation == 'university');
+      result = result.where((e) => matchingLocationIds.contains(e.location_id)).toList();
+    }
+    if (selectedStartDate != null && selectedEndDate != null) {
+      result = result.where((e) =>
+        e.start_date.isAfter(selectedStartDate.subtract(const Duration(days: 0))) &&
+        e.start_date.isBefore(selectedEndDate.add(const Duration(days: 1)))
+      ).toList();
+    }
+
+    result.sort((a, b) => a.start_date.compareTo(b.start_date));
+    return result;
+  }
+  
+
 
 
 

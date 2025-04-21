@@ -41,9 +41,9 @@ class Profile {
           .map((id) => _db.collection("users").doc(id)) 
           .toList(),
       'interests': interests
-          .map((id) => _db.collection("interests").doc(id)) 
+          .map((id) => _db.collection("categories").doc(id)) 
           .toList(),
-      'user_ref': _db.collection("users").doc(user_ref), 
+      'user_ref': _db.collection("users").doc(user_ref),
     };
   }
 

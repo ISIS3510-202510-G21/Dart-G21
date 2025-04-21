@@ -4,6 +4,7 @@ import 'package:dart_g21/views/home_view.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/core/colors.dart';
 import 'package:dart_g21/services/auth_service.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({Key? key}) : super(key: key);
@@ -161,21 +162,33 @@ class _SignInScreenState extends State<SignInScreen> {
     height: 48,
     child: ElevatedButton(
       onPressed: () async {
-        //validación de campos vacíos
-        await AuthService().signIn(
+         bool loginSuccess = await AuthService().signIn(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
-        );
-        User? user = await _userController.getUserByEmail(_emailController.text).first;
-        String? user_id = user?.id;
-        print(user_id);
-        Navigator.push(
-        context,
-        MaterialPageRoute(
+           );
 
-          builder: (context) => HomePage(userId: user_id!),
-        ),
-      );
+        if (loginSuccess) {
+            User? user = await _userController.getUserByEmail(_emailController.text).first;
+            String? user_id = user?.id;
+
+        if (user_id != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => HomePage(userId: user_id),
+            ),
+          );
+        } else {
+            Fluttertoast.showToast(
+            msg: "User not found in database.",
+            toastLength: Toast.LENGTH_LONG,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
+            fontSize: 14.0,
+          );
+        }
+        }
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.secondary,

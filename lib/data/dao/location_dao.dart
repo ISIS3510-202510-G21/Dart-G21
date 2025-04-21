@@ -42,4 +42,12 @@ class LocationDAO {
         .getDocumentByFieldOnce(collectionPath, "address", address)
         .map((doc) => doc != null ? Location.fromMap(doc as Map<String, dynamic>, doc["id"]) : null);
   }
+
+  Future<List<String>> getLocationIdsByUniversity(bool isUniversity) async {
+  final snapshot = await _firestore.getCollection("locations")
+    .where("university", isEqualTo: isUniversity)
+    .get();
+  return snapshot.docs.map((doc) => doc.id).toList();
+}
+
 }

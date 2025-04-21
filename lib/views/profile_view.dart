@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:dart_g21/controllers/category_controller.dart';
 import 'package:dart_g21/controllers/interest_controller.dart';
 import 'package:dart_g21/controllers/profile_controller.dart';
 import 'package:dart_g21/controllers/user_controller.dart';
@@ -6,6 +9,8 @@ import 'package:dart_g21/models/interest.dart';
 import 'package:dart_g21/models/profile.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/widgets/navigation_bar_host.dart';
+
+import '../controllers/skill_controller.dart';
 
 class ProfilePage extends StatefulWidget {
   final String userId;
@@ -19,7 +24,7 @@ class ProfilePage extends StatefulWidget {
  
 class _ProfilePageState extends State<ProfilePage> {
   final ProfileController _profileController = ProfileController();
-  final InterestController _interestController = InterestController();
+  final CategoryController _categoryController = CategoryController();
   final UserController _userController = UserController();
   final double coverHeight = 200;
   final double profileHeight = 180;
@@ -27,40 +32,56 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Profile", style: TextStyle(color: AppColors.textPrimary, fontSize: 24)),
-      ),
-      body: StreamBuilder<Profile?>(
-        
-        stream: _profileController.getProfileByUserId(widget.userId),  // Conexión con Firestore
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-      return Center(child: CircularProgressIndicator()); 
-          } 
-          if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
-          }
-          if (!snapshot.hasData || snapshot.data == null) {
-            
-            return Center(child: Text("No se encontró el perfil")); 
-          }
-          
-          Profile profile = snapshot.data!;
-          return ListView(
-            padding: EdgeInsets.zero,
-            children: <Widget>[
-              buildTop(profile), 
-              buildContent(profile), 
+    return Column(
+      children: [
+        SizedBox(height: 40,),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16),
+          child: Row(
+            children: const [
+              Text(
+                "Profile",
+                style: TextStyle(
+                  fontSize: 24,
+                  color: Colors.black,
+                  fontWeight: FontWeight.normal,
+                ),
+              ),
             ],
-          );
-        },
-      ),
+          ),
+        ),
+        Expanded(
+          child: StreamBuilder<Profile?>(
+            stream: _profileController.getProfileByUserId(widget.userId),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Center(child: Text("Error: ${snapshot.error}"));
+              }
+              if (!snapshot.hasData || snapshot.data == null) {
+                return const Center(child: Text("No se encontró el perfil"));
+              }
+
+              Profile profile = snapshot.data!;
+              return ListView(
+                padding: EdgeInsets.zero,
+                children: <Widget>[
+                  buildTop(profile),
+                  buildContent(profile),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
 
- Widget buildTop(Profile profile) {
+
+  Widget buildTop(Profile profile) {
    final bottom = 200.0;
    final top = 20.0;
    return Stack (
@@ -71,7 +92,8 @@ class _ProfilePageState extends State<ProfilePage> {
               child:buildCoverImage() ),
               Positioned(
                 top: top,
-                child:buildProfileImage(profile),
+                //LO CAMBIE
+                child:buildProfileImage(profile.picture),
           )],
           );
   }  
@@ -83,8 +105,25 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-// Widget para la imagen de perfil
-  Widget buildProfileImage(Profile profile) {
+// Widget para la imagen de perfil ACTUALIZADA!
+    Widget buildProfileImage(String? imagePath) {
+    final bool hasImage = imagePath != null && imagePath.isNotEmpty;
+
+    return CircleAvatar(
+      radius: 90,
+      backgroundColor: Colors.grey.shade300,
+      backgroundImage: hasImage ? FileImage(File(imagePath)) : null,
+      child: hasImage
+        ? null
+        : const Icon(
+            Icons.person,
+            size: 60,
+            color: Colors.white,
+          ),
+      );
+    }
+
+  /* Widget buildProfileImage(Profile profile) {
     return CircleAvatar( 
       radius: profileHeight/2,
       backgroundColor: Colors.grey.shade800,
@@ -93,10 +132,7 @@ class _ProfilePageState extends State<ProfilePage> {
         profile.picture,
       ),
     );
-  }
-
-
- 
+  } */
 
 // Widget para el contenido del perfil
   Widget buildContent(Profile profile) {
@@ -250,8 +286,9 @@ class _ProfilePageState extends State<ProfilePage> {
             children: [
 
               for (var interest in profile.interests)
+
                 FutureBuilder(
-                  future: _interestController.getInterestById(interest),
+                  future: _categoryController.getCategoryById(interest),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.done) {
                       if (snapshot.hasData) {

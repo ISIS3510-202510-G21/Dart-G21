@@ -38,7 +38,7 @@ class _ChatBotPageState extends State<ChatBotPage> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, size:28 ,),
           onPressed: () {
             Navigator.pop(context);
           },

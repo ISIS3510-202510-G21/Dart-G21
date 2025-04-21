@@ -1,10 +1,14 @@
+import 'dart:io';
+
 import 'package:dart_g21/controllers/user_controller.dart';
 import 'package:dart_g21/models/user.dart';
 import 'package:dart_g21/views/home_view.dart';
+import 'package:dart_g21/views/selectcategories_view.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/core/colors.dart';
 import 'package:dart_g21/services/auth_service.dart';
 import '../controllers/auth_controller.dart';
+import 'package:image_picker/image_picker.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
@@ -20,6 +24,69 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _headlineController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  
+  XFile? _profileImage;
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickImage() async {
+  final XFile? image = await _picker.pickImage(source: ImageSource.gallery); // o ImageSource.camera
+  if (image != null) {
+    setState(() {
+      _profileImage = image;
+    });
+  }
+}
+
+
+//para hacer dinamico cuando el usuario este creando su password hy le muestre que falta
+  bool hasUpper = false;
+  bool hasLower = false;
+  bool hasDigit = false;
+  bool hasSpecial = false;
+  bool hasMinLength = false;
+
+  bool isValidEmail(String email) {
+    final emailRegex = RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$");
+    return emailRegex.hasMatch(email);
+  }
+
+  bool isTrustedEmailProvider(String email) {
+    final trustedDomains = ['gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'uniandes.edu.co'];
+    final parts = email.split('@');
+    if (parts.length != 2) return false;
+    return trustedDomains.contains(parts[1].toLowerCase());
+  }
+
+  bool isStrongPassword(String password) {
+    final hasUpper = password.contains(RegExp(r'[A-Z]'));
+    final hasLower = password.contains(RegExp(r'[a-z]'));
+    final hasDigit = password.contains(RegExp(r'[0-9]'));
+    final hasSpecial = password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
+    return password.length >= 8 && hasUpper && hasLower && hasDigit && hasSpecial;
+  }
+
+  void validatePassword(String password) {
+    setState(() {
+      hasUpper = password.contains(RegExp(r'[A-Z]'));
+      hasLower = password.contains(RegExp(r'[a-z]'));
+      hasDigit = password.contains(RegExp(r'[0-9]'));
+      hasSpecial = password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
+      hasMinLength = password.length >= 8;
+    });
+  }
+
+  void showToast(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   //nuevo
   String userType = "attendee";
 
@@ -33,9 +100,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _headlineController.dispose(); // nuevo
+    _descriptionController.dispose(); // nuevo
     super.dispose();
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +124,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   const SizedBox(height: 30),
                   _buildTitle(),
                   const SizedBox(height: 40),
+                  Center(
+                    child: GestureDetector(
+                      onTap: _pickImage,
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundColor: Colors.grey[300],
+                        backgroundImage: _profileImage != null ? FileImage(File(_profileImage!.path)) : null,
+                        child: _profileImage == null
+                            ? Icon(Icons.camera_alt, size: 40, color: Colors.white)
+                            : null,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                   _buildFormFields(),
                   const SizedBox(height: 38),
                   _buildSignUpButton(),
@@ -106,12 +188,28 @@ class _SignUpScreenState extends State<SignUpScreen> {
             _isPasswordVisible = !_isPasswordVisible;
           });
         }),
+        const SizedBox(height: 10),
+        _passwordCriteria(), // validador visual
         const SizedBox(height: 23),
         _buildPasswordField(_confirmPasswordController, 'Confirm password', _isConfirmPasswordVisible, (value) {
           setState(() {
             _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
           });
         }),
+        const SizedBox(height: 23),
+        _buildInputField(_headlineController, 'Your headline (e.g. Marketing Student)', Icons.title),
+        const SizedBox(height: 23),
+        TextField(
+          controller: _descriptionController,
+          maxLines: 3,
+          decoration: InputDecoration(
+            prefixIcon: Icon(Icons.description, color: Color(0xFFE6E6E6)),
+            hintText: 'Short bio or description...',
+            border: _buildInputBorder(),
+            enabledBorder: _buildInputBorder(),
+            focusedBorder: _buildInputBorder(),
+          ),
+        ),
       ],
     );
   }
@@ -133,6 +231,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return TextField(
       controller: controller,
       obscureText: !isVisible,
+      onChanged: (value) {
+        //Solo activa la validación en el campo "Your password"
+        if (hintText == "Your password") {
+          validatePassword(value);
+        }
+      },
       decoration: InputDecoration(
         prefixIcon: const Icon(Icons.lock, color: Color(0xFFE6E6E6)),
         hintText: hintText,
@@ -146,6 +250,40 @@ class _SignUpScreenState extends State<SignUpScreen> {
       ),
     );
   }
+
+  Widget _passwordCriteria() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildCriteriaRow("At least 8 characters", hasMinLength),
+        _buildCriteriaRow("One uppercase letter", hasUpper),
+        _buildCriteriaRow("One lowercase letter", hasLower),
+        _buildCriteriaRow("One number", hasDigit),
+        _buildCriteriaRow("One special character (!@#...)", hasSpecial),
+      ],
+    );
+  }
+
+  Widget _buildCriteriaRow(String text, bool condition) {
+    return Row(
+      children: [
+        Icon(
+          condition ? Icons.check_circle : Icons.cancel,
+          color: condition ? Colors.green : Colors.red,
+          size: 18,
+        ),
+        const SizedBox(width: 8),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 13,
+            color: condition ? Colors.green : Colors.red,
+          ),
+        ),
+      ],
+    );
+  }
+  
 
   Widget _buildUserTypeDropdown() {
     return DropdownButtonFormField<String>(
@@ -185,8 +323,65 @@ class _SignUpScreenState extends State<SignUpScreen> {
     height: 48,
     child: ElevatedButton(
       onPressed: () async {
+      final name = _nameController.text.trim();
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+      final confirmPassword = _confirmPasswordController.text;
+
+      //Validaciones de campos vacíos
+      if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty || selectedUserType == null) {
+        showToast("All fields are required.");
+        return;
+      }
+
+      //Validación de email
+      if (!isValidEmail(email)) {
+        showToast("That's not a valid email format.");
+        return;
+      }
+      if (!isTrustedEmailProvider(email)) {
+        showToast("Please use a trusted email provider (gmail, outlook, etc).");
+        return;
+      }
+
+      //Validación de contraseña segura
+      if (!isStrongPassword(password)) {
+        showToast("Password must include uppercase, lowercase, number and special character (min 8 characters).");
+        return;
+      }
+
+      // ⚠ Confirmación de contraseña
+      if (password != confirmPassword) {
+        showToast("The passwords do not match.");
+        return;
+      }
+
+      //  Si todo pasa, continuar con el registro
+      await _authController.signUp(
+        email,
+        name,
+        password,
+        confirmPassword,
+        selectedUserType!,
+        _headlineController.text.trim(),
+        _descriptionController.text.trim(),
+        _profileImage?.path ?? "", // si no hay imagen seleccionada, queda vacío
+      );
+
+      User? user = await _userController.getUserByEmail(email).first;
+      String? user_id = user?.id;
+
+      //Cambie esto sprint 3!!!!
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SelectCategoriesScreen(userId: user_id!),
+            ),
+          );
+
+
        
-        await _authController.signUp(
+        /* await _authController.signUp(
           _emailController.text,
           _nameController.text,
           _passwordController.text,
@@ -202,7 +397,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           builder: (context) => HomePage(userId: user_id!),
         ),
       );
-
+ */
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.secondary,
@@ -262,8 +457,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
           ),
         ),
       ),
-    ],
-  );
+],
+);
 }
 
 }
