@@ -17,6 +17,7 @@ import 'package:flutter/services.dart';
 import 'firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:dart_g21/views/splash_view.dart';
 
 
 
@@ -37,10 +38,11 @@ await SystemChrome.setPreferredOrientations([
 
 
     debugShowCheckedModeBanner: false,
-    initialRoute: '/signin', // La app inicia en la pantalla de Sign In
+    initialRoute: '/splash', // La app inicia en la pantalla de Sign In
     routes: {
       '/signin': (context) => SignInScreen(),  // Pantalla de inicio de sesión
       '/signup': (context) => SignUpScreen(),  // Pantalla de registro
+      '/splash': (context) => const SplashScreen(),
       '/home': (context) {
       final args = ModalRoute.of(context)!.settings.arguments as String;
       return HomePage(userId: args);
@@ -233,4 +235,5 @@ class _MyHomePageState extends State<MyHomePage> {
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
+
 }

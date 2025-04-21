@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:dart_g21/core/colors.dart';
 import 'package:dart_g21/services/auth_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:dart_g21/services/local_storage_service.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({Key? key}) : super(key: key);
@@ -172,6 +173,10 @@ class _SignInScreenState extends State<SignInScreen> {
             String? user_id = user?.id;
 
         if (user_id != null) {
+          //Guardar en local storage para mantener sesión
+            await LocalStorageService.saveUserId(user_id);
+            print("Guardado en SharedPreferences: $user_id");
+
           Navigator.push(
             context,
             MaterialPageRoute(

@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'package:dart_g21/controllers/auth_controller.dart';
 import 'package:dart_g21/controllers/category_controller.dart';
 import 'package:dart_g21/controllers/interest_controller.dart';
 import 'package:dart_g21/controllers/profile_controller.dart';
@@ -9,8 +9,10 @@ import 'package:dart_g21/models/interest.dart';
 import 'package:dart_g21/models/profile.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/widgets/navigation_bar_host.dart';
-
 import '../controllers/skill_controller.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:dart_g21/services/local_storage_service.dart';
+
 
 class ProfilePage extends StatefulWidget {
   final String userId;
@@ -26,9 +28,22 @@ class _ProfilePageState extends State<ProfilePage> {
   final ProfileController _profileController = ProfileController();
   final CategoryController _categoryController = CategoryController();
   final UserController _userController = UserController();
+  final AuthController _authController = AuthController();
   final double coverHeight = 200;
   final double profileHeight = 180;
   int selectedIndex = 4; // Índice del ícono seleccionado (Profile)
+
+  //Método para salir
+  Future<void> logout(BuildContext context) async {
+  await _authController.signOut();
+  await LocalStorageService.clearUserId();
+
+  Navigator.pushNamedAndRemoveUntil(
+    context,
+    '/signin',
+    (route) => false,
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -78,8 +93,6 @@ class _ProfilePageState extends State<ProfilePage> {
       ],
     );
   }
-
-
 
   Widget buildTop(Profile profile) {
    final bottom = 200.0;
