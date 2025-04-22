@@ -1,6 +1,7 @@
 
 import 'package:dart_g21/repositories/localStorage_repository.dart';
 import 'package:dart_g21/views/categoriesfilter_view.dart';
+import 'package:dart_g21/views/eventdetail_view.dart';
 import 'package:dart_g21/views/chatbot_view.dart';
 import 'package:dart_g21/views/createevents_view.dart';
 import 'package:dart_g21/views/map_view.dart';
@@ -15,11 +16,13 @@ import 'package:dart_g21/views/home_view.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:dart_g21/views/splash_view.dart';
 
 
 
@@ -36,6 +39,9 @@ await SystemChrome.setPreferredOrientations([
   ]);
  final appDocumentDir = await getApplicationDocumentsDirectory();
   await Hive.initFlutter(appDocumentDir.path);
+  //await Hive.initFlutter();
+  await Hive.openBox('profileBox');
+
 
   await LocalStorageRepository().init();
 
@@ -43,10 +49,11 @@ await SystemChrome.setPreferredOrientations([
 
 
     debugShowCheckedModeBanner: false,
-    initialRoute: '/signin', // La app inicia en la pantalla de Sign In
+    initialRoute: '/splash', // La app inicia en la pantalla de Sign In
     routes: {
       '/signin': (context) => SignInScreen(),  // Pantalla de inicio de sesión
       '/signup': (context) => SignUpScreen(),  // Pantalla de registro
+      '/splash': (context) => const SplashScreen(),
       '/home': (context) {
       final args = ModalRoute.of(context)!.settings.arguments as String;
       return HomePage(userId: args);
@@ -60,20 +67,35 @@ await SystemChrome.setPreferredOrientations([
       return MyEventsPage(userId: args);
       },  // Pantalla de eventos
       '/chatBot': (context) => ChatBotPage(title:"ChatBot"),  // Pantalla de chatbot
-      '/mapa': (context) => MapView(),  // Pantalla de mapa
+      '/mapa': (context) {
+        final args = ModalRoute.of(context)!.settings.arguments as String;
+        return MapView(userId: args);
+      },  // Pantalla de mapa
       '/createEvent': (context) {
       final args = ModalRoute.of(context)!.settings.arguments as String;
       return CreateEventScreen(userId: args);
       },  // Pantalla de creación de evento
-      '/searchEvents': (context) => SearchEventView(),  // Pantalla de búsqueda de eventos
+      '/searchEvents': (context) {
+        final args = ModalRoute.of(context)!.settings.arguments as String;
+        return SearchEventView(userId: args);  // Pantalla de búsqueda de eventos
+      },
       '/filterCategory': (context) {
       final args = ModalRoute.of(context)!.settings.arguments as String;
-      return CategoriesFilter(categoryId: args);
-      },  // Pantalla de filtro por categoría
+      return CategoriesFilter(
+        categoryId: args,
+        userId: ModalRoute.of(context)!.settings.arguments as String,
+      ); },  // Pantalla de filtro por categoría
       'selectCategories': (context)  {
       final args = ModalRoute.of(context)!.settings.arguments as String;
       return SelectCategoriesScreen(userId: args);
-      }
+      },
+      '/eventDetail': (context) {
+        final args = ModalRoute.of(context)!.settings.arguments as Map<String, String>;
+        return EventDetailScreen(
+          eventId: args['eventId']!,
+          userId: args['userId']!,
+        );
+      },  // Pantalla de detalles del evento,
     },
   ));
 
@@ -239,4 +261,5 @@ class _MyHomePageState extends State<MyHomePage> {
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
+
 }

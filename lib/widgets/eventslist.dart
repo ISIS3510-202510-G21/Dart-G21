@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dart_g21/views/eventdetail_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import '../controllers/location_controller.dart';
@@ -8,8 +9,9 @@ import '../models/location.dart' as app_models;
 
 class EventsList extends StatefulWidget {
   final Stream<List<Event>> Function() eventsStreamProvider;
+  final String userId; 
+  const EventsList({Key? key, required this.eventsStreamProvider, required this.userId}) : super(key: key);
 
-  const EventsList({Key? key, required this.eventsStreamProvider}) : super(key: key);
 
   @override
   _EventsListState createState() => _EventsListState();
@@ -99,7 +101,18 @@ class _EventsListState extends State<EventsList> {
   }
 
   Widget _buildEventCard(Event event) {
-    return SizedBox(
+    return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EventDetailScreen(
+            eventId: event.id,
+            userId: widget.userId, 
+          ),
+        ),
+);
+}, child: SizedBox(
       width: 257,
       height: 124,
       child: Card(
@@ -207,6 +220,7 @@ class _EventsListState extends State<EventsList> {
           ),
         ),
       ),
+    ),
     );
   }
 

@@ -6,6 +6,7 @@ import 'package:dart_g21/controllers/user_controller.dart';
 import 'package:dart_g21/models/event.dart';
 import 'package:dart_g21/models/profile.dart';
 import 'package:dart_g21/models/user.dart';
+import 'package:dart_g21/views/eventdetail_view.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/core/colors.dart';
 import 'package:dart_g21/widgets/navigation_bar_host.dart';
@@ -185,6 +186,15 @@ void _setupConnectivity() {
       child: InkWell(
         onTap: () {
           print("Evento seleccionado: \${event.name}");
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => EventDetailScreen(
+                eventId: event.id,
+                userId: widget.userId,
+               ),
+            ),
+          );
         },
         borderRadius: BorderRadius.circular(12),
         splashColor: Colors.blue.withOpacity(0.2),

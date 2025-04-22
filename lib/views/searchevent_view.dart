@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:dart_g21/views/eventdetail_view.dart';
 import 'package:dart_g21/widgets/eventcard_view.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/controllers/event_controller.dart';
@@ -16,7 +17,8 @@ import 'package:dart_g21/core/colors.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 class SearchEventView extends StatefulWidget {
-  const SearchEventView({super.key});
+  final String userId;
+  const SearchEventView({super.key, required this.userId});
 
   @override
   State<SearchEventView> createState() => _SearchEventViewState();
@@ -550,12 +552,13 @@ Widget styledDropdown<T>({
                   //return buildEventCard(event, context);
                   return EventCard(event: event, onTap: () {
                     print("Evento seleccionado: ${event.name}");
-                    // Navigator.push(
-                    //       context,
-                    //       MaterialPageRoute(
-                    //         builder: (context) => DetailEventScreen(eventId: event.id), 
-                    //       ),
-                    // );
+                     Navigator.push(
+                           context,
+                           MaterialPageRoute(
+                             builder: (context) => EventDetailScreen(eventId: event.id, userId: widget.userId, 
+                             ), 
+                           ),
+                    );
                   });
                 },
               ),

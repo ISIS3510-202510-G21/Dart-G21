@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_g21/core/colors.dart';
+import 'package:dart_g21/views/myevents_view.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/models/event.dart';
 import 'package:dart_g21/controllers/profile_controller.dart'; 
@@ -178,12 +179,12 @@ class _SuccessfulregistrationViewState extends State<SuccessfulregistrationView>
                                 ],
                               ),
 
-                              const SizedBox(width: 70),
+                              const SizedBox(width: 20),
 
                               // Separador vertical
                               Container(width: 1, height: 30, color: Colors.grey.shade300),
 
-                              const SizedBox(width: 20),
+                              const SizedBox(width: 5),
 
                               Row(
                                 children: [
@@ -307,7 +308,14 @@ class _SuccessfulregistrationViewState extends State<SuccessfulregistrationView>
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () {
-                  Navigator.pushNamed(context, "/myEvents", arguments: widget.userId);
+                   Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MyEventsPage(
+                          userId: widget.userId, 
+          ),
+        ),
+);
                 },
               ),
             )
