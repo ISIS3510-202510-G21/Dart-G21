@@ -131,7 +131,10 @@ class _HomePage extends State<HomePage> {
                     userId: widget.userId),
                 _buildSectionTitle("You Might Like"),
                 EventsList(
-                  eventsStreamProvider: () => _eventController.getRecommendedEventsStreamForUser(widget.userId), userId: widget.userId
+                  eventsStreamProvider: () => isConnected
+                      ?_eventController.getRecommendedEventsStreamForUserOnline(widget.userId)
+                      :_eventController.getRecommendedEventsStreamForUserOffline(),
+                    userId: widget.userId
                 ),
                 SizedBox(height: 20),
               ],
