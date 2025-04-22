@@ -28,23 +28,20 @@ class _MapView extends State<MapView> {
 
   /// Carga los eventos y coloca marcadores en el mapa
   Future<void> _loadEventsAndMarkers() async {
-    List<Event> events = await _eventController
-        .getTopNearbyEventsStream()
-        .first;
+    List<Event> events = await _eventController.getEventsStream().first;
     List<Marker> markerList = [];
 
     for (Event event in events) {
-      final coordinates = await _locationController
-          .getCoordinatesFromLocationId(event.location_id);
-      if (coordinates != null) {
+      final location = await _locationController.getLocationById(event.location_id);
+
+      if (location != null && location.latitude != 0.0 && location.longitude != 0.0) {
         markerList.add(
           Marker(
             markerId: MarkerId(event.id),
-            position: coordinates,
+            position: LatLng(location.latitude, location.longitude),
             infoWindow: InfoWindow(
               title: event.name,
-              snippet: "${event.start_date.day}/${event.start_date
-                  .month}/${event.start_date.year}",
+              snippet: "${event.start_date.day}/${event.start_date.month}/${event.start_date.year}",
             ),
           ),
         );
@@ -57,12 +54,12 @@ class _MapView extends State<MapView> {
     });
   }
 
+
   /// Mueve la cámara al evento seleccionado
   Future<void> _moveCameraToEvent(String locationId) async {
-    final coordinates = await _locationController.getCoordinatesFromLocationId(
-        locationId);
-    if (coordinates != null) {
-      _mapController.animateCamera(CameraUpdate.newLatLng(coordinates));
+    final location = await _locationController.getLocationById(locationId);
+    if (location != null && location.latitude != 0.0 && location.longitude != 0.0) {
+      _mapController.animateCamera(CameraUpdate.newLatLng(LatLng(location.latitude,location.longitude)));
     }
   }
 

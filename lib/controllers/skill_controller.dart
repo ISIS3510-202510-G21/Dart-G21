@@ -24,8 +24,19 @@ class SkillController {
     await _skillRepository.deleteSkill(interestId);
   }
 
-  Future<List<String>> getSkillsByIds(List<String> skillIds) async {
+  /* Future<List<String>> getSkillsByIds(List<String> skillIds) async {
     return await _skillRepository.getSkillsByIds(skillIds);
   }
+ */
+  Future<List<String>> getSkillsByIds(List<String> skillIds) async {
+  List<String> skillNames = [];
+  for (String id in skillIds) {
+    Skill? skill = await getSkillById(id);
+    if (skill != null) {
+      skillNames.add(skill.name);
+    }
+  }
+  return skillNames;
+}
 
 }
