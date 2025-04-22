@@ -42,9 +42,10 @@ class LocalStorageRepository{
 
   Future<void> saveEvents(List<Event> events) async {
     await _lock.synchronized(() async {
-      await _eventBox.clear();
       for (var event in events) {
-        await _eventBox.put(event.id, jsonEncode(event.toJson()));
+        if (!_eventBox.containsKey(event.id)) {
+          await _eventBox.put(event.id, jsonEncode(event.toJson()));
+        }
       }
     });
   }
@@ -64,9 +65,10 @@ class LocalStorageRepository{
 
   Future<void> saveCategories(List<Category_event> categories) async {
     await _lock.synchronized(() async {
-      await _categoryBox.clear();
       for (var category in categories) {
-        await _categoryBox.put(category.id, jsonEncode(category.toJson()));
+        if (!_categoryBox.containsKey(category.id)) {
+          await _categoryBox.put(category.id, jsonEncode(category.toJson()));
+        }
       }
     });
   }
@@ -78,9 +80,11 @@ class LocalStorageRepository{
 
   Future<void> saveSkills(List<Skill> skills) async {
     await _lock.synchronized(() async {
-      await _skillBox.clear();
       for (var skill in skills) {
-        await _skillBox.put(skill.id, jsonEncode(skill.toJson()));
+        if (!_skillBox.containsKey(skill.id)) {
+          await _skillBox.put(skill.id, jsonEncode(skill.toJson()));
+
+        }
       }
     });
   }
@@ -92,9 +96,10 @@ class LocalStorageRepository{
 
   Future<void> saveLocations(List<Location> locations) async {
     await _lock.synchronized(() async {
-      await _locationBox.clear();
       for (var loc in locations) {
-        await _locationBox.put(loc.id, jsonEncode(loc.toJson()));
+        if (!_locationBox.containsKey(loc.id)) {
+          await _locationBox.put(loc.id, jsonEncode(loc.toJson()));
+        }
       }
     });
   }
@@ -109,7 +114,9 @@ class LocalStorageRepository{
     await _lock.synchronized(() async {
       await _recommendationBox.clear();
       for (var event in events) {
-        await _recommendationBox.put(event.id, jsonEncode(event.toJson()));
+        if (!_recommendationBox.containsKey(event.id)) {
+          await _recommendationBox.put(event.id, jsonEncode(event.toJson()));
+        }
       }
     });
   }
@@ -147,6 +154,7 @@ class LocalStorageRepository{
       'followers': followersJson != null ? List<String>.from(jsonDecode(followersJson)) : [],
       'following': followingJson != null ? List<String>.from(jsonDecode(followingJson)) : [],
 };
+
 }
 
 
