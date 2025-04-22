@@ -295,8 +295,9 @@ Stream<List<Event>> getRecommendedEventsStreamForUser(String userId) {
     return result;
   }
   
-
-
-
+  //Suscribirse a un evento 
+  Future<void> subscribeUserToEvent(String eventId, String userId) async {
+  await _eventRepository.addAttendeeToEvent(eventId, userId);
+  }
 
 }
