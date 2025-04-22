@@ -44,25 +44,55 @@ class _ProfilePageState extends State<ProfilePage> {
   String offlineFollowing = "";
   Profile profile_user = Profile(id: '', user_ref: '', headline: '', events_associated: [], picture: '', description: '', followers: [], following: [], interests: []);
 
-  @override
+   @override
   void initState() {
     super.initState();
     _setupConnectivity();
-    _initHive();
+    _loadInitialData();
+  }
+ Future<void> _loadInitialData() async {
+    if (isConnected) {
+      _loadOnlineData();
+    } else {
+      _loadOfflineData();
+    }
   }
 
-  Future<void> _initHive() async {
-    await Hive.initFlutter();
-    profileBox = await Hive.openBox('profileBox');
-    loadOfflineData();
+    Future<void> _loadOnlineData() async {
+    
+    final profileStream = _profileController.getProfileByUserId(widget.userId);
+    profileStream.listen((profile) async {
+     
+      if (profile != null) {
+        setState(() {
+          profile_user = profile;
+        });
+
+        // Guardar datos en el almacenamiento local
+        await _profileController.saveProfileToLocal(widget.userId, profile);
+
+        // Guardar seguidores y seguidos
+        await _profileController.saveFollowersAndFollowingToLocal(
+          widget.userId,
+          profile.followers,
+          profile.following,
+        );
+      }
+    });
   }
 
-  void loadOfflineData() {
-    offlineName = profileBox.get('${widget.userId}_name', defaultValue: '');
-    offlineHeadline = profileBox.get('${widget.userId}_headline', defaultValue: '');
-    offlineDescription = profileBox.get('${widget.userId}_description', defaultValue: '');
-    offlineFollowers = profileBox.get('${widget.userId}_followers', defaultValue: '0');
-    offlineFollowing = profileBox.get('${widget.userId}_following', defaultValue: '0');
+   Future<void> _loadOfflineData() async {
+    final profile = await _profileController.getProfileFromLocal(widget.userId);
+    if (profile != null) {
+      setState(() {
+        profile_user = profile;
+        offlineName = profile_user.user_ref;
+        offlineHeadline = profile_user.headline;
+        offlineDescription = profile_user.description;
+        offlineFollowers = profile_user.followers.length.toString();
+        offlineFollowing = profile_user.following.length.toString();
+      });
+    }
   }
 
   void _setupConnectivity() {
@@ -71,7 +101,11 @@ class _ProfilePageState extends State<ProfilePage> {
       final prev = isConnected;
       setState(() {
         isConnected = !results.contains(ConnectivityResult.none);
-        if (!isConnected) loadOfflineData();
+        if (!isConnected) {
+        _loadOfflineData();
+        } else {
+          _loadOnlineData();
+        }
       });
       if (!prev && isConnected) {
         // ScaffoldMessenger.of(context).showSnackBar(
@@ -117,7 +151,7 @@ class _ProfilePageState extends State<ProfilePage> {
   );
 }
 
-  @override
+   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
@@ -139,38 +173,12 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         Expanded(
           child: isConnected
-              ? StreamBuilder<Profile?>(
-                  stream: _profileController.getProfileByUserId(widget.userId),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    if (snapshot.hasError) {
-                      return Center(child: Text("Error: \${snapshot.error}"));
-                    }
-                    if (!snapshot.hasData || snapshot.data == null) {
-                      return const Center(child: Text("No se encontró el perfil"));
-                    }
-
-                    Profile profile = snapshot.data!;
-                    profile_user = profile;
-
-                    _userController.getUserById(profile.user_ref).then((user) {
-                      profileBox.put('${widget.userId}_name', user?.name ?? '');
-                      profileBox.put('${widget.userId}_headline', profile.headline);
-                      profileBox.put('${widget.userId}_description', profile.description);
-                      profileBox.put('${widget.userId}_followers', profile.followers.length.toString());
-                      profileBox.put('${widget.userId}_following', profile.following.length.toString());
-                    });
-
-                    return ListView(
-                      padding: EdgeInsets.zero,
-                      children: <Widget>[
-                        buildTop(profile),
-                        buildContent(profile),
-                      ],
-                    );
-                  },
+              ? ListView(
+                  padding: EdgeInsets.zero,
+                  children: <Widget>[
+                    buildTop(profile_user),
+                    buildContent(profile_user),
+                  ],
                 )
               : ListView(
                   padding: EdgeInsets.zero,
@@ -183,6 +191,7 @@ class _ProfilePageState extends State<ProfilePage> {
       ],
     );
   }
+
 
   Widget buildTop(Profile profile) {
     final bottom = 200.0;
@@ -415,7 +424,7 @@ Widget buildProfileImage(String? imagePath) {
     return Chip(
       label: Text(label, style: TextStyle(color: AppColors.primary, fontSize: 14)),
       backgroundColor: color,
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
- );
- }
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical:6),
+);
+}
 }

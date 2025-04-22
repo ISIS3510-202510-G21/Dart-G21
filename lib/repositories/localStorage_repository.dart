@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:dart_g21/models/profile.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:dart_g21/models/event.dart';
 import 'package:dart_g21/models/category.dart';
@@ -18,6 +19,8 @@ class LocalStorageRepository{
   late Box _skillBox;
   late Box _locationBox;
   late Box _recommendationBox;
+  late Box _profileBox;
+
 
   final Lock _lock = Lock();
 
@@ -28,6 +31,7 @@ class LocalStorageRepository{
     _skillBox = await Hive.openBox('local_skills');
     _locationBox = await Hive.openBox('local_locations');
     _recommendationBox = await Hive.openBox('local_recommends');
+    _profileBox = await Hive.openBox('local_profile');
   }
 
   /// ----------------------- Events ------------------------------
@@ -109,6 +113,42 @@ class LocalStorageRepository{
       }
     });
   }
+
+// ----------------------- Profile ------------------------------
+
+  Future<void> saveProfile(String userId, Profile profile) async {
+    await _lock.synchronized(() async {
+      await _profileBox.clear();
+      await _profileBox.put(userId, jsonEncode(profile.toJson()));
+    });
+  }
+
+   Future<Profile?> getProfileByUserId(String userId) async {
+    final profileJson = _profileBox.get(userId);
+    if (profileJson != null) {
+      return Profile.fromJson(Map<String, dynamic>.from(jsonDecode(profileJson)));
+    }
+    return null;
+  }
+
+   Future<void> saveFollowersAndFollowing(String userId, List<String> followers, List<String> following) async {
+    await _lock.synchronized(() async {
+      await _profileBox.clear();
+      await _profileBox.put('${userId}_followers', jsonEncode(followers));
+      await _profileBox.put('${userId}_following', jsonEncode(following));
+    });
+  
+  }
+
+  Future<Map<String, List<String>>> getFollowersAndFollowing(String userId) async {
+    final followersJson = _profileBox.get('${userId}_followers');
+    final followingJson = _profileBox.get('${userId}_following');
+    return {
+      'followers': followersJson != null ? List<String>.from(jsonDecode(followersJson)) : [],
+      'following': followingJson != null ? List<String>.from(jsonDecode(followingJson)) : [],
+};
+}
+
 
 
 
