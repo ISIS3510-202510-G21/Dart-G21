@@ -94,10 +94,7 @@ class EventController {
           ..sort((a, b) => a.start_date.compareTo(b.start_date));
 
         final top5 = upcoming.take(5).toList();
-
-        for (var e in top5) {
-          _localStorageRepository.saveEvents([e]);
-        }
+        _localStorageRepository.saveEvents(events);
         yield upcoming;
       }
   }
@@ -158,82 +155,57 @@ class EventController {
   }
 
   ///Obtener eventos proximos a un usuario según gps
-  Stream<List<Event>> getTopNearbyEventsStream(String userCity) async* {
-    try {
-      final connected = await hasConnection();
-      final box = await Hive.openBox('local_nearby_events_${userCity.toLowerCase()}');
+  Stream<List<Event>> getTopNearbyEventsOnlineStream(String userCity) async* {
+    await for (List<Event> events in _eventRepository.getEventsStream()) {
+      if (events.isEmpty) {
+        continue;
+      }
+      List<Event> cityEvents = [];
 
-      if (connected) {
-        // Modo online
-        await for (List<Event> events in _eventRepository.getEventsStream()) {
-          if (events.isEmpty) {
+      for (Event event in events) {
+          if (event.location_id.isEmpty) continue;
+
+          app_models.Location? eventLocation =
+            await _locationController.getLocationById(event.location_id);
+
+          if (eventLocation == null) {
             continue;
           }
 
-          List<Event> cityEvents = [];
-
-          for (Event event in events) {
-            try {
-              if (event.location_id == null || event.location_id.isEmpty) continue;
-
-              app_models.Location? eventLocation =
-              await _locationController.getLocationById(event.location_id);
-
-              if (eventLocation == null || eventLocation.city == null) {
-                continue;
-              }
-
-              if (eventLocation.city.toLowerCase().trim() ==
-                  userCity.toLowerCase().trim()) {
+          if (eventLocation.city.toLowerCase().trim() ==
+              userCity.toLowerCase().trim()) {
                 cityEvents.add(event);
-                // Guardar en caché
-                await box.put(event.id, jsonEncode(event.toJson()));
               }
-            } catch (error) {
-              print("Error procesando evento cercano: $error");
-              continue;
-            }
           }
 
           if (cityEvents.isEmpty) {
-            // Si no hay eventos en la ciudad del usuario, usar eventos de Bogotá
-            print("No hay eventos en $userCity, mostrando eventos de Bogotá");
             yield* getBogotaEventsStream();
           } else {
-            final topEvents = cityEvents.take(10).toList();
-            print("Encontrados ${topEvents.length} eventos cercanos en $userCity");
+            final topEvents = cityEvents.toList();
+            final top5 = topEvents.take(5).toList();
+            _localStorageRepository.saveEvents(top5);
             yield topEvents;
           }
         }
-      } else {
-        // Modo offline - usar caché
-        print("Sin conexión, usando eventos en caché de $userCity");
+  }
 
-        try {
-          final cached = box.values
-              .map((e) => Event.fromJson(Map<String, dynamic>.from(jsonDecode(e.toString()))))
-              .toList()
-            ..sort((a, b) => a.start_date.compareTo(b.start_date));
 
-          if (cached.isEmpty) {
-            // Si no hay eventos en caché para esta ciudad, intentar con eventos de Bogotá en caché
-            print("No hay eventos en caché para $userCity, intentando con Bogotá");
-            yield* getBogotaEventsStream();
-          } else {
-            final topCached = cached.take(10).toList();
-            print("Cargados ${topCached.length} eventos cercanos desde caché");
-            yield topCached;
-          }
-        } catch (cacheError) {
-          print("Error al cargar eventos cercanos de caché: $cacheError");
-          // Si hay error al cargar el caché, intentar con eventos de Bogotá
-          yield* getBogotaEventsStream();
+  Stream <List<Event>> getTopNearbyEventsOfflineStream(String userCity) async* {
+    List<Event> cached=_localStorageRepository.getEvents();
+    List<Event> nearby = [];
+    for (int i = 0; i < cached.length; i++) {
+        Event e=cached[i];
+        if (e.location_id.isEmpty) continue;
+        app_models.Location? eventLocation =
+        await _locationController.getLocationById(e.location_id);
+        if (eventLocation == null) {
+          continue;
         }
-      }
-    } catch (error) {
-      print("Error general en getTopNearbyEventsStream: $error");
-      // En caso de error general, intentar con eventos de Bogotá
-      yield* getBogotaEventsStream();
+        if (eventLocation.city.toLowerCase().trim() ==
+            userCity.toLowerCase().trim()) {
+          nearby.add(e);
+        }
+    yield nearby.take(5).toList();
     }
   }
 

@@ -125,7 +125,10 @@ class _HomePage extends State<HomePage> {
                 ),
                 _buildSectionTitle("Nearby Events"),
                 EventsList(
-                  eventsStreamProvider: () => _eventController.getTopNearbyEventsStream(_location),userId: widget.userId),
+                  eventsStreamProvider: () => isConnected
+                      ?_eventController.getTopNearbyEventsOnlineStream(_location)
+                      : _eventController.getTopNearbyEventsOfflineStream(_location),
+                    userId: widget.userId),
                 _buildSectionTitle("You Might Like"),
                 EventsList(
                   eventsStreamProvider: () => _eventController.getRecommendedEventsStreamForUser(widget.userId), userId: widget.userId
