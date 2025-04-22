@@ -1,5 +1,6 @@
 import 'dart:collection';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 import 'package:dart_g21/views/chatbot_view.dart';
@@ -15,6 +16,7 @@ import '../controllers/user_controller.dart';
 import '../models/category.dart';
 import '../models/event.dart';
 import '../models/user.dart';
+import '../widgets/eventslist.dart';
 import '../widgets/navigation_bar_attendant.dart';
 import '../widgets/navigation_bar_host.dart';
 import '../core/colors.dart';
@@ -110,11 +112,17 @@ class _HomePage extends State<HomePage> {
                 _buildBarCategories(),
                 SizedBox(height: 10),
                 _buildSectionTitle("Upcoming Events"),
-                _buildUpcomingEventsList(),
+                EventsList(
+                  eventsStreamProvider: () => _eventController.getUpcomingEventsStream(),
+                ),
                 _buildSectionTitle("Nearby Events"),
-                _buildNearbyEventsList(),
+                EventsList(
+                  eventsStreamProvider: () => _eventController.getTopNearbyEventsStream(_location),
+                ),
                 _buildSectionTitle("You Might Like"),
-                _buildNearbyEventsRecommend(),
+                EventsList(
+                  eventsStreamProvider: () => _eventController.getRecommendedEventsStreamForUser(widget.userId),
+                ),
                 SizedBox(height: 20),
               ],
             ),
@@ -340,132 +348,7 @@ class _HomePage extends State<HomePage> {
     );
   }
 
-  /// event card ACTUALIZADA!
-  Widget _buildEventCard(Event event) {
-    return GestureDetector(
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => EventDetailScreen(
-            eventId: event.id,
-            userId: widget.userId, 
-          ),
-        ),
-      );
-    },
-    child: SizedBox(
-      width: 257,
-      height: 124,
-      child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        margin: const EdgeInsets.all(11),
-        elevation: 5,
-        color: AppColors.primary,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              if (event.image.isNotEmpty && Uri.tryParse(event.image)?.hasAbsolutePath == true)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: CachedNetworkImage(
-                    imageUrl: event.image,
-                    width: 220,
-                    height: 106,
-                    fit: BoxFit.cover,
-                    cacheManager: CacheManager(
-                      Config(
-                        'customCacheKey',
-                        stalePeriod: const Duration(days: 7),
-                        maxNrOfCacheObjects: 100,
-                      ),
-                    ),
-                    placeholder: (context, url) => Container(
-                      width: 220, 
-                      height: 106, 
-                      color: Colors.grey.shade200, 
-                      child: const Center(child: CircularProgressIndicator(strokeWidth: 2))),
-                    errorWidget: (context, url, error) => Container(
-                      width: 220, 
-                      height: 106, 
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(8),
-                        ),
-                       child: const Icon(Icons.image_not_supported, size: 40, color: Colors.grey),),
-                  ),
-                ),
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      event.name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 5),
-                    Row(
-                      children: [
-                        const Icon(Icons.calendar_today, size: 16, color: AppColors.secondaryText),
-                        const SizedBox(width: 5),
-                        Text(
-                          "${event.start_date.day}/${event.start_date.month}/${event.start_date.year}",
-                          style: const TextStyle(fontSize: 10, color: AppColors.secondaryText),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 5),
 
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on, size: 16, color: AppColors.secondaryText),
-                        const SizedBox(width: 5),
-                        Expanded(
-                          child: FutureBuilder<app_models.Location?>(
-                            future: LocationController().getLocationById(event.location_id),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState == ConnectionState.waiting) {
-                                return const Text(
-                                  "Loading location...",
-                                  style: TextStyle(fontSize: 10, color: AppColors.secondaryText),
-                                );
-                              }
-                              if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
-                                return const Text(
-                                  "Unknown location",
-                                  style: TextStyle(fontSize: 10, color: AppColors.secondaryText),
-                                );
-                              }
-                              return Text(
-                                snapshot.data!.address,
-                                style: const TextStyle(fontSize: 10, color: AppColors.secondaryText),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    )
-    );
-    
-  }
   /// title section for events
   Widget _buildSectionTitle(String title) {
     return Padding(
@@ -479,157 +362,6 @@ class _HomePage extends State<HomePage> {
       ),
     );
   }
-
-  /// upcoming events list
-  Widget _buildUpcomingEventsList() {
-    return SizedBox(
-      height: 220,
-      child: StreamBuilder<List<Event>>(
-        stream: EventController().getTop10UpcomingEventsStream(),
-
-        builder: (context, snapshot) {
-
-          print('!!!!1');
-          print(EventController().getTop10UpcomingEventsStream());
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return const Center(child: Text("error at charging the events"));
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text("No events"));
-          }
-
-          List<Event> events = snapshot.data!;
-
-          return ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: events.length,
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: const EdgeInsets.only(left: 5.0),
-                child: _buildEventCard(events[index]),
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
-
-  /// nearby events list
-  Widget _buildNearbyEventsList() {
-    return SizedBox(
-      height: 220,
-      child: StreamBuilder<List<Event>>(
-        stream: EventController().getTopNearbyEventsStream(), 
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                "Error al cargar eventos cercanos: ${snapshot.error}",
-                style: TextStyle(color: Colors.red),
-              ),
-            );
-          }
-          if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) {
-            return const Center(child: Text("No hay eventos cercanos disponibles"));
-          }
-
-          List<Event> events = snapshot.data!;
-
-          return ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: events.length,
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: const EdgeInsets.only(left: 5.0),
-                child: _buildEventCard(events[index]),
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
-
- Widget _buildNearbyEventsRecommend() {
-  return SizedBox(
-    height: 220,
-    child: StreamBuilder<List<Event>>(
-      stream: EventController().getRecommendedEventsStreamForUser(widget.userId),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(
-            child: Text(
-              "Error al cargar eventos cercanos: ${snapshot.error}",
-              style: TextStyle(color: Colors.red),
-            ),
-          );
-        }
-
-        List<Event> events = snapshot.data ?? []; 
-
-        if (events.isEmpty) {
-          return StreamBuilder<List<Event>>(
-            stream: EventController().getEventsStream(), 
-            builder: (context, allSnapshot) {
-              if (allSnapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (allSnapshot.hasError) {
-                return Center(
-                  child: Text(
-                    "Error al cargar eventos: ${allSnapshot.error}",
-                    style: TextStyle(color: Colors.red),
-                  ),
-                );
-              }
-
-              List<Event> allEvents = allSnapshot.data ?? [];
-
-              if (allEvents.isEmpty) {
-                return const Center(child: Text("No hay eventos disponibles"));
-              }
-
-              allEvents = allEvents.take(10).toList();
-
-              return ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: allEvents.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.only(left: 5.0),
-                    child: _buildEventCard(allEvents[index]),
-                  );
-                },
-              );
-            },
-          );
-        }
-
-        return ListView.builder(
-          scrollDirection: Axis.horizontal,
-          itemCount: events.length,
-          itemBuilder: (context, index) {
-            return Padding(
-              padding: const EdgeInsets.only(left: 5.0),
-              child: _buildEventCard(events[index]),
-            );
-          },
-        );
-      },
-    ),
-  );
-}
-
 
   Widget _buildChatbotButton() {
     return Positioned(
@@ -651,10 +383,5 @@ class _HomePage extends State<HomePage> {
       ),
     );
   }
-
-
-
-
-
 
 }

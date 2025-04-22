@@ -1,4 +1,5 @@
 
+import 'package:dart_g21/repositories/localStorage_repository.dart';
 import 'package:dart_g21/views/categoriesfilter_view.dart';
 import 'package:dart_g21/views/eventdetail_view.dart';
 import 'package:dart_g21/views/chatbot_view.dart';
@@ -41,6 +42,8 @@ await SystemChrome.setPreferredOrientations([
   //await Hive.initFlutter();
   await Hive.openBox('profileBox');
 
+
+  await LocalStorageRepository().init();
 
   runApp(MaterialApp(
 
