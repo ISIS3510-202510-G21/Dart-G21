@@ -440,7 +440,7 @@ Widget _buildTimeField(String label, TimeOfDay? time, bool isFromTime) {
           border: _buildInputBorder(),
         ),
         value: selectedCategory,
-        hint: const Text("Choose the category", style: TextStyle(color: AppColors.secondaryText)),
+        hint: const Text("Choose the category", style: TextStyle(color: Color(0xFF8D8D8D), fontSize: 16)),
         items: categoryList.map((category) {
           return DropdownMenuItem<String>(
             value: category.id, //Guardas el ID directamente
