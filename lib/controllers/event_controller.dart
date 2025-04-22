@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dart_g21/models/event.dart';
 import 'package:dart_g21/repositories/event_repository.dart';
+import 'package:dart_g21/repositories/localStorage_repository.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
@@ -13,6 +14,7 @@ import '../controllers/location_controller.dart';
 class EventController {
   final EventRepository _eventRepository = EventRepository();
   final LocationController _locationController = LocationController();
+  final LocalStorageRepository _localStorageRepository=LocalStorageRepository();
 
   Stream<List<Event>> getEventsStream() {
     return _eventRepository.getEventsStream();
@@ -84,31 +86,28 @@ class EventController {
 
 
   ///Obtener eventos proximos a un usuario
-  Stream<List<Event>> getUpcomingEventsStream() async* {
-    final connected = await hasConnection();
-    final box = await Hive.openBox('local_events');
-    if (connected) {
+  Stream<List<Event>> getUpcomingEventsOnlineStream() async* {
       await for (final events in getEventsStream()) {
         List<Event> upcoming = events
             .where((e) => e.start_date.isAfter(DateTime.now()))
             .toList()
           ..sort((a, b) => a.start_date.compareTo(b.start_date));
 
-        final top5 = upcoming.take(5).toList();;
+        final top5 = upcoming.take(5).toList();
 
         for (var e in top5) {
-          box.put(e.id, jsonEncode(e.toJson()));
+          _localStorageRepository.saveEvents([e]);
         }
         yield upcoming;
       }
-    } else {
-      final cached = box.values
-          .map((e) => Event.fromJson(Map<String, dynamic>.from(jsonDecode(e))))
-          .toList()
-        ..sort((a, b) => a.start_date.compareTo(b.start_date));
+  }
 
-      yield cached.take(5).toList();
-    }
+  Stream <List<Event>> getUpcomingEventsOfflineStream() async* {
+    final cached= _localStorageRepository.getEvents()
+        .where((e) => e.start_date.isAfter(DateTime.now())).toList()
+      ..sort((a, b) => a.start_date.compareTo(b.start_date));
+
+    yield cached.take(5).toList();
   }
 
   ///Obtener ciudad del usuario
