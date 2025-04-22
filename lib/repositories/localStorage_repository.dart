@@ -154,6 +154,7 @@ class LocalStorageRepository{
       'followers': followersJson != null ? List<String>.from(jsonDecode(followersJson)) : [],
       'following': followingJson != null ? List<String>.from(jsonDecode(followingJson)) : [],
 };
+
 }
 
 
