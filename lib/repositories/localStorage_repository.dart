@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'package:dart_g21/models/profile.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:dart_g21/models/event.dart';
 import 'package:dart_g21/models/category.dart';
 import 'package:dart_g21/models/location.dart';
 import 'package:dart_g21/models/skill.dart';
+import 'package:synchronized/synchronized.dart';
 
 class LocalStorageRepository{
   static final LocalStorageRepository _instance = LocalStorageRepository._internal();
@@ -17,6 +19,10 @@ class LocalStorageRepository{
   late Box _skillBox;
   late Box _locationBox;
   late Box _recommendationBox;
+  late Box _profileBox;
+
+
+  final Lock _lock = Lock();
 
   Future<void> init() async {
     await Hive.initFlutter();
@@ -25,6 +31,7 @@ class LocalStorageRepository{
     _skillBox = await Hive.openBox('local_skills');
     _locationBox = await Hive.openBox('local_locations');
     _recommendationBox = await Hive.openBox('local_recommends');
+    _profileBox = await Hive.openBox('local_profile');
   }
 
   /// ----------------------- Events ------------------------------
@@ -34,10 +41,12 @@ class LocalStorageRepository{
   }
 
   Future<void> saveEvents(List<Event> events) async {
-    await _eventBox.clear();
-    for (var event in events) {
-      await _eventBox.put(event.id, jsonEncode(event.toJson()));
-    }
+    await _lock.synchronized(() async {
+      await _eventBox.clear();
+      for (var event in events) {
+        await _eventBox.put(event.id, jsonEncode(event.toJson()));
+      }
+    });
   }
 
   Future<Event?> getEventById(String eventId) async {
@@ -54,10 +63,12 @@ class LocalStorageRepository{
   }
 
   Future<void> saveCategories(List<Category_event> categories) async {
-    await _categoryBox.clear();
-    for (var category in categories) {
-      await _categoryBox.put(category.id, jsonEncode(category.toJson()));
-    }
+    await _lock.synchronized(() async {
+      await _categoryBox.clear();
+      for (var category in categories) {
+        await _categoryBox.put(category.id, jsonEncode(category.toJson()));
+      }
+    });
   }
 
   /// ----------------------- Skills ------------------------------
@@ -66,10 +77,12 @@ class LocalStorageRepository{
   }
 
   Future<void> saveSkills(List<Skill> skills) async {
-    await _skillBox.clear();
-    for (var skill in skills) {
-      await _skillBox.put(skill.id, jsonEncode(skill.toJson()));
-    }
+    await _lock.synchronized(() async {
+      await _skillBox.clear();
+      for (var skill in skills) {
+        await _skillBox.put(skill.id, jsonEncode(skill.toJson()));
+      }
+    });
   }
 
   /// ----------------------- Locations ------------------------------
@@ -78,10 +91,12 @@ class LocalStorageRepository{
   }
 
   Future<void> saveLocations(List<Location> locations) async {
-    await _locationBox.clear();
-    for (var loc in locations) {
-      await _locationBox.put(loc.id, jsonEncode(loc.toJson()));
-    }
+    await _lock.synchronized(() async {
+      await _locationBox.clear();
+      for (var loc in locations) {
+        await _locationBox.put(loc.id, jsonEncode(loc.toJson()));
+      }
+    });
   }
 
   /// ----------------------- Recommendations ------------------------------
@@ -91,11 +106,50 @@ class LocalStorageRepository{
   }
 
   Future<void> saveRecommends(List<Event> events) async {
-    await _recommendationBox.clear();
-    for (var event in events) {
-      await _recommendationBox.put(event.id, jsonEncode(event.toJson()));
-    }
+    await _lock.synchronized(() async {
+      await _recommendationBox.clear();
+      for (var event in events) {
+        await _recommendationBox.put(event.id, jsonEncode(event.toJson()));
+      }
+    });
   }
+
+// ----------------------- Profile ------------------------------
+
+  Future<void> saveProfile(String userId, Profile profile) async {
+    await _lock.synchronized(() async {
+      await _profileBox.clear();
+      await _profileBox.put(userId, jsonEncode(profile.toJson()));
+    });
+  }
+
+   Future<Profile?> getProfileByUserId(String userId) async {
+    final profileJson = _profileBox.get(userId);
+    if (profileJson != null) {
+      return Profile.fromJson(Map<String, dynamic>.from(jsonDecode(profileJson)));
+    }
+    return null;
+  }
+
+   Future<void> saveFollowersAndFollowing(String userId, List<String> followers, List<String> following) async {
+    await _lock.synchronized(() async {
+      await _profileBox.clear();
+      await _profileBox.put('${userId}_followers', jsonEncode(followers));
+      await _profileBox.put('${userId}_following', jsonEncode(following));
+    });
+  
+  }
+
+  Future<Map<String, List<String>>> getFollowersAndFollowing(String userId) async {
+    final followersJson = _profileBox.get('${userId}_followers');
+    final followingJson = _profileBox.get('${userId}_following');
+    return {
+      'followers': followersJson != null ? List<String>.from(jsonDecode(followersJson)) : [],
+      'following': followingJson != null ? List<String>.from(jsonDecode(followingJson)) : [],
+};
+}
+
+
 
 
 }

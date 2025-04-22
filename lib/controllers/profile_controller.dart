@@ -1,8 +1,10 @@
 import 'package:dart_g21/models/profile.dart';
+import 'package:dart_g21/repositories/localStorage_repository.dart';
 import 'package:dart_g21/repositories/profile_repository.dart';
 
 class ProfileController {
   final ProfileRepository _profileRepository = ProfileRepository();
+  final LocalStorageRepository _localStorageRepository = LocalStorageRepository();
 
   Stream<List<Profile>> getProfilesStream() {
     return _profileRepository.getProfilesStream();
@@ -57,6 +59,41 @@ class ProfileController {
   Future<String?> getProfileIdFromUserId(String userId) async {
   return await _profileRepository.getProfileIdByUserId(userId);
   }
+
+  Future<void> saveProfileToLocal(String userId, Profile profile) async {
+    try {
+      await _localStorageRepository.saveProfile(userId, profile);
+    } catch (e) {
+      print("Error al guardar el perfil en el almacenamiento local: $e");
+    }
+  }
+
+  Future<Profile?> getProfileFromLocal(String userId) async {
+    try {
+      return _localStorageRepository.getProfileByUserId(userId);
+    } catch (e) {
+      print("Error al obtener el perfil desde el almacenamiento local: $e");
+      return null;
+    }
+  }
+
+  Future<void> saveFollowersAndFollowingToLocal(String userId, List<String> followers, List<String> following) async {
+    try {
+      await _localStorageRepository.saveFollowersAndFollowing(userId, followers, following);
+    } catch (e) {
+      print("Error al guardar seguidores y seguidos en el almacenamiento local: $e");
+    }
+  }
+
+
+  Future<Map<String, List<String>>> getFollowersAndFollowingFromLocal(String userId) async {
+    try {
+      return _localStorageRepository.getFollowersAndFollowing(userId);
+    } catch (e) {
+      print("Error al obtener seguidores y seguidos desde el almacenamiento local: $e");
+      return {'followers': [], 'following':[]};
+}
+}
 
 
 }
