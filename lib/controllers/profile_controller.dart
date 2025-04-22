@@ -95,5 +95,22 @@ class ProfileController {
 }
 }
 
+  Future<void> saveUserNameToLocal(String userId, String userName) async {
+    try {
+      await _localStorageRepository.saveUserName(userId, userName);
+    } catch (e) {
+      print("Error al guardar el nombre de usuario en el almacenamiento local: $e");
+    }
+  }
+
+  Future<String?> getUserNameFromLocal(String userId) async {
+    try {
+      return await _localStorageRepository.getUserName(userId);
+    } catch (e) {
+      print("Error al obtener el nombre de usuario desde el almacenamiento local: $e");
+      return null;
+    }
+  }
+
 
 }

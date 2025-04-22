@@ -51,86 +51,94 @@ class _SearchEventViewState extends State<SearchEventView> {
   void initState() {
     super.initState();
     _setupConnectivity();
-    _checkInitialConnectivity();
-    initHiveAndLoad();
+    _checkInitialConnectivityAndLoad(); 
   }
 
-  void _setupConnectivity() {
-    _connectivity = Connectivity();
-    _connectivitySubscription = _connectivity.onConnectivityChanged.listen((List<ConnectivityResult> results) async {
-      final prev = isConnected;
-      final currentlyConnected = !results.contains(ConnectivityResult.none);
+void _setupConnectivity() {
+  _connectivity = Connectivity();
+  _connectivitySubscription = _connectivity.onConnectivityChanged.listen((List<ConnectivityResult> results) async {
+    final prev = isConnected;
+    final currentlyConnected = !results.contains(ConnectivityResult.none);
 
-      if (prev != currentlyConnected) {
-        setState(() {
-          isConnected = currentlyConnected;
-        });
+    if (prev != currentlyConnected) {
+      setState(() {
+        isConnected = currentlyConnected;
+      });
 
-        await initHiveAndLoad();
+      //Recarga datos según el nuevo estado de conexión
+      await initHiveAndLoad();
 
-        if (isConnected) {
-          // ScaffoldMessenger.of(context).showSnackBar(
-          //   SnackBar(
-          //     content: const Text("Connection Restored", style: TextStyle(color: AppColors.primary, fontSize: 16)),
-          //     backgroundColor: const Color.fromARGB(255, 37, 108, 39),
-          //     behavior: SnackBarBehavior.floating,
-          //     shape: RoundedRectangleBorder(
-          //       borderRadius: BorderRadius.circular(12),
-          //     ),
-          //   ),
-          // );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text("Connection lost, Offline mode activated", style: TextStyle(color: AppColors.primary, fontSize: 16)),
-              backgroundColor: AppColors.buttonRed,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          );
-        }
+      if (isConnected) {
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: const Text("Connection Restored", style: TextStyle(color: AppColors.primary, fontSize: 16)),
+        //     backgroundColor: const Color.fromARGB(255, 37, 108, 39),
+        //     behavior: SnackBarBehavior.floating,
+        //     shape: RoundedRectangleBorder(
+        //       borderRadius: BorderRadius.circular(12),
+        //     ),
+        //   ),
+        // );
+      } else {
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: const Text("Connection lost, Offline mode activated", style: TextStyle(color: AppColors.primary, fontSize: 16)),
+        //     backgroundColor: AppColors.buttonRed,
+        //     behavior: SnackBarBehavior.floating,
+        //     shape: RoundedRectangleBorder(
+        //       borderRadius: BorderRadius.circular(12),
+        //     ),
+        //   ),
+        // );
       }
+    }
+  });
+}
+
+
+Future<void> _checkInitialConnectivityAndLoad() async {
+  final result = await Connectivity().checkConnectivity();
+  setState(() {
+    isConnected = !result.contains(ConnectivityResult.none);
+  });
+  print("Estado inicial de conexión corregido: $isConnected");
+
+  await initHiveAndLoad(); // Ahora sí, después de saber el estado real
+}
+
+Future<List<Event>> getCachedEvents10() async {
+  final events = await _eventController.getCachedEvents();
+  return events.take(10).toList(); // Limitar a 10 eventos aquí
+}
+Future<void> initHiveAndLoad() async {
+  if (!isConnected) {
+    final local = await getCachedEvents10(); 
+    localCategories = await _categoryController.getCachedCategories();
+    localSkills = await _skillController.getCachedSkills();
+    localLocations = await _locationController.getCachedLocations();
+    local.sort((a, b) => a.start_date.compareTo(b.start_date)); 
+    setState(() {
+      allEvents = local;
+      filteredEvents = local; 
+    });
+  } else {
+    final categories = await _categoryController.getCategoriesStream().first;
+    final skills = await _skillController.getSkillsStream().first;
+    final locations = await _locationController.getLocationsStream().first;
+    final events = await _eventController.getFirstNEvents(20); 
+
+    await _eventController.saveEventsToCache(events.take(10).toList()); 
+    await _categoryController.saveCategoriesToCache(categories);
+    await _skillController.saveSkillsToCache(skills);
+    await _locationController.saveLocationsToCache(locations);
+
+    events.sort((a, b) => a.start_date.compareTo(b.start_date));
+    setState(() {
+      allEvents = events; 
+      filteredEvents = events; 
     });
   }
-
-  Future<void> _checkInitialConnectivity() async {
-    final result = await Connectivity().checkConnectivity();
-    setState(() => isConnected = !result.contains(ConnectivityResult.none));
-  }
-
-  Future<void> initHiveAndLoad() async {
-    //await Hive.initFlutter();
-    //final eventBox = await Hive.openBox('search_events');
-    if (!isConnected) {
-      final local = await _eventController.getCachedEvents();
-      localCategories = await _categoryController.getCachedCategories();
-      localSkills = await _skillController.getCachedSkills();
-      localLocations = await _locationController.getCachedLocations();
-      setState(() {
-        allEvents = local;
-        filteredEvents = local;
-      });
-    } else {
-      final categories = await _categoryController.getCategoriesStream().first;
-      final skills = await _skillController.getSkillsStream().first;
-      final locations = await _locationController.getLocationsStream().first;
-      final events = await _eventController.getFirstNEvents(20);
-      final limited = events.take(10).toList();
-
-      await _eventController.saveEventsToCache(limited);
-      await _categoryController.saveCategoriesToCache(categories);
-      await _skillController.saveSkillsToCache(skills);
-      await _locationController.saveLocationsToCache(locations);
-
-      events.sort((a, b) => a.start_date.compareTo(b.start_date));
-      setState(() {
-        allEvents = events;
-        filteredEvents = events;
-      });
-    }
-  }
+}
 
   @override
   void dispose() {
