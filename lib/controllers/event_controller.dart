@@ -9,10 +9,12 @@ import 'package:geolocator/geolocator.dart';
 import 'package:dart_g21/models/location.dart' as app_models;
 import 'package:hive/hive.dart';
 import '../controllers/location_controller.dart';
+import '../repositories/localStorage_repository.dart';
 
 class EventController {
   final EventRepository _eventRepository = EventRepository();
   final LocationController _locationController = LocationController();
+  final LocalStorageRepository _localStorageRepository = LocalStorageRepository();
 
   Stream<List<Event>> getEventsStream() {
     return _eventRepository.getEventsStream();
@@ -413,5 +415,12 @@ class EventController {
   await _eventRepository.addAttendeeToEvent(eventId, userId);
   }
 
+  //Guardad eventos en caché utilizando el repositorio de LocalStorage
+  Future<List<Event>> getCachedEvents() async {
+    return _localStorageRepository.getEvents();
+  }
 
+  Future<void> saveEventsToCache(List<Event> events) async {
+    await _localStorageRepository.saveEvents(events);
+  }
 }
