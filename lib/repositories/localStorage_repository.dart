@@ -4,6 +4,7 @@ import 'package:dart_g21/models/event.dart';
 import 'package:dart_g21/models/category.dart';
 import 'package:dart_g21/models/location.dart';
 import 'package:dart_g21/models/skill.dart';
+import 'package:synchronized/synchronized.dart';
 
 class LocalStorageRepository{
   static final LocalStorageRepository _instance = LocalStorageRepository._internal();
@@ -17,6 +18,8 @@ class LocalStorageRepository{
   late Box _skillBox;
   late Box _locationBox;
   late Box _recommendationBox;
+
+  final Lock _lock = Lock();
 
   Future<void> init() async {
     await Hive.initFlutter();
@@ -34,10 +37,12 @@ class LocalStorageRepository{
   }
 
   Future<void> saveEvents(List<Event> events) async {
-    await _eventBox.clear();
-    for (var event in events) {
-      await _eventBox.put(event.id, jsonEncode(event.toJson()));
-    }
+    await _lock.synchronized(() async {
+      await _eventBox.clear();
+      for (var event in events) {
+        await _eventBox.put(event.id, jsonEncode(event.toJson()));
+      }
+    });
   }
 
   Future<Event?> getEventById(String eventId) async {
@@ -54,10 +59,12 @@ class LocalStorageRepository{
   }
 
   Future<void> saveCategories(List<Category_event> categories) async {
-    await _categoryBox.clear();
-    for (var category in categories) {
-      await _categoryBox.put(category.id, jsonEncode(category.toJson()));
-    }
+    await _lock.synchronized(() async {
+      await _categoryBox.clear();
+      for (var category in categories) {
+        await _categoryBox.put(category.id, jsonEncode(category.toJson()));
+      }
+    });
   }
 
   /// ----------------------- Skills ------------------------------
@@ -66,10 +73,12 @@ class LocalStorageRepository{
   }
 
   Future<void> saveSkills(List<Skill> skills) async {
-    await _skillBox.clear();
-    for (var skill in skills) {
-      await _skillBox.put(skill.id, jsonEncode(skill.toJson()));
-    }
+    await _lock.synchronized(() async {
+      await _skillBox.clear();
+      for (var skill in skills) {
+        await _skillBox.put(skill.id, jsonEncode(skill.toJson()));
+      }
+    });
   }
 
   /// ----------------------- Locations ------------------------------
@@ -78,10 +87,12 @@ class LocalStorageRepository{
   }
 
   Future<void> saveLocations(List<Location> locations) async {
-    await _locationBox.clear();
-    for (var loc in locations) {
-      await _locationBox.put(loc.id, jsonEncode(loc.toJson()));
-    }
+    await _lock.synchronized(() async {
+      await _locationBox.clear();
+      for (var loc in locations) {
+        await _locationBox.put(loc.id, jsonEncode(loc.toJson()));
+      }
+    });
   }
 
   /// ----------------------- Recommendations ------------------------------
@@ -91,10 +102,12 @@ class LocalStorageRepository{
   }
 
   Future<void> saveRecommends(List<Event> events) async {
-    await _recommendationBox.clear();
-    for (var event in events) {
-      await _recommendationBox.put(event.id, jsonEncode(event.toJson()));
-    }
+    await _lock.synchronized(() async {
+      await _recommendationBox.clear();
+      for (var event in events) {
+        await _recommendationBox.put(event.id, jsonEncode(event.toJson()));
+      }
+    });
   }
 
 
