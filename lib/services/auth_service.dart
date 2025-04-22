@@ -1,12 +1,11 @@
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:dart_g21/services/local_storage_service.dart';
 
 class AuthService {
-
+  
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  //final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   //validación de Email
   bool isValidEmail(String email) {
@@ -76,27 +75,10 @@ class AuthService {
         password: password,
       );
       String userId = userCredential.user!.uid; //Obtener UID del usuario
+        await LocalStorageService.saveUserId(userId);
+
       print("Usuario registrado con UID: $userId");
 
-      /* //guardar datos en Firestore (colección `users`)
-      await _firestore.collection("users").doc(userId).set({
-        "email": email,
-        "name": name,
-        "user_type": userType,
-      });
-
-      //guardar perfil en Firestore (colección `profiles`)
-      await _firestore.collection("profiles").doc(userId).set({
-        "picture": "",
-        "description": "",
-        "headline": "",
-        "events_associated": [],
-        "followers": [],
-        "following": [],
-        "interests": [],
-        "user_ref": userId,
-      });
-      */
 
       //mostrar mensaje de éxito
       Fluttertoast.showToast(
@@ -137,58 +119,72 @@ class AuthService {
   Future<bool> signIn({
   required String email,
   required String password,
-}) async {
-  try {
-    if (email.isEmpty || password.isEmpty) {
-      Fluttertoast.showToast(
-        msg: "All fields are required.",
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-        fontSize: 14.0,
-      );
-      return false;
+    }) async {
+      try {
+        if (email.isEmpty || password.isEmpty) {
+          Fluttertoast.showToast(
+            msg: "All fields are required.",
+            toastLength: Toast.LENGTH_LONG,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
+            fontSize: 14.0,
+          );
+          return false;
+        }
+
+        if (!isValidEmail(email)) return false;
+
+        final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+
+        //Extraer el UID
+        final authUid = userCredential.user?.uid;
+        
+        //Usar el método del controller para encontrar el `userId`
+        if (authUid != null) {
+          await LocalStorageService.saveUserId(authUid);
+        }
+
+        Fluttertoast.showToast(
+          msg: "Login successful!",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+          fontSize: 14.0,
+        );
+        return true;
+
+      } on FirebaseAuthException catch (e) {
+        String message = '';
+        if (e.code == 'user-not-found') {
+          message = 'No user found for that email.';
+        } else if (e.code == 'wrong-password') {
+          message = 'Wrong password provided for that user.';
+        } else if (e.code == 'invalid-credential') {
+          message = 'The password is incorrect. Please try again.';
+        } else {
+          message = "Error: ${e.message}";
+        }
+
+        Fluttertoast.showToast(
+          msg: message,
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 14.0,
+        );
+        return false;
+      }
     }
 
-    if (!isValidEmail(email)) return false;
-
-    await FirebaseAuth.instance.signInWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
-
-    Fluttertoast.showToast(
-      msg: "Login successful!",
-      toastLength: Toast.LENGTH_LONG,
-      gravity: ToastGravity.BOTTOM,
-      backgroundColor: Colors.green,
-      textColor: Colors.white,
-      fontSize: 14.0,
-    );
-    return true;
-
-  } on FirebaseAuthException catch (e) {
-    String message = '';
-    if (e.code == 'user-not-found') {
-      message = 'No user found for that email.';
-    } else if (e.code == 'wrong-password') {
-      message = 'Wrong password provided for that user.';
-    } else if (e.code == 'invalid-credential') {
-      message = 'The password is incorrect. Please try again.';
-    } else {
-      message = "Error: ${e.message}";
-    }
-
-    Fluttertoast.showToast(
-      msg: message,
-      toastLength: Toast.LENGTH_LONG,
-      gravity: ToastGravity.BOTTOM,
-      backgroundColor: Colors.red,
-      textColor: Colors.white,
-      fontSize: 14.0,
-    );
-    return false;
+  //Función para cerrar sesión
+  Future<void> signOut() async {
+    await FirebaseAuth.instance.signOut();
   }
-}
+
 }

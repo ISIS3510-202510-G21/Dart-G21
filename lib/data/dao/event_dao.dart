@@ -56,12 +56,22 @@ class EventDAO {
 
         return events.whereType<Event>().toList(); // Filtrar eventos válidos
       });
-}
+    }
 
-Future<List<Event>> getFirstNEvents(int n) async {
-  final snapshot = await _firestore.getCollection("events").limit(n).get();
-  return snapshot.docs.map((doc) => Event.fromMap(doc.data() as Map<String, dynamic>, doc.id)).toList();
-}
+      Future<List<Event>> getFirstNEvents(int n) async {
+        final snapshot = await _firestore.getCollection("events").limit(n).get();
+        return snapshot.docs.map((doc) => Event.fromMap(doc.data() as Map<String, dynamic>, doc.id)).toList();
+      }
 
+      //Agregar un asistente a un evento
+      Future<void> addAttendeeToEvent(String eventId, String userId) async {
+        final userRef = _firestore.getCollection("users").doc(userId);
+        await _firestore.updateArrayReference(
+          targetCollection: "events",
+          targetDocId: eventId,
+          field: "attendees",
+          reference: userRef,
+        );
+      }
 
 }

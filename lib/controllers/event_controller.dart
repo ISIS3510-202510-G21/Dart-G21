@@ -238,7 +238,7 @@ class EventController {
     }
   }
 
-  ///Obtner eventos en Bogota
+  ///Obtener eventos en Bogota
   Stream<List<Event>> getBogotaEventsStream() async* {
     try {
       final connected = await hasConnection();
@@ -288,7 +288,6 @@ class EventController {
         }
       }
     } catch (error) {
-      print("Error general en getBogotaEventsStream: $error");
       yield [];
     }
   }
@@ -407,10 +406,12 @@ class EventController {
 
     result.sort((a, b) => a.start_date.compareTo(b.start_date));
     return result;
-}
-
-
-
+  }
+  
+  //Suscribirse a un evento 
+  Future<void> subscribeUserToEvent(String eventId, String userId) async {
+  await _eventRepository.addAttendeeToEvent(eventId, userId);
+  }
 
 
 }

@@ -7,6 +7,7 @@ import 'package:dart_g21/views/chatbot_view.dart';
 import 'package:dart_g21/views/map_view.dart';
 import 'package:dart_g21/views/profile_view.dart';
 import 'package:dart_g21/views/searchevent_view.dart';
+import 'package:dart_g21/views/eventdetail_view.dart';
 import 'package:flutter/material.dart';
 import '../controllers/category_controller.dart';
 import '../controllers/event_controller.dart';
@@ -346,6 +347,7 @@ class _HomePage extends State<HomePage> {
       ),
     );
   }
+
 
   /// title section for events
   Widget _buildSectionTitle(String title) {
