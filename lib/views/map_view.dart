@@ -29,7 +29,7 @@ class _MapView extends State<MapView> {
   /// Carga los eventos y coloca marcadores en el mapa
   Future<void> _loadEventsAndMarkers() async {
     List<Event> events = await _eventController
-        .getTopNearbyEventsStream()
+        .getEventsStream()
         .first;
     List<Marker> markerList = [];
 
