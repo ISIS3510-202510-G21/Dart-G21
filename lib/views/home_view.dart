@@ -1,4 +1,6 @@
 import 'dart:collection';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 import 'package:dart_g21/views/chatbot_view.dart';
 import 'package:dart_g21/views/map_view.dart';
@@ -368,18 +370,31 @@ class _HomePage extends State<HomePage> {
               if (event.image.isNotEmpty && Uri.tryParse(event.image)?.hasAbsolutePath == true)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: Image.network(
-                    event.image,
+                  child: CachedNetworkImage(
+                    imageUrl: event.image,
                     width: 220,
                     height: 106,
                     fit: BoxFit.cover,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Container(width: 220, height: 106, color: Colors.white);
-                    },
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(width: 220, height: 106, color: Colors.white);
-                    },
+                    cacheManager: CacheManager(
+                      Config(
+                        'customCacheKey',
+                        stalePeriod: const Duration(days: 7),
+                        maxNrOfCacheObjects: 100,
+                      ),
+                    ),
+                    placeholder: (context, url) => Container(
+                      width: 220, 
+                      height: 106, 
+                      color: Colors.grey.shade200, 
+                      child: const Center(child: CircularProgressIndicator(strokeWidth: 2))),
+                    errorWidget: (context, url, error) => Container(
+                      width: 220, 
+                      height: 106, 
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(8),
+                        ),
+                       child: const Icon(Icons.image_not_supported, size: 40, color: Colors.grey),),
                   ),
                 ),
               Padding(
