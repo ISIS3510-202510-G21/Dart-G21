@@ -7,6 +7,7 @@ import 'package:dart_g21/views/selectcategories_view.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/core/colors.dart';
 import 'package:dart_g21/services/auth_service.dart';
+import 'package:dart_g21/services/local_storage_service.dart';
 import '../controllers/auth_controller.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -365,11 +366,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
         selectedUserType!,
         _headlineController.text.trim(),
         _descriptionController.text.trim(),
-        _profileImage?.path ?? "", // si no hay imagen seleccionada, queda vacío
+        _profileImage?.path ?? "", //si no hay imagen seleccionada, queda vacío
       );
 
       User? user = await _userController.getUserByEmail(email).first;
       String? user_id = user?.id;
+      
+      await LocalStorageService.saveUserId(user_id!);
 
       //Cambie esto sprint 3!!!!
         Navigator.push(

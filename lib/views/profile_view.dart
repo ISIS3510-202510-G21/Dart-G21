@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:dart_g21/controllers/auth_controller.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:hive/hive.dart';
@@ -14,6 +15,8 @@ import 'package:dart_g21/models/interest.dart';
 import 'package:dart_g21/models/profile.dart';
 import 'package:dart_g21/widgets/navigation_bar_host.dart';
 import '../controllers/skill_controller.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:dart_g21/services/local_storage_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -27,6 +30,7 @@ class _ProfilePageState extends State<ProfilePage> {
   final ProfileController _profileController = ProfileController();
   final CategoryController _categoryController = CategoryController();
   final UserController _userController = UserController();
+  final AuthController _authController = AuthController();
   final double coverHeight = 200;
   final double profileHeight = 180;
   bool isConnected = true;
@@ -100,6 +104,18 @@ class _ProfilePageState extends State<ProfilePage> {
     _connectivitySubscription?.cancel();
     super.dispose();
   }
+
+  //Método para salir
+  Future<void> logout(BuildContext context) async {
+  await _authController.signOut();
+  await LocalStorageService.clearUserId();
+
+  Navigator.pushNamedAndRemoveUntil(
+    context,
+    '/signin',
+    (route) => false,
+  );
+}
 
   @override
   Widget build(BuildContext context) {
