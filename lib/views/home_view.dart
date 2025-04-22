@@ -61,7 +61,7 @@ class _HomePage extends State<HomePage> {
             index: _selectedIndex,
             children: [
               _buildMainContent(),
-              MapView(),
+              MapView(userId: widget.userId,),
               MyEventsPage(userId: widget.userId),
               ProfilePage(userId: widget.userId),
             ],
@@ -113,15 +113,14 @@ class _HomePage extends State<HomePage> {
                 SizedBox(height: 10),
                 _buildSectionTitle("Upcoming Events"),
                 EventsList(
-                  eventsStreamProvider: () => _eventController.getUpcomingEventsStream(),
+                  eventsStreamProvider: () => _eventController.getUpcomingEventsStream(), userId: widget.userId
                 ),
                 _buildSectionTitle("Nearby Events"),
                 EventsList(
-                  eventsStreamProvider: () => _eventController.getTopNearbyEventsStream(_location),
-                ),
+                  eventsStreamProvider: () => _eventController.getTopNearbyEventsStream(_location),userId: widget.userId),
                 _buildSectionTitle("You Might Like"),
                 EventsList(
-                  eventsStreamProvider: () => _eventController.getRecommendedEventsStreamForUser(widget.userId),
+                  eventsStreamProvider: () => _eventController.getRecommendedEventsStreamForUser(widget.userId), userId: widget.userId
                 ),
                 SizedBox(height: 20),
               ],
@@ -199,7 +198,7 @@ class _HomePage extends State<HomePage> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => CategoriesFilter(categoryId: category.id),
+                            builder: (context) => CategoriesFilter(categoryId: category.id, userId: widget.userId,),
                           ),
                         );
                       },
@@ -339,7 +338,7 @@ class _HomePage extends State<HomePage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => SearchEventView(),
+              builder: (context) => SearchEventView(userId: widget.userId,),
             ),
           );
         },

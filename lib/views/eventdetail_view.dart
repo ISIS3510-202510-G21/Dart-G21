@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/controllers/event_controller.dart';
 import 'package:dart_g21/controllers/user_controller.dart';
@@ -10,6 +11,7 @@ import 'package:dart_g21/models/location.dart';
 import 'package:dart_g21/models/profile.dart';
 import 'package:dart_g21/core/colors.dart';
 import 'package:dart_g21/views/successfulregistration_view.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 class EventDetailScreen extends StatefulWidget {
   final String eventId;
@@ -106,7 +108,34 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.network(_event!.image, height: 200, width: double.infinity, fit: BoxFit.cover),
+              child: CachedNetworkImage(
+              imageUrl: _event!.image,
+              height: 200,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              placeholder: (context, url) => Container(
+                height: 200,
+                width: double.infinity,
+                color: Colors.grey.shade200,
+                child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              ),
+              errorWidget: (context, url, error) => Container(
+                height: 200,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.image_not_supported, size: 40, color: Colors.grey),
+              ),
+              cacheManager: CacheManager(
+                Config(
+                'customCacheKeyMyEvents',
+                stalePeriod: const Duration(days: 7),
+                maxNrOfCacheObjects: 100,
+                ),
+              ),
+              ),
             ),
             const SizedBox(height: 16),
 
@@ -337,15 +366,35 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   child: Row(
                     children: [
                       //Foto del speaker
-                      CircleAvatar(
-                        radius: 35,
-                        backgroundImage: creatorImage.isNotEmpty
-                            ? NetworkImage(creatorImage)
-                            : null,
-                        backgroundColor: Colors.grey.shade200,
-                        child: creatorImage.isEmpty
-                            ? const Icon(Icons.person, size: 32, color: Colors.grey)
-                            : null,
+                      ClipOval(
+                      child: CachedNetworkImage(
+                        imageUrl: creatorImage,
+                        width: 70,
+                        height: 70,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                        width: 70,
+                        height: 70,
+                        color: Colors.grey.shade200,
+                        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                        width: 70,
+                        height: 70,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.person, size: 32, color: Colors.grey),
+                        ),
+                        cacheManager: CacheManager(
+                        Config(
+                          'customCacheKeyMyEvents',
+                          stalePeriod: const Duration(days: 7),
+                          maxNrOfCacheObjects: 100,
+                        ),
+                        ),
+                      ),
                       ),
                       const SizedBox(width: 16),
 

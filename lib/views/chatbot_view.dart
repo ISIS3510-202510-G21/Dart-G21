@@ -50,16 +50,16 @@ class _ChatBotPageState extends State<ChatBotPage> {
     _connectivitySubscription = _connectivity.onConnectivityChanged.listen((List<ConnectivityResult> results) {
       final prev = isConnected;
       setState(() => isConnected = !results.contains(ConnectivityResult.none));
-      if (!prev && isConnected) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text("Connection Restored", style: TextStyle(color: AppColors.primary, fontSize: 16)),
-            backgroundColor: const Color.fromARGB(255, 37, 108, 39),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-      } 
+      // if (!prev && isConnected) {
+      //   ScaffoldMessenger.of(context).showSnackBar(
+      //     SnackBar(
+      //       content: const Text("Connection Restored", style: TextStyle(color: AppColors.primary, fontSize: 16)),
+      //       backgroundColor: const Color.fromARGB(255, 37, 108, 39),
+      //       behavior: SnackBarBehavior.floating,
+      //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      //     ),
+      //   );
+      // } 
     });
   }
 

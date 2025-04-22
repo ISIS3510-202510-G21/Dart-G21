@@ -40,6 +40,14 @@ class LocalStorageRepository{
     }
   }
 
+  Future<Event?> getEventById(String eventId) async {
+    final eventJson = _eventBox.get(eventId);
+    if (eventJson != null) {
+      return Event.fromJson(Map<String, dynamic>.from(jsonDecode(eventJson)));
+    }
+    return null;
+  }
+
   /// ----------------------- Categories ------------------------------
   List<Category_event> getCategories() {
     return _categoryBox.values.map((e) => Category_event.fromJson(Map<String, dynamic>.from(jsonDecode(e)))).toList();

@@ -67,16 +67,24 @@ await SystemChrome.setPreferredOrientations([
       return MyEventsPage(userId: args);
       },  // Pantalla de eventos
       '/chatBot': (context) => ChatBotPage(title:"ChatBot"),  // Pantalla de chatbot
-      '/mapa': (context) => MapView(),  // Pantalla de mapa
+      '/mapa': (context) {
+        final args = ModalRoute.of(context)!.settings.arguments as String;
+        return MapView(userId: args);
+      },  // Pantalla de mapa
       '/createEvent': (context) {
       final args = ModalRoute.of(context)!.settings.arguments as String;
       return CreateEventScreen(userId: args);
       },  // Pantalla de creación de evento
-      '/searchEvents': (context) => SearchEventView(),  // Pantalla de búsqueda de eventos
+      '/searchEvents': (context) {
+        final args = ModalRoute.of(context)!.settings.arguments as String;
+        return SearchEventView(userId: args);  // Pantalla de búsqueda de eventos
+      },
       '/filterCategory': (context) {
       final args = ModalRoute.of(context)!.settings.arguments as String;
-      return CategoriesFilter(categoryId: args);
-      },  // Pantalla de filtro por categoría
+      return CategoriesFilter(
+        categoryId: args,
+        userId: ModalRoute.of(context)!.settings.arguments as String,
+      ); },  // Pantalla de filtro por categoría
       'selectCategories': (context)  {
       final args = ModalRoute.of(context)!.settings.arguments as String;
       return SelectCategoriesScreen(userId: args);

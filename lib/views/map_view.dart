@@ -1,3 +1,4 @@
+import 'package:dart_g21/views/eventdetail_view.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../controllers/event_controller.dart';
@@ -7,7 +8,8 @@ import '../models/event.dart';
 import '../widgets/eventcard_view.dart';
 
 class MapView extends StatefulWidget {
-  const MapView({Key? key}) : super(key: key);
+  final String userId; 
+  const MapView({Key? key, required this.userId}) : super(key: key);
 
   @override
   _MapView createState() => _MapView();
@@ -108,8 +110,19 @@ class _MapView extends State<MapView> {
                   itemBuilder: (context, index) {
                     return EventCard(
                       event: _events[index],
-                      onTap: () =>
-                          _moveCameraToEvent(_events[index].location_id),
+                      onTap: () {
+                        _moveCameraToEvent(_events[index].location_id);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => EventDetailScreen(
+                              eventId: _events[index].id,
+                              userId: widget.userId,
+                            ),
+                          ),
+                        );
+                      },
+          
                     );
                   },
                 ),
@@ -123,3 +136,4 @@ class _MapView extends State<MapView> {
 }
 
 
+ 

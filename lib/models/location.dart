@@ -42,6 +42,8 @@ class Location{
       city: json['city'] as String,
       details: json['details'] as String,
       university: json['university'] as bool,
+      latitude: json['latitude'] as double, 
+      longitude: json['longitude'] as double,
     );
   }
 
@@ -52,6 +54,8 @@ class Location{
       'city': city,
       'details': details,
       'university': university,
+      'latitude': latitude,
+      'longitude': longitude,
     };
   }
 
