@@ -1,5 +1,6 @@
 
 import 'package:dart_g21/views/categoriesfilter_view.dart';
+import 'package:dart_g21/views/eventdetail_view.dart';
 import 'package:dart_g21/views/chatbot_view.dart';
 import 'package:dart_g21/views/createevents_view.dart';
 import 'package:dart_g21/views/map_view.dart';
@@ -72,7 +73,14 @@ await SystemChrome.setPreferredOrientations([
       'selectCategories': (context)  {
       final args = ModalRoute.of(context)!.settings.arguments as String;
       return SelectCategoriesScreen(userId: args);
-      }
+      },
+      '/eventDetail': (context) {
+        final args = ModalRoute.of(context)!.settings.arguments as Map<String, String>;
+        return EventDetailScreen(
+          eventId: args['eventId']!,
+          userId: args['userId']!,
+        );
+      },  // Pantalla de detalles del evento,
     },
   ));
 
