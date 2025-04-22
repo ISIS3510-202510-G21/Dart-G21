@@ -75,4 +75,32 @@ class Profile {
           : map['user_ref'] ?? '',
     );
   }
+
+   factory Profile.fromJson(Map<String, dynamic> json) {
+    return Profile(
+      id: json['id'] as String,
+      picture: json['profile_picture'] as String,
+      description: json['description'] as String,
+      headline: json['headline'] as String,
+      events_associated: List<String>.from(json['events_asociated']),
+      followers: List<String>.from(json['followers']),
+      following: List<String>.from(json['following']),
+      interests: List<String>.from(json['interests']),
+      user_ref: json['user_ref'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'profile_picture': picture,
+      'description': description,
+      'headline': headline,
+      'events_asociated': events_associated,
+      'followers': followers,
+      'following': following,
+      'interests': interests,
+      'user_ref': user_ref,
+};}
+
 }

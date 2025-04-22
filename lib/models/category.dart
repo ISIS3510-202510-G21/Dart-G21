@@ -20,5 +20,19 @@ class Category_event {
       name: map['name'],
     );
   }
+
+  factory Category_event.fromJson(Map<String, dynamic> json) {
+    return Category_event(
+      id: json['id'] as String,
+      name: json['name'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+    };
+  }
 }
 

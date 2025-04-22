@@ -66,6 +66,10 @@ class AuthController {
       
       throw Exception("Error en el registro del usuario");
     }
-   
+  }
+
+  //Método para salir de la sesión
+  Future<void> signOut() async {
+    await _authService.signOut();
   }
 }

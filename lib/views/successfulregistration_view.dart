@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_g21/core/colors.dart';
+import 'package:dart_g21/views/home_view.dart';
+import 'package:dart_g21/views/myevents_view.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/models/event.dart';
 import 'package:dart_g21/controllers/profile_controller.dart'; 
@@ -178,7 +180,7 @@ class _SuccessfulregistrationViewState extends State<SuccessfulregistrationView>
                                 ],
                               ),
 
-                              const SizedBox(width: 70),
+                              const SizedBox(width: 30),
 
                               // Separador vertical
                               Container(width: 1, height: 30, color: Colors.grey.shade300),
@@ -298,19 +300,34 @@ class _SuccessfulregistrationViewState extends State<SuccessfulregistrationView>
             SizedBox(
               width: double.infinity,
               height: 48,
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.event, color: AppColors.primary, size: 25),
-                label: const Text("My Events", style: TextStyle(color: AppColors.primary, fontSize: 16)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.secondary,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                onPressed: () {
-                  Navigator.pushNamed(context, "/myEvents", arguments: widget.userId);
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => HomePage(userId: widget.userId),
+                    ),
+                  );
                 },
-              ),
-            )
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.secondary,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.home, color: AppColors.primary, size: 25),
+                      SizedBox(width: 10),
+                      Text("Home", style: TextStyle(color: AppColors.primary, fontSize: 16)),
+        ],
+      ),
+    ),
+  ),
+)
+
           ],
         ),
       ),

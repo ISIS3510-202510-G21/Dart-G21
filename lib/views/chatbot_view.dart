@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dart_g21/consts.dart';
 import 'package:http/http.dart' as http;
 import 'package:dart_g21/core/colors.dart';
@@ -32,72 +34,122 @@ class _ChatBotPageState extends State<ChatBotPage> {
 
   List<ChatMessage> _messages = <ChatMessage>[];
   List<ChatUser> _typingUsers = <ChatUser>[];
+  bool isConnected = true;
+  late final Connectivity _connectivity;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _setupConnectivity();
+    _checkInitialConnectivity();
+  }
+
+  void _setupConnectivity() {
+    _connectivity = Connectivity();
+    _connectivitySubscription = _connectivity.onConnectivityChanged.listen((List<ConnectivityResult> results) {
+      final prev = isConnected;
+      setState(() => isConnected = !results.contains(ConnectivityResult.none));
+      // if (!prev && isConnected) {
+      //   ScaffoldMessenger.of(context).showSnackBar(
+      //     SnackBar(
+      //       content: const Text("Connection Restored", style: TextStyle(color: AppColors.primary, fontSize: 16)),
+      //       backgroundColor: const Color.fromARGB(255, 37, 108, 39),
+      //       behavior: SnackBarBehavior.floating,
+      //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      //     ),
+      //   );
+      // } 
+    });
+  }
+
+  Future<void> _checkInitialConnectivity() async {
+    final result = await Connectivity().checkConnectivity();
+    setState(() => isConnected = !result.contains(ConnectivityResult.none));
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, size:28 ,),
+          icon: Icon(Icons.arrow_back, size: 28),
           onPressed: () {
             Navigator.pop(context);
           },
         ),
         title: Text("ChatBot", style: TextStyle(color: AppColors.textPrimary, fontSize: 24)),
       ),
-      body: DashChat(
-        currentUser: _currentUser,
-        typingUsers: _typingUsers,
-        onSend: (ChatMessage m) {
-          getChatResponse(m);
-        },
-        messages: _messages,
-        inputOptions: InputOptions(
-          sendButtonBuilder: (Function onSend) {
-            return IconButton(
-              icon: Icon(Icons.send, color: Colors.blue),
-              onPressed: () => onSend(),
-            );
-          },
-        ),
-        messageOptions: MessageOptions(
-          messageRowBuilder: (ChatMessage message, ChatMessage? previousMessage, ChatMessage? nextMessage, bool isAfter, bool isBefore) {
-            bool isCurrentUser = message.user == _currentUser;
-            return Row(
-              mainAxisAlignment: isCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-              children: [
-                SizedBox(width: 8),
-                if (!isCurrentUser)
-                  CircleAvatar(
-                    backgroundImage: NetworkImage(message.user.profileImage ?? ''),
-                    radius: 20,
-                  ),
-                SizedBox(width: 4),
-                Flexible(
-                  child: Container(
-                    padding: EdgeInsets.all(12),
-                    margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                    decoration: BoxDecoration(
-                      color: isCurrentUser ? AppColors.icons : AppColors.secondary,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      message.text.replaceAll('*', ''),
-                      style: TextStyle(fontSize: 16, color: isCurrentUser ? AppColors.textPrimary : AppColors.primary),
-                    ),
-                  ),
-                ),
-                if (isCurrentUser)
-                  CircleAvatar(
-                    backgroundImage: NetworkImage(message.user.profileImage ?? ''),
-                    radius: 20,
-                  ),
-                SizedBox(width: 10),
-              ],
-            );
-          },
-        ),
-      ),
+      body: isConnected
+          ? DashChat(
+              currentUser: _currentUser,
+              typingUsers: _typingUsers,
+              onSend: (ChatMessage m) {
+                getChatResponse(m);
+              },
+              messages: _messages,
+              inputOptions: InputOptions(
+                sendButtonBuilder: (Function onSend) {
+                  return IconButton(
+                    icon: Icon(Icons.send, color: Colors.blue),
+                    onPressed: () => onSend(),
+                  );
+                },
+              ),
+              messageOptions: MessageOptions(
+                messageRowBuilder: (ChatMessage message, ChatMessage? previousMessage, ChatMessage? nextMessage, bool isAfter, bool isBefore) {
+                  bool isCurrentUser = message.user == _currentUser;
+                  return Row(
+                    mainAxisAlignment: isCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+                    children: [
+                      SizedBox(width: 8),
+                      if (!isCurrentUser)
+                        CircleAvatar(
+                          backgroundImage: NetworkImage(message.user.profileImage ?? ''),
+                          radius: 20,
+                        ),
+                      SizedBox(width: 4),
+                      Flexible(
+                        child: Container(
+                          padding: EdgeInsets.all(12),
+                          margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                          decoration: BoxDecoration(
+                            color: isCurrentUser ? AppColors.icons : AppColors.secondary,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Text(
+                            message.text.replaceAll('*', ''),
+                            style: TextStyle(fontSize: 16, color: isCurrentUser ? AppColors.textPrimary : AppColors.primary),
+                          ),
+                        ),
+                      ),
+                      if (isCurrentUser)
+                        CircleAvatar(
+                          backgroundImage: NetworkImage(message.user.profileImage ?? ''),
+                          radius: 20,
+                        ),
+                      SizedBox(width: 10),
+                    ],
+                  );
+                },
+              ),
+            )
+          : Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(Icons.wifi_off, size: 60, color: Colors.grey),
+                  SizedBox(height: 10),
+                  Text("No internet connection", style: TextStyle(fontSize: 18, color: Colors.grey)),
+                ],
+              ),
+            ),
     );
   }
 
@@ -120,37 +172,37 @@ class _ChatBotPageState extends State<ChatBotPage> {
                   Contexto de GrowHub:
                   GrowHub es una aplicación móvil diseñada para conectar estudiantes, profesionales y organizadores con eventos de desarrollo de habilidades.
                   Ofrece tanto eventos gratuitos como pagos y permite que organizadores gestionen su visibilidad y audiencia de manera efectiva.
-                  
-                   **Tipos de Usuarios**:
+
+                   *Tipos de Usuarios*:
                   - Organizadores voluntarios: crean eventos gratuitos.
                   - Organizadores pagos: pueden cobrar por la participación.
                   - Asistentes gratuitos: se registran en eventos sin costo.
                   - Asistentes pagos: acceden a eventos premium.
 
-                   **Modelo de Monetización**:
-                  1. **Tarifa por Publicación de Eventos**:
+                   *Modelo de Monetización*:
+                  1. *Tarifa por Publicación de Eventos*:
                      - Publicación básica: \$5 (solo aparece en el catálogo).
                      - Publicación premium: \$15 (más visibilidad y destacada).
-                  
-                  2. **Tarifa por Aumentar Visibilidad**:
+
+                  2. *Tarifa por Aumentar Visibilidad*:
                      - Estándar: Incluida en la publicación.
                      - Destacada: \$10/semana (más prioridad en búsqueda).
                      - Evento destacado: \$25/semana (portada de la app).
                      - Promoción exclusiva: \$50/semana (notificaciones push y redes sociales).
-                  
-                  3. **Comisión por Venta de Tickets**:
+
+                  3. *Comisión por Venta de Tickets*:
                      - 10% en tickets <\$10.
                      - 8% en tickets de \$10 a \$50.
                      - 5% en tickets >\$50.
 
-                   **Beneficios para Organizadores**:
+                   *Beneficios para Organizadores*:
                   - Creación fácil de eventos con formulario simplificado.
                   - Herramientas de promoción para maximizar la asistencia.
                   - Integración con redes sociales y plataformas universitarias.
                   - Recomendaciones personalizadas para los asistentes.
 
-                  🔹 Solo responde preguntas sobre todo lo relacionado a eventos, recomendación de eventos según intereses y gustos de los usuarios que te escriban, organizadores, costos y visibilidad de eventos. 
-                  🔹 No respondas sobre búsqueda de eventos ni registro.
+                     Solo responde preguntas sobre todo lo relacionado a eventos, recomendación de eventos según intereses y gustos de los usuarios que te escriban, organizadores, costos y visibilidad de eventos. 
+                     No respondas sobre búsqueda de eventos ni registro.
 
                   Usuario: ${m.text}
                   """

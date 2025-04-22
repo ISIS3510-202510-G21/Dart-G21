@@ -1,3 +1,4 @@
+import 'package:dart_g21/views/eventdetail_view.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/core/colors.dart';
 import '../controllers/category_controller.dart';
@@ -8,7 +9,8 @@ import '../widgets/eventcard_view.dart';
 
 class CategoriesFilter extends StatefulWidget {
   final String categoryId;
-  const CategoriesFilter({Key? key, required this.categoryId}) : super(key: key);
+  final String userId;
+  const CategoriesFilter({Key? key, required this.categoryId, required this.userId}) : super(key: key);
 
   @override
   _CategoriesFilter createState() => _CategoriesFilter();
@@ -106,7 +108,15 @@ class _CategoriesFilter extends State<CategoriesFilter> {
               itemBuilder: (context, index) {
                 return EventCard(
                   event: _events![index],
-                  onTap: () => _showDetailEvent(_events![index].location_id),
+                  onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EventDetailScreen(
+                          eventId: _events![index].id,
+                          userId: widget.userId,
+                        ),
+                      ),
+                    ),
                 );
               },
             ),
@@ -200,6 +210,14 @@ class _CategoriesFilter extends State<CategoriesFilter> {
 
 
   Future<void> _showDetailEvent(String idEvent) async {
-    // TODO: Navegar al detalle del evento
-  }
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EventDetailScreen(
+          eventId: idEvent,
+          userId: widget.userId,
+        ),
+      ),
+    );
+      }
 }
