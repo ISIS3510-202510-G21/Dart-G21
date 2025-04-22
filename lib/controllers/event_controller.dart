@@ -180,41 +180,29 @@ class EventController {
     }
   }
 
-  ///Obtner eventos en Bogota
+  ///Obtener eventos en Bogota
   Stream<List<Event>> getBogotaEventsStream() async* {
     try {
       await for (List<Event> events in _eventRepository.getEventsStream()) {
         List<Event> bogotaEvents = [];
-
         for (Event event in events) {
           try {
             final eventLocation = await _locationController.getLocationById(event.location_id);
-
             if (eventLocation == null) {
-              print("Ubicación no encontrada para el evento ${event.id}");
               continue;
             }
-
             final city = eventLocation.city;
-
-            if (city is String && city.toLowerCase().trim() == "bogotá") {
+            if (city.toLowerCase().trim() == "bogotá") {
               bogotaEvents.add(event);
             }
 
           } catch (error) {
-            print("Error al procesar ubicación de evento ${event.id}: $error");
             continue;
           }
         }
-
-        if (bogotaEvents.isEmpty) {
-          print("No se encontraron eventos en Bogotá.");
-        }
-
         yield bogotaEvents;
       }
     } catch (error) {
-      print("Error general en getBogotaEventsStream: $error");
       yield [];
     }
   }
@@ -299,10 +287,12 @@ Stream<List<Event>> getRecommendedEventsStreamForUser(String userId) {
 
     result.sort((a, b) => a.start_date.compareTo(b.start_date));
     return result;
-}
-
-
-
+  }
+  
+  //Suscribirse a un evento 
+  Future<void> subscribeUserToEvent(String eventId, String userId) async {
+  await _eventRepository.addAttendeeToEvent(eventId, userId);
+  }
 
 
 }
