@@ -1,4 +1,7 @@
 import 'dart:convert';
+import 'package:dart_g21/controllers/location_controller.dart';
+import 'package:dart_g21/controllers/profile_controller.dart';
+import 'package:dart_g21/controllers/skill_controller.dart';
 import 'package:dart_g21/models/profile.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:dart_g21/models/event.dart';
@@ -42,7 +45,9 @@ class LocalStorageRepository{
       ..sort((a, b) => a.start_date.compareTo(b.start_date));
   }
 
-  Future<void> saveEvents(List<Event> events, CategoryController categoryController) async {
+  Future<void> saveEvents(List<Event> events, CategoryController categoryController,
+                          LocationController locationController,
+                          ProfileController profileController) async {
     await _lock.synchronized(() async {
       for (var event in events) {
         if (!_eventBox.containsKey(event.id)) {
@@ -52,6 +57,16 @@ class LocalStorageRepository{
         if (category != null) {
           saveCategory(category);
         }
+        Location? location = await locationController.getLocationById(event.location_id);
+        if (location != null) {
+          saveLocation(location);
+        }
+        Profile? profile = await profileController.getProfileByUserId(event.creator_id).first;
+        if (profile != null) {
+          saveProfile(event.creator_id, profile);
+        }
+
+
       }
     });
   }
@@ -128,6 +143,14 @@ class LocalStorageRepository{
         if (!_locationBox.containsKey(loc.id)) {
           await _locationBox.put(loc.id, jsonEncode(loc.toJson()));
         }
+      }
+    });
+  }
+
+  Future<void> saveLocation(Location location) async {
+    await _lock.synchronized(() async {
+      if (!_locationBox.containsKey(location.id)) {
+        await _locationBox.put(location.id, jsonEncode(location.toJson()));
       }
     });
   }

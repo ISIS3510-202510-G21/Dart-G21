@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:dart_g21/controllers/profile_controller.dart';
+import 'package:dart_g21/controllers/skill_controller.dart';
 import 'package:dart_g21/models/event.dart';
 import 'package:dart_g21/repositories/event_repository.dart';
 import 'package:dart_g21/repositories/localStorage_repository.dart';
@@ -17,6 +19,7 @@ class EventController {
   final LocationController _locationController = LocationController();
   final LocalStorageRepository _localStorageRepository=LocalStorageRepository();
   final CategoryController _categoryController = CategoryController();
+  final ProfileController _profileController = ProfileController();
 
   Stream<List<Event>> getEventsStream() {
     return _eventRepository.getEventsStream();
@@ -96,7 +99,7 @@ class EventController {
           ..sort((a, b) => a.start_date.compareTo(b.start_date));
 
         final top5 = upcoming.take(5).toList();
-        _localStorageRepository.saveEvents(top5,_categoryController);
+        _localStorageRepository.saveEvents(top5,_categoryController,_locationController,_profileController);
         yield upcoming;
       }
   }
@@ -185,7 +188,7 @@ class EventController {
           } else {
             final topEvents = cityEvents.toList();
             final top5 = topEvents.take(5).toList();
-            _localStorageRepository.saveEvents(top5,_categoryController);
+            _localStorageRepository.saveEvents(top5,_categoryController, _locationController,_profileController);
             yield topEvents;
           }
         }
@@ -233,7 +236,7 @@ class EventController {
       }
       yield bogotaEvents;
       final top5= bogotaEvents.take(5).toList();
-      await _localStorageRepository.saveEvents(top5,_categoryController);
+      await _localStorageRepository.saveEvents(top5,_categoryController,_locationController,_profileController);
     }
   }
 
