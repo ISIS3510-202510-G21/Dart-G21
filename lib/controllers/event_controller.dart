@@ -1,8 +1,8 @@
 import 'dart:convert';
-
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dart_g21/models/event.dart';
 import 'package:dart_g21/repositories/event_repository.dart';
+import 'package:dart_g21/repositories/localStorage_repository.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
@@ -13,6 +13,7 @@ import '../controllers/location_controller.dart';
 class EventController {
   final EventRepository _eventRepository = EventRepository();
   final LocationController _locationController = LocationController();
+  final LocalStorageRepository _localStorageRepository=LocalStorageRepository();
 
   Stream<List<Event>> getEventsStream() {
     return _eventRepository.getEventsStream();
@@ -84,31 +85,25 @@ class EventController {
 
 
   ///Obtener eventos proximos a un usuario
-  Stream<List<Event>> getUpcomingEventsStream() async* {
-    final connected = await hasConnection();
-    final box = await Hive.openBox('local_events');
-    if (connected) {
+  Stream<List<Event>> getUpcomingEventsOnlineStream() async* {
       await for (final events in getEventsStream()) {
         List<Event> upcoming = events
             .where((e) => e.start_date.isAfter(DateTime.now()))
             .toList()
           ..sort((a, b) => a.start_date.compareTo(b.start_date));
 
-        final top5 = upcoming.take(5).toList();;
-
-        for (var e in top5) {
-          box.put(e.id, jsonEncode(e.toJson()));
-        }
+        final top5 = upcoming.take(5).toList();
+        _localStorageRepository.saveEvents(events);
         yield upcoming;
       }
-    } else {
-      final cached = box.values
-          .map((e) => Event.fromJson(Map<String, dynamic>.from(jsonDecode(e))))
-          .toList()
-        ..sort((a, b) => a.start_date.compareTo(b.start_date));
+  }
 
-      yield cached.take(5).toList();
-    }
+  Stream <List<Event>> getUpcomingEventsOfflineStream() async* {
+    final cached= _localStorageRepository.getEvents()
+        .where((e) => e.start_date.isAfter(DateTime.now())).toList()
+      ..sort((a, b) => a.start_date.compareTo(b.start_date));
+
+    yield cached.take(5).toList();
   }
 
   ///Obtener ciudad del usuario
@@ -159,178 +154,120 @@ class EventController {
   }
 
   ///Obtener eventos proximos a un usuario según gps
-  Stream<List<Event>> getTopNearbyEventsStream(String userCity) async* {
-    try {
-      final connected = await hasConnection();
-      final box = await Hive.openBox('local_nearby_events_${userCity.toLowerCase()}');
+  Stream<List<Event>> getTopNearbyEventsOnlineStream(String userCity) async* {
+    await for (List<Event> events in _eventRepository.getEventsStream()) {
+      if (events.isEmpty) {
+        continue;
+      }
+      List<Event> cityEvents = [];
 
-      if (connected) {
-        // Modo online
-        await for (List<Event> events in _eventRepository.getEventsStream()) {
-          if (events.isEmpty) {
+      for (Event event in events) {
+          if (event.location_id.isEmpty) continue;
+
+          app_models.Location? eventLocation =
+            await _locationController.getLocationById(event.location_id);
+
+          if (eventLocation == null) {
             continue;
           }
 
-          List<Event> cityEvents = [];
-
-          for (Event event in events) {
-            try {
-              if (event.location_id == null || event.location_id.isEmpty) continue;
-
-              app_models.Location? eventLocation =
-              await _locationController.getLocationById(event.location_id);
-
-              if (eventLocation == null || eventLocation.city == null) {
-                continue;
-              }
-
-              if (eventLocation.city.toLowerCase().trim() ==
-                  userCity.toLowerCase().trim()) {
+          if (eventLocation.city.toLowerCase().trim() ==
+              userCity.toLowerCase().trim()) {
                 cityEvents.add(event);
-                // Guardar en caché
-                await box.put(event.id, jsonEncode(event.toJson()));
               }
-            } catch (error) {
-              print("Error procesando evento cercano: $error");
-              continue;
-            }
           }
 
           if (cityEvents.isEmpty) {
-            // Si no hay eventos en la ciudad del usuario, usar eventos de Bogotá
-            print("No hay eventos en $userCity, mostrando eventos de Bogotá");
-            yield* getBogotaEventsStream();
+            yield* getBogotaEventsOnlineStream();
           } else {
-            final topEvents = cityEvents.take(10).toList();
-            print("Encontrados ${topEvents.length} eventos cercanos en $userCity");
+            final topEvents = cityEvents.toList();
+            final top5 = topEvents.take(5).toList();
+            _localStorageRepository.saveEvents(top5);
             yield topEvents;
           }
         }
-      } else {
-        // Modo offline - usar caché
-        print("Sin conexión, usando eventos en caché de $userCity");
+  }
 
-        try {
-          final cached = box.values
-              .map((e) => Event.fromJson(Map<String, dynamic>.from(jsonDecode(e.toString()))))
-              .toList()
-            ..sort((a, b) => a.start_date.compareTo(b.start_date));
 
-          if (cached.isEmpty) {
-            // Si no hay eventos en caché para esta ciudad, intentar con eventos de Bogotá en caché
-            print("No hay eventos en caché para $userCity, intentando con Bogotá");
-            yield* getBogotaEventsStream();
-          } else {
-            final topCached = cached.take(10).toList();
-            print("Cargados ${topCached.length} eventos cercanos desde caché");
-            yield topCached;
-          }
-        } catch (cacheError) {
-          print("Error al cargar eventos cercanos de caché: $cacheError");
-          // Si hay error al cargar el caché, intentar con eventos de Bogotá
-          yield* getBogotaEventsStream();
+  Stream <List<Event>> getTopNearbyEventsOfflineStream(String userCity) async* {
+    List<Event> cached=_localStorageRepository.getEvents();
+    List<Event> nearby = [];
+    for (int i = 0; i < cached.length; i++) {
+        Event e=cached[i];
+        if (e.location_id.isEmpty) continue;
+        app_models.Location? eventLocation =
+        await _locationController.getLocationById(e.location_id);
+        if (eventLocation == null) {
+          continue;
         }
-      }
-    } catch (error) {
-      print("Error general en getTopNearbyEventsStream: $error");
-      // En caso de error general, intentar con eventos de Bogotá
-      yield* getBogotaEventsStream();
+        if (eventLocation.city.toLowerCase().trim() ==
+            userCity.toLowerCase().trim()) {
+          nearby.add(e);
+        }
+    }
+    if (nearby.isEmpty){
+      yield* getBogotaEventsOfflineStream();
+    }else{
+      yield nearby.take(5).toList();
     }
   }
 
   ///Obtener eventos en Bogota
-  Stream<List<Event>> getBogotaEventsStream() async* {
-    try {
-      final connected = await hasConnection();
-      final box = await Hive.openBox('local_events');
-
-      if (connected){
-        await for (List<Event> events in _eventRepository.getEventsStream()) {
-          List<Event> bogotaEvents = [];
-
-          for (Event event in events) {
-            try {
-              final eventLocation = await _locationController.getLocationById(event.location_id);
-
-              if (eventLocation == null) {
-                continue;
-              }
-
-              final city = eventLocation.city;
-
-              if (city is String && city.toLowerCase().trim() == "bogotá") {
-                bogotaEvents.add(event);
-                await box.put(event.id, jsonEncode(event.toJson()));
-              }
-
-            } catch (error) {
-              continue;
-            }
-          }
-
-          if (bogotaEvents.isEmpty) {
-            print("No se encontraron eventos en Bogotá.");
-          }
-
-          yield bogotaEvents;
-        }
-      }else {
-
+  Stream<List<Event>> getBogotaEventsOnlineStream() async* {
+    await for (List<Event> events in _eventRepository.getEventsStream()) {
+      List<Event> bogotaEvents = [];
+      for (Event event in events) {
         try {
-          final cached = box.values
-              .map((e) => Event.fromJson(Map<String, dynamic>.from(jsonDecode(e.toString()))))
-              .toList()
-            ..sort((a, b) => a.start_date.compareTo(b.start_date));
-
-          yield cached;
-        } catch (cacheError) {
-          yield [];
+          final eventLocation = await _locationController.getLocationById(event.location_id);
+          if (eventLocation == null) continue;
+          final city = eventLocation.city;
+          if (city.toLowerCase().trim() == "bogotá") {
+            bogotaEvents.add(event);
+          }
+        } catch (_) {
+          continue;
         }
       }
-    } catch (error) {
-      yield [];
+      yield bogotaEvents;
+      final top5= bogotaEvents.take(5).toList();
+      await _localStorageRepository.saveEvents(top5);
     }
   }
 
-  ///Obtener los eventos recomendados para un usuario (user_id)
-  Stream<List<Event>> getRecommendedEventsStreamForUser(String userId) async* {
-    try {
-      final connected = await hasConnection();
-      final box = await Hive.openBox('local_recommends');
-
-      if (connected) {
-
-        await for (List<Event> events in _eventRepository.getRecommendedEventsStreamForUser(userId)) {
-          try {
-            await box.clear();
-            final eventsToCache = events.take(5).toList();
-            for (var event in eventsToCache) {
-              await box.put(event.id, jsonEncode(event.toJson()));
-            }
-            yield events;
-          } catch (cacheError) {
-            yield events;
-          }
-        }
-      } else {
-        try {
-          final cached = box.values
-              .map((e) => Event.fromJson(Map<String, dynamic>.from(jsonDecode(e.toString()))))
-              .toList()
-            ..sort((a, b) => a.start_date.compareTo(b.start_date));
-
-          if (cached.isEmpty) {
-            yield* getBogotaEventsStream();
-          } else {
-            yield cached;
-          }
-        } catch (cacheError) {
-          yield* getBogotaEventsStream();
-        }
+  Stream<List<Event>> getBogotaEventsOfflineStream() async* {
+    List<Event> cached = _localStorageRepository.getEvents();
+    List<Event> bogotaEvents = [];
+    for (int i = 0; i < cached.length; i++) {
+      Event e = cached[i];
+      if (e.location_id.isEmpty) continue;
+      app_models.Location? eventLocation =
+      await _locationController.getLocationById(e.location_id);
+      if (eventLocation == null) continue;
+      if (eventLocation.city.toLowerCase().trim() == 'bogotá') {
+        bogotaEvents.add(e);
       }
-    } catch (error) {
-      yield* getBogotaEventsStream();
     }
+    yield bogotaEvents.take(5).toList();
+  }
+
+  ///Obtener los eventos recomendados para un usuario (user_id)
+  Stream<List<Event>> getRecommendedEventsStreamForUserOnline(String userId) async* {
+    final box = await Hive.openBox('local_recommends');
+      await for (List<Event> events in _eventRepository.getRecommendedEventsStreamForUser(userId)) {
+        await box.clear();
+        List<Event> recommended = events
+          ..sort((a, b) => a.start_date.compareTo(b.start_date));
+        final top5 = recommended.take(5).toList();
+        _localStorageRepository.saveRecommends(top5);
+        yield recommended;
+      }
+
+  }
+
+  Stream<List<Event>> getRecommendedEventsStreamForUserOffline() async* {
+    final cached= _localStorageRepository.getRecommends()
+      ..sort((a, b) => a.start_date.compareTo(b.start_date));
+    yield cached.take(5).toList();
   }
 
  Future<List<Event>> getFirstNEvents(int n) async {
@@ -413,5 +350,24 @@ class EventController {
   await _eventRepository.addAttendeeToEvent(eventId, userId);
   }
 
+  Future<void> saveEventDraft(Event event) async {
+    await _localStorageRepository.saveEventDraft(event);
+  }
 
+  Future<Event?> getEventDraft() async {
+    return await _localStorageRepository.getEventDraft();
+  }
+
+  Future<void> deleteEventDraft() async {
+    await _localStorageRepository.deleteEventDraft();
+  }
+
+  //Guardar eventos en Hive al verlos online
+  Future<void> cacheEvent(Event event) async {
+    final box = await Hive.openBox('event_cache');
+    await box.put(event.id, jsonEncode(event.toJson()));
+  }
+  
 }
+
+  

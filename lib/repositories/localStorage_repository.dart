@@ -58,6 +58,25 @@ class LocalStorageRepository{
     return null;
   }
 
+  Future<void> saveEventDraft(Event eventDraft) async {
+    final box = await Hive.openBox('event_drafts');
+    await box.put('current_draft', jsonEncode(eventDraft.toJson()));
+  }
+
+  Future<Event?> getEventDraft() async {
+    final box = await Hive.openBox('event_drafts');
+    if (box.containsKey('current_draft')) {
+      final draftJson = box.get('current_draft');
+      return Event.fromJson(Map<String, dynamic>.from(jsonDecode(draftJson)));
+    }
+    return null;
+  }
+
+  Future<void> deleteEventDraft() async {
+    final box = await Hive.openBox('event_drafts');
+    await box.delete('current_draft');
+  }
+
   /// ----------------------- Categories ------------------------------
   List<Category_event> getCategories() {
     return _categoryBox.values.map((e) => Category_event.fromJson(Map<String, dynamic>.from(jsonDecode(e)))).toList();
