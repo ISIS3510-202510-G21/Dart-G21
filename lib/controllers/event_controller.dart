@@ -10,11 +10,13 @@ import 'package:geolocator/geolocator.dart';
 import 'package:dart_g21/models/location.dart' as app_models;
 import 'package:hive/hive.dart';
 import '../controllers/location_controller.dart';
+import 'category_controller.dart';
 
 class EventController {
   final EventRepository _eventRepository = EventRepository();
   final LocationController _locationController = LocationController();
   final LocalStorageRepository _localStorageRepository=LocalStorageRepository();
+  final CategoryController _categoryController = CategoryController();
 
   Stream<List<Event>> getEventsStream() {
     return _eventRepository.getEventsStream();
@@ -94,7 +96,7 @@ class EventController {
           ..sort((a, b) => a.start_date.compareTo(b.start_date));
 
         final top5 = upcoming.take(5).toList();
-        _localStorageRepository.saveEvents(events);
+        _localStorageRepository.saveEvents(top5,_categoryController);
         yield upcoming;
       }
   }
@@ -183,7 +185,7 @@ class EventController {
           } else {
             final topEvents = cityEvents.toList();
             final top5 = topEvents.take(5).toList();
-            _localStorageRepository.saveEvents(top5);
+            _localStorageRepository.saveEvents(top5,_categoryController);
             yield topEvents;
           }
         }
@@ -231,7 +233,7 @@ class EventController {
       }
       yield bogotaEvents;
       final top5= bogotaEvents.take(5).toList();
-      await _localStorageRepository.saveEvents(top5);
+      await _localStorageRepository.saveEvents(top5,_categoryController);
     }
   }
 
@@ -349,6 +351,15 @@ class EventController {
   //Suscribirse a un evento 
   Future<void> subscribeUserToEvent(String eventId, String userId) async {
   await _eventRepository.addAttendeeToEvent(eventId, userId);
+  }
+
+  Stream<List<Event>> getEventsByCategoryStreamOffline(String categoryId) async* {
+    List<Event> events = _localStorageRepository.getEvents()
+        .where((event) => event.category == categoryId)
+        .toList()
+      ..sort((a, b) => a.start_date.compareTo(b.start_date));
+    yield events;
+    print(events);
   }
 
 

@@ -1,21 +1,14 @@
 import 'dart:async';
-import 'dart:collection';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dart_g21/views/chatbot_view.dart';
 import 'package:dart_g21/views/map_view.dart';
 import 'package:dart_g21/views/profile_view.dart';
 import 'package:dart_g21/views/searchevent_view.dart';
-import 'package:dart_g21/views/eventdetail_view.dart';
 import 'package:flutter/material.dart';
 import '../controllers/category_controller.dart';
 import '../controllers/event_controller.dart';
-import '../controllers/location_controller.dart';
 import '../controllers/user_controller.dart';
 import '../models/category.dart';
-import '../models/event.dart';
 import '../models/user.dart';
 import '../widgets/eventslist.dart';
 import '../widgets/navigation_bar_attendant.dart';
@@ -23,7 +16,7 @@ import '../widgets/navigation_bar_host.dart';
 import '../core/colors.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:dart_g21/models/location.dart' as app_models;
+
 import 'categoriesfilter_view.dart';
 import 'myevents_view.dart';
 
@@ -181,7 +174,7 @@ class _HomePage extends State<HomePage> {
   /// bar with categories
   Widget _buildBarCategories() {
     return StreamBuilder<List<Category_event>>(
-      stream: _categoryController.getCategoriesStream(),
+      stream: getCategoriesConnection(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(child: CircularProgressIndicator());
@@ -224,6 +217,14 @@ class _HomePage extends State<HomePage> {
         );
       },
     );
+  }
+
+  Stream<List<Category_event>> getCategoriesConnection(){
+    if(isConnected){
+      return _categoryController.getCategoriesStream();
+    }else{
+      return _categoryController.getCategoriesStreamOffline();
+    }
   }
 
   /// gets user location and turn into location

@@ -7,6 +7,8 @@ import 'package:dart_g21/models/location.dart';
 import 'package:dart_g21/models/skill.dart';
 import 'package:synchronized/synchronized.dart';
 
+import '../controllers/category_controller.dart';
+
 class LocalStorageRepository{
   static final LocalStorageRepository _instance = LocalStorageRepository._internal();
 
@@ -40,11 +42,15 @@ class LocalStorageRepository{
       ..sort((a, b) => a.start_date.compareTo(b.start_date));
   }
 
-  Future<void> saveEvents(List<Event> events) async {
+  Future<void> saveEvents(List<Event> events, CategoryController categoryController) async {
     await _lock.synchronized(() async {
       for (var event in events) {
         if (!_eventBox.containsKey(event.id)) {
           await _eventBox.put(event.id, jsonEncode(event.toJson()));
+        }
+        Category_event? category = await categoryController.getCategoryById(event.category);
+        if (category != null) {
+          saveCategory(category);
         }
       }
     });
@@ -56,6 +62,13 @@ class LocalStorageRepository{
       return Event.fromJson(Map<String, dynamic>.from(jsonDecode(eventJson)));
     }
     return null;
+  }
+
+  Stream<List<Event>> getEventsByCategory(String categoryId) async* {
+    List<Event> events = getEvents()
+        .where((event) => event.category == categoryId)
+        .toList();
+    yield events;
   }
 
   /// ----------------------- Categories ------------------------------
@@ -71,6 +84,21 @@ class LocalStorageRepository{
         }
       }
     });
+  }
+  Future<void> saveCategory(Category_event category) async {
+    await _lock.synchronized(() async {
+      if (!_categoryBox.containsKey(category.id)) {
+        await _categoryBox.put(category.id, jsonEncode(category.toJson()));
+      }
+    });
+  }
+
+  Future<Category_event?> getCategoryById(String categoryId) async {
+    final categoryJson = _categoryBox.get(categoryId);
+    if (categoryJson != null) {
+      return Category_event.fromJson(Map<String, dynamic>.from(jsonDecode(categoryJson)));
+    }
+    return null;
   }
 
   /// ----------------------- Skills ------------------------------
