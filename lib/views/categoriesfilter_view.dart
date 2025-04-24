@@ -1,4 +1,5 @@
-import 'package:dart_g21/views/eventdetail_view.dart';
+import 'dart:async';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/core/colors.dart';
 import '../controllers/category_controller.dart';
@@ -6,6 +7,7 @@ import '../controllers/event_controller.dart';
 import '../models/category.dart';
 import '../models/event.dart';
 import '../widgets/eventcard_view.dart';
+import 'eventdetail_view.dart';
 
 class CategoriesFilter extends StatefulWidget {
   final String categoryId;
@@ -13,110 +15,139 @@ class CategoriesFilter extends StatefulWidget {
   const CategoriesFilter({Key? key, required this.categoryId, required this.userId}) : super(key: key);
 
   @override
-  _CategoriesFilter createState() => _CategoriesFilter();
+  _CategoriesFilterState createState() => _CategoriesFilterState();
 }
 
-class _CategoriesFilter extends State<CategoriesFilter> {
+class _CategoriesFilterState extends State<CategoriesFilter> {
   final CategoryController _categoryController = CategoryController();
   final EventController _eventController = EventController();
 
-  List<Event>? _allEvents;
-  Category_event? _category;
-  List<Event>? _events;
+  late final Connectivity _connectivity;
+  bool isConnected = true;
+  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+
   List<bool> isSelected = [false, false];
   String selectedSort = "Soonest to Latest";
+  Category_event? _category;
 
   @override
   void initState() {
     super.initState();
-    _loadCategoryEvents();
+    _checkInitialConnectivityAndLoad();
+    setUpConnectivity();
+    _loadCategory();
   }
 
-  Future<void> _loadCategoryEvents() async {
-    List<Event> events = await _eventController.getEventsByCategory(widget.categoryId).first;
-    final category = await _categoryController.getCategoryById(widget.categoryId);
-    setState(() {
-      _category = category;
-      _allEvents = events;
-      _events = events;
-    });
+  @override
+  void dispose() {
+    _connectivitySubscription.cancel();
+    super.dispose();
   }
 
-  void _handleSelection(int index) async {
-    if (isSelected[index]) {
-      setState(() {
-        isSelected = [false, false];
-        _events = _allEvents;
-      });
-      return;
-    }
-
-    setState(() {
-      isSelected = List.generate(isSelected.length, (i) => i == index);
-    });
-
-    if (_allEvents != null) {
-      List<Event> filtered;
-      if (index == 0) {
-        filtered = await _eventController.getFreeEventsStream(_allEvents!).first;
-      } else {
-        filtered = await _eventController.getPaidEventsStream(_allEvents!).first;
+  void setUpConnectivity() {
+    _connectivity = Connectivity();
+    _connectivitySubscription = _connectivity.onConnectivityChanged.listen((
+        List<ConnectivityResult> results) async {
+      final prev = isConnected;
+      final currentlyConnected = !results.contains(ConnectivityResult.none);
+      if (prev != currentlyConnected) {
+        setState(() {
+          isConnected = currentlyConnected;
+        });
       }
+    });
+  }
+  Future<void> _checkInitialConnectivityAndLoad() async {
+    final result = await Connectivity().checkConnectivity();
+    setState(() {
+      isConnected = !result.contains(ConnectivityResult.none);
+    });
+    print("Estado inicial de conexión corregido: $isConnected");
 
+    await _loadCategory();
+  }
+
+  Future<void> _loadCategory() async {
+    Category_event? category;
+    if (isConnected) {
+      category = await _categoryController.getCategoryById(widget.categoryId);
+    } else {
+      category = await _categoryController.getCategoryByIdOffline(widget.categoryId);
+    }
+    if (mounted) {
       setState(() {
-        _events = filtered;
+        _category = category;
       });
     }
   }
 
-
-
-  void _handleSort(String sortOption) async {
-    setState(() {
-      selectedSort = sortOption;
-    });
-
-    if (_events != null) {
-      _events = await _eventController.getEventsSortedByDate(_events!, sortOption).first;
-      setState(() {});
+  // Filtros y ordenamiento en memoria
+  Future<List<Event>> _applyFiltersAndSort(List<Event> events) async {
+    List<Event> filtered = events;
+    if (isSelected[0]) {
+      filtered = await _eventController.getFreeEventsStream(filtered).first;
+    } else if (isSelected[1]) {
+      filtered = await _eventController.getPaidEventsStream(filtered).first;
     }
+    filtered = await _eventController.getEventsSortedByDate(filtered, selectedSort).first;
+    return filtered;
   }
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.primary,
+      appBar: AppBar(
         backgroundColor: AppColors.primary,
-        appBar: AppBar(
-          backgroundColor: AppColors.primary,
-          title: Text(
-            _category?.name ?? "Category",
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 24),
-          ),
+        title: Text(
+          _category?.name ?? "Category",
+          style: const TextStyle(color: AppColors.textPrimary, fontSize: 24),
         ),
+      ),
       body: Column(
         children: [
           _buildFilterBar(),
           Expanded(
-            flex: 1,
-            child: _events == null
-                ? const Center(child: CircularProgressIndicator())
-                : _events!.isEmpty
-                ? const Center(child: Text("No events found"))
-                : ListView.builder(
-              itemCount: _events!.length,
-              itemBuilder: (context, index) {
-                return EventCard(
-                  event: _events![index],
-                  onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => EventDetailScreen(
-                          eventId: _events![index].id,
-                          userId: widget.userId,
-                        ),
-                      ),
-                    ),
+            child: StreamBuilder<List<Event>>(
+              stream: isConnected
+                  ? _eventController.getEventsByCategory(widget.categoryId)
+                  : _eventController.getEventsByCategoryStreamOffline(widget.categoryId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return const Center(child: Text("Error loading events"));
+                }
+                List<Event> events = snapshot.data ?? [];
+                return FutureBuilder<List<Event>>(
+                  future: _applyFiltersAndSort(events),
+                  builder: (context, filteredSnapshot) {
+                    if (filteredSnapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    final filteredEvents = filteredSnapshot.data ?? [];
+                    if (filteredEvents.isEmpty) {
+                      return const Center(child: Text("No events found"));
+                    }
+                    return ListView.builder(
+                      itemCount: filteredEvents.length,
+                      itemBuilder: (context, index) {
+                        return EventCard(
+                          event: filteredEvents[index],
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => EventDetailScreen(
+                                eventId: filteredEvents[index].id,
+                                userId: widget.userId,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
                 );
               },
             ),
@@ -143,9 +174,16 @@ class _CategoriesFilter extends State<CategoriesFilter> {
 
   Widget _buildFilterButton(String label, int index) {
     final bool selected = isSelected[index];
-
     return GestureDetector(
-      onTap: () => _handleSelection(index),
+      onTap: () {
+        setState(() {
+          if (isSelected[index]) {
+            isSelected = [false, false];
+          } else {
+            isSelected = List.generate(isSelected.length, (i) => i == index);
+          }
+        });
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
@@ -172,7 +210,6 @@ class _CategoriesFilter extends State<CategoriesFilter> {
     );
   }
 
-
   Widget _buildSortMenu() {
     return Container(
       height: 40,
@@ -189,7 +226,11 @@ class _CategoriesFilter extends State<CategoriesFilter> {
         ],
       ),
       child: PopupMenuButton<String>(
-        onSelected: _handleSort,
+        onSelected: (sortOption) {
+          setState(() {
+            selectedSort = sortOption;
+          });
+        },
         itemBuilder: (context) => const [
           PopupMenuItem(value: "Soonest to Latest", child: Text("Soonest to Latest")),
           PopupMenuItem(value: "Latest to Soonest", child: Text("Latest to Soonest")),
@@ -206,18 +247,4 @@ class _CategoriesFilter extends State<CategoriesFilter> {
       ),
     );
   }
-
-
-
-  Future<void> _showDetailEvent(String idEvent) async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => EventDetailScreen(
-          eventId: idEvent,
-          userId: widget.userId,
-        ),
-      ),
-    );
-      }
 }
