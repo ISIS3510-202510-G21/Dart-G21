@@ -364,6 +364,10 @@ class EventController {
     return await _localStorageRepository.getEventDraft();
   }
 
+  Future<void> deleteEventDraft() async {
+    await _localStorageRepository.deleteEventDraft();
+  }
+
   Stream<List<Event>> getEventsByCategoryStreamOffline(String categoryId) async* {
     List<Event> events = _localStorageRepository.getEvents()
         .where((event) => event.category == categoryId)
