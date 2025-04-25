@@ -65,8 +65,6 @@ class LocalStorageRepository{
         if (profile != null) {
           saveProfile(event.creator_id, profile);
         }
-
-
       }
     });
   }
@@ -84,6 +82,29 @@ class LocalStorageRepository{
         .where((event) => event.category == categoryId)
         .toList();
     yield events;
+  }
+  
+  Stream<List<Event>> getEventsByCity(String cityId) async* {
+    List<Event> events = getEvents();
+    List<Event> eventsCity=[];
+    Event event;
+    for (event in events) {
+      Location? location = await getLocationById(event.location_id);
+      if (location != null && location.city == cityId) {
+        eventsCity.add(event);
+      }
+    }
+  }
+
+  Future<Location?> getLocationOfEvent(String eventId) async {
+    final eventJson = _eventBox.get(eventId);
+    Location? location;
+    Event? event;
+    if (eventJson != null) {
+      event=Event.fromJson(Map<String, dynamic>.from(jsonDecode(eventJson)));
+      return  location = await getLocationById(event.location_id);
+    }
+    return null;
   }
 
   /// ----------------------- Categories ------------------------------
@@ -153,6 +174,14 @@ class LocalStorageRepository{
         await _locationBox.put(location.id, jsonEncode(location.toJson()));
       }
     });
+  }
+
+  Future<Location?> getLocationById(String locationId) async {
+    final locationJson = _locationBox.get(locationId);
+    if (locationJson != null) {
+      return Location.fromJson(Map<String, dynamic>.from(jsonDecode(locationJson)));
+    }
+    return null;
   }
 
   /// ----------------------- Recommendations ------------------------------
