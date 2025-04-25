@@ -45,6 +45,7 @@ class _SearchEventViewState extends State<SearchEventView> {
   DateTime? selectedEndDate;
 
   bool isConnected = true;
+  bool isLoading = false;
   late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
 
   @override
@@ -111,6 +112,11 @@ Future<List<Event>> getCachedEvents10() async {
   return events.take(10).toList(); // Limitar a 10 eventos aquí
 }
 Future<void> initHiveAndLoad() async {
+
+   setState(() {
+    isLoading = true; // Inicia la carga
+  });
+
   if (!isConnected) {
     final local = await getCachedEvents10(); 
     localCategories = await _categoryController.getCachedCategories();
@@ -120,22 +126,24 @@ Future<void> initHiveAndLoad() async {
     setState(() {
       allEvents = local;
       filteredEvents = local; 
+      isLoading = false; 
     });
   } else {
-    final categories = await _categoryController.getCategoriesStream().first;
+    //final categories = await _categoryController.getCategoriesStream().first;
     final skills = await _skillController.getSkillsStream().first;
-    final locations = await _locationController.getLocationsStream().first;
+    //final locations = await _locationController.getLocationsStream().first;
     final events = await _eventController.getFirstNEvents(20); 
 
     await _eventController.saveEventsToCache(events.take(10).toList()); 
-    await _categoryController.saveCategoriesToCache(categories);
+    //await _categoryController.saveCategoriesToCache(categories);
     await _skillController.saveSkillsToCache(skills);
-    await _locationController.saveLocationsToCache(locations);
+    //await _locationController.saveLocationsToCache(locations);
 
     events.sort((a, b) => a.start_date.compareTo(b.start_date));
     setState(() {
       allEvents = events; 
       filteredEvents = events; 
+      isLoading = false;
     });
   }
 }
@@ -519,10 +527,20 @@ Future<void> initHiveAndLoad() async {
               ),
             ),
             const SizedBox(height: 20),
-          if (filteredEvents.isEmpty)
-            const Center(
-              child: Text("No events found", style: TextStyle(color: AppColors.secondaryText, fontSize: 16)),
-            ),
+          
+            isLoading?
+                Expanded(
+            
+                child: Center(
+                  child: CircularProgressIndicator(), // Indicador de carga
+                ),
+                ):
+            filteredEvents.isEmpty && allEvents.isNotEmpty?
+            Expanded(
+              child: Center(
+                child: Text("No events found with the selected filters", style: TextStyle(color: AppColors.secondaryText, fontSize: 16)),
+              ),):
+          
             Expanded(
               child: ListView.builder(
                 itemCount: filteredEvents.length,
@@ -539,7 +557,8 @@ Future<void> initHiveAndLoad() async {
                   });
                 },
               ),
-            )
+            ),
+          
           ],
         ),
       ),

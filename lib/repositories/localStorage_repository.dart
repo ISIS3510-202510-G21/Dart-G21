@@ -52,10 +52,10 @@ class LocalStorageRepository{
       for (var event in events) {
         if (!_eventBox.containsKey(event.id)) {
           print("SAVED ${_eventBox.values.length} events");
-          if (_eventBox.values.length > 10) {
-            await deleteOldEvents(); // Eliminar el evento más antiguo
-            print("5 events DELETED");
-          }
+          // if (_eventBox.values.length >= 10) {
+          //   await deleteOldEvents(); // Eliminar el evento más antiguo
+          //   print("5 events DELETED");
+          // }
           await _eventBox.put(event.id, jsonEncode(event.toJson()));
         }
 
