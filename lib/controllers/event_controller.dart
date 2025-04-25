@@ -12,6 +12,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:dart_g21/models/location.dart' as app_models;
 import 'package:hive/hive.dart';
 import '../controllers/location_controller.dart';
+import '../repositories/localStorage_repository.dart';
 import 'category_controller.dart';
 
 class EventController {
@@ -20,6 +21,7 @@ class EventController {
   final LocalStorageRepository _localStorageRepository=LocalStorageRepository();
   final CategoryController _categoryController = CategoryController();
   final ProfileController _profileController = ProfileController();
+
 
   Stream<List<Event>> getEventsStream() {
     return _eventRepository.getEventsStream();
@@ -356,6 +358,11 @@ class EventController {
   await _eventRepository.addAttendeeToEvent(eventId, userId);
   }
 
+
+  Future<List<Event>> getCachedEvents() async {
+    return _localStorageRepository.getEvents();
+  }
+
   Stream<List<Event>> getEventsByCategoryStreamOffline(String categoryId) async* {
     List<Event> events = _localStorageRepository.getEvents()
         .where((event) => event.category == categoryId)
@@ -365,5 +372,7 @@ class EventController {
     print(events);
   }
 
-
+  Future<void> saveEventsToCache(List<Event> events) async {
+    await _localStorageRepository.saveEvents(events);
+  }
 }
