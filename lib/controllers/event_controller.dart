@@ -21,6 +21,7 @@ class EventController {
   final CategoryController _categoryController = CategoryController();
   final ProfileController _profileController = ProfileController();
 
+
   Stream<List<Event>> getEventsStream() {
     return _eventRepository.getEventsStream();
   }
@@ -366,6 +367,9 @@ class EventController {
 
   Future<void> deleteEventDraft() async {
     await _localStorageRepository.deleteEventDraft();
+
+  Future<List<Event>> getCachedEvents() async {
+    return _localStorageRepository.getEvents();
   }
 
   Stream<List<Event>> getEventsByCategoryStreamOffline(String categoryId) async* {
@@ -376,5 +380,10 @@ class EventController {
     yield events;
     print(events);
   }
+    
+  Future<void> saveEventsToCache(List<Event> events) async {
+    await _localStorageRepository.saveEvents(events);
+  }
+
 }
 

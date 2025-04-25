@@ -33,7 +33,7 @@ class _SearchEventViewState extends State<SearchEventView> {
 
   List<Event> allEvents = [];
   List<Event> filteredEvents = [];
-   List<Category_event> localCategories = [];
+  List<Category_event> localCategories = [];
   List<Skill> localSkills = [];
   List<Location> localLocations = [];
 
@@ -51,9 +51,9 @@ class _SearchEventViewState extends State<SearchEventView> {
   void initState() {
     super.initState();
     _setupConnectivity();
-    _checkInitialConnectivity();
-    initHiveAndLoad();
+    _checkInitialConnectivityAndLoad(); 
   }
+
 void _setupConnectivity() {
   _connectivity = Connectivity();
   _connectivitySubscription = _connectivity.onConnectivityChanged.listen((List<ConnectivityResult> results) async {
@@ -80,89 +80,71 @@ void _setupConnectivity() {
         //   ),
         // );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text("Connection lost, Offline mode activated", style: TextStyle(color: AppColors.primary, fontSize: 16)),
-            backgroundColor: AppColors.buttonRed,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: const Text("Connection lost, Offline mode activated", style: TextStyle(color: AppColors.primary, fontSize: 16)),
+        //     backgroundColor: AppColors.buttonRed,
+        //     behavior: SnackBarBehavior.floating,
+        //     shape: RoundedRectangleBorder(
+        //       borderRadius: BorderRadius.circular(12),
+        //     ),
+        //   ),
+        // );
       }
     }
   });
 }
 
 
-  Future<void> _checkInitialConnectivity() async {
-    final result = await Connectivity().checkConnectivity();
-    setState(() => isConnected = !result.contains(ConnectivityResult.none));
+Future<void> _checkInitialConnectivityAndLoad() async {
+  final result = await Connectivity().checkConnectivity();
+  setState(() {
+    isConnected = !result.contains(ConnectivityResult.none);
+  });
+  print("Estado inicial de conexión corregido: $isConnected");
+
+  await initHiveAndLoad(); // Ahora sí, después de saber el estado real
+}
+
+Future<List<Event>> getCachedEvents10() async {
+  final events = await _eventController.getCachedEvents();
+  return events.take(10).toList(); // Limitar a 10 eventos aquí
+}
+Future<void> initHiveAndLoad() async {
+  if (!isConnected) {
+    final local = await getCachedEvents10(); 
+    localCategories = await _categoryController.getCachedCategories();
+    localSkills = await _skillController.getCachedSkills();
+    localLocations = await _locationController.getCachedLocations();
+    local.sort((a, b) => a.start_date.compareTo(b.start_date)); 
+    setState(() {
+      allEvents = local;
+      filteredEvents = local; 
+    });
+  } else {
+    final categories = await _categoryController.getCategoriesStream().first;
+    final skills = await _skillController.getSkillsStream().first;
+    final locations = await _locationController.getLocationsStream().first;
+    final events = await _eventController.getFirstNEvents(20); 
+
+    await _eventController.saveEventsToCache(events.take(10).toList()); 
+    await _categoryController.saveCategoriesToCache(categories);
+    await _skillController.saveSkillsToCache(skills);
+    await _locationController.saveLocationsToCache(locations);
+
+    events.sort((a, b) => a.start_date.compareTo(b.start_date));
+    setState(() {
+      allEvents = events; 
+      filteredEvents = events; 
+    });
   }
+}
 
-  Future<void> initHiveAndLoad() async {
-    await Hive.initFlutter();
-    final eventBox = await Hive.openBox('search_events');
-    final catBox = await Hive.openBox('local_categories');
-    final skillBox = await Hive.openBox('local_skills');
-    final locationBox = await Hive.openBox('local_locations');
-    if (!isConnected) {
-      final local = eventBox.values.map((e) => Event.fromJson(Map<String, dynamic>.from(jsonDecode(e)))).toList();
-      localCategories = catBox.values.map((e) => Category_event.fromJson(Map<String, dynamic>.from(jsonDecode(e)))).toList();
-      localSkills = skillBox.values.map((e) => Skill.fromJson(Map<String, dynamic>.from(jsonDecode(e)))).toList();
-      localLocations = locationBox.values.map((e) => Location.fromJson(Map<String, dynamic>.from(jsonDecode(e)))).toList();
-      local.sort((a, b) => a.start_date.compareTo(b.start_date));
-      setState(() {
-        allEvents = local;
-        filteredEvents = local;
-      });
-    } else {
-      final categories = await _categoryController.getCategoriesStream().first;
-      final skills = await _skillController.getSkillsStream().first;
-      final locations = await _locationController.getLocationsStream().first;
-      final events = await _eventController.getFirstNEvents(20);
-      final limited = events.take(10).toList();
-     
-      for (var event in limited) {
-        eventBox.put(event.id, jsonEncode(event.toJson()));
-      }
-        for (var category in categories) {
-        localCategories.add(category);
-        catBox.put(category.id, jsonEncode(category.toJson()));
-      }
-      for (var skill in skills) {
-        localSkills.add(skill);
-        skillBox.put(skill.id, jsonEncode(skill.toJson()));
-      }
-      for (var location in locations) {
-        localLocations.add(location);
-        locationBox.put(location.id, jsonEncode(location.toJson()));
-      }
-
-
-      events.sort((a, b) => a.start_date.compareTo(b.start_date));
-      setState(() {
-        allEvents = events;
-        filteredEvents = events;
-      });
-    }
-
-  }
-
-List<String> getOfflineLocationIdsByUniversity(bool isUniversity) {
-    return localLocations
-      .where((location) => location.university == isUniversity)
-      .map((location) => location.id)
-      .toList();
-  }
-
- @override
+  @override
   void dispose() {
     _connectivitySubscription.cancel();
     super.dispose();
   }
-
 
   void applyFiltersOffline() {
     List<Event> result = allEvents;
@@ -177,7 +159,10 @@ List<String> getOfflineLocationIdsByUniversity(bool isUniversity) {
       result = result.where((e) => e.skills.contains(selectedSkillId)).toList();
     }
     if (selectedLocation != null) {
-      List<String> matchingLocationIds = getOfflineLocationIdsByUniversity(selectedLocation == 'university');
+      List<String> matchingLocationIds = localLocations
+        .where((location) => location.university == (selectedLocation == 'university'))
+        .map((location) => location.id)
+        .toList();
       result = result.where((e) => matchingLocationIds.contains(e.location_id)).toList();
     }
     if (selectedStartDate != null && selectedEndDate != null) {
@@ -192,8 +177,6 @@ List<String> getOfflineLocationIdsByUniversity(bool isUniversity) {
     });
   }
 
-
-
   void applyFilters() async {
     final result = await _eventController.filterEvents(
       allEvents: allEvents,
@@ -204,7 +187,6 @@ List<String> getOfflineLocationIdsByUniversity(bool isUniversity) {
       selectedStartDate: selectedStartDate,
       selectedEndDate: selectedEndDate,
     );
-
 
     setState(() {
       filteredEvents = result;
@@ -223,59 +205,57 @@ List<String> getOfflineLocationIdsByUniversity(bool isUniversity) {
     });
   }
 
-Widget styledDropdown<T>({
-  required T? value,
-  required String hint,
-  required List<DropdownMenuItem<T>> items,
-  required Function(T?) onChanged,
-}) {
-  return ConstrainedBox(
-    constraints: const BoxConstraints(minWidth: 120, maxWidth: 150, minHeight: 34, maxHeight: 40), 
-    child: Container(
-      decoration: BoxDecoration(
-        color: AppColors.secondary, 
-        borderRadius: BorderRadius.circular(20),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<T>(
-          isExpanded: true,
-          value: value,
-          dropdownColor: AppColors.primary, 
-          hint: Text(
-            hint,
-            style: const TextStyle(color: AppColors.primary, fontSize: 14),
-          ),
-          items: items.map((item) {
-            return DropdownMenuItem<T>(
-              value: item.value,
-              child: DefaultTextStyle(
-                style: const TextStyle(color: Colors.black),
-                child: item.child,
-              ),
-            );
-          }).toList(),
-          onChanged: onChanged,
-          iconEnabledColor: AppColors.primary,
-          style: const TextStyle(color: AppColors.primary, fontSize: 14),
-          selectedItemBuilder: (BuildContext context) {
-            return items.map<Widget>((DropdownMenuItem<T> item) {
-              return Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  item.child is Text ? (item.child as Text).data ?? '' : item.value.toString(),
-                  style: const TextStyle(color: AppColors.primary, fontSize: 14),
+  Widget styledDropdown<T>({
+    required T? value,
+    required String hint,
+    required List<DropdownMenuItem<T>> items,
+    required Function(T?) onChanged,
+  }) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 120, maxWidth: 150, minHeight: 34, maxHeight: 40), 
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.secondary, 
+          borderRadius: BorderRadius.circular(20),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<T>(
+            isExpanded: true,
+            value: value,
+            dropdownColor: AppColors.primary, 
+            hint: Text(
+              hint,
+              style: const TextStyle(color: AppColors.primary, fontSize: 14),
+            ),
+            items: items.map((item) {
+              return DropdownMenuItem<T>(
+                value: item.value,
+                child: DefaultTextStyle(
+                  style: const TextStyle(color: Colors.black),
+                  child: item.child,
                 ),
               );
-            }).toList();
-          },
+            }).toList(),
+            onChanged: onChanged,
+            iconEnabledColor: AppColors.primary,
+            style: const TextStyle(color: AppColors.primary, fontSize: 14),
+            selectedItemBuilder: (BuildContext context) {
+              return items.map<Widget>((DropdownMenuItem<T> item) {
+                return Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    item.child is Text ? (item.child as Text).data ?? '' : item.value.toString(),
+                    style: const TextStyle(color: AppColors.primary, fontSize: 14),
+                  ),
+                );
+              }).toList();
+            },
+          ),
         ),
       ),
-    ),
-  );
-}
-
-
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -308,256 +288,253 @@ Widget styledDropdown<T>({
             ),
             const SizedBox(height: 10),
             Align(
-  alignment: Alignment.centerLeft,
-  child: SingleChildScrollView(
-    scrollDirection: Axis.horizontal, // Habilita el desplazamiento horizontal
-    child: Row(
-      children: [
-         isConnected ?  styledDropdown<String>(
-          value: selectedType,
-          hint: "By Type",
-          items: const [
-            DropdownMenuItem(value: 'free', child: Text("Free")),
-            DropdownMenuItem(value: 'paid', child: Text("Paid")),
-          ],
-          onChanged: (value) {
-            setState(() => selectedType = value);
-            applyFilters();
-          },
-        ): styledDropdown<String>(
-            value: selectedType,
-            hint: "By Type",
-            items: const [
-              DropdownMenuItem(value: 'free', child: Text("Free")),
-              DropdownMenuItem(value: 'paid', child: Text("Paid")),
-            ],
-            onChanged: (value) {
-              setState(() => selectedType = value);
-              applyFiltersOffline();
-            },
-          )
-        ,
-        const SizedBox(width: 8), // Espaciado entre los filtros
-        isConnected ?   FutureBuilder(
-          future: _categoryController.getCategoriesStream().first,
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) return const SizedBox();
-            return styledDropdown<String>(
-              value: selectedCategoryId,
-              hint: "By Category",
-              items: snapshot.data!.map((cat) => DropdownMenuItem(
-                value: cat.id,
-                child: Text(cat.name),
-              )).toList(),
-              onChanged: (value) {
-                setState(() => selectedCategoryId = value);
-                applyFilters();
-              },
-            );
-          },
-        ) : styledDropdown<String>(
-            value: selectedCategoryId,
-            hint: "By Category",
-            items: localCategories.map((cat) => DropdownMenuItem(
-              value: cat.id,
-              child: Text(cat.name),
-            )).toList(),
-            onChanged: (value) {
-              setState(() => selectedCategoryId = value);
-              applyFiltersOffline();
-            },
-          ),
-        const SizedBox(width: 8),
-        isConnected ?    FutureBuilder(
-          future: _skillController.getSkillsStream().first,
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) return const SizedBox();
-            return styledDropdown<String>(
-              value: selectedSkillId,
-              hint: "By Skill",
-              items: snapshot.data!.map((skill) => DropdownMenuItem(
-                value: skill.id,
-                child: Text(skill.name),
-              )).toList(),
-              onChanged: (value) {
-                setState(() => selectedSkillId = value);
-                applyFilters();
-              },
-            );
-          },
-        ):styledDropdown<String>(
-            value: selectedSkillId,
-            hint: "By Skill",
-            items: localSkills.map((skill) => DropdownMenuItem(
-              value: skill.id,
-              child: Text(skill.name),
-            )).toList(),
-            onChanged: (value) {
-              setState(() => selectedSkillId = value);
-              applyFiltersOffline();
-            },
-          )
-        ,
-        const SizedBox(width: 8),
-        isConnected ?    styledDropdown<String>(
-          value: selectedLocation,
-          hint: "By Location",
-          items: const [
-            DropdownMenuItem(value: 'university', child: Text("University")),
-            DropdownMenuItem(value: 'other', child: Text("Other")),
-          ],
-          onChanged: (value) {
-            setState(() => selectedLocation = value);
-            applyFilters();
-          },
-        ):styledDropdown<String>(
-            value: selectedLocation,
-            hint: "By Location",
-            items: const [
-              DropdownMenuItem(value: 'university', child: Text("University")),
-              DropdownMenuItem(value: 'other', child: Text("Other")),
-            ],
-            onChanged: (value) {
-              setState(() => selectedLocation = value);
-              applyFiltersOffline();
-            },
-          ),
-        const SizedBox(width: 8),
-        isConnected ?   TextButton.icon(
-          style: TextButton.styleFrom(
-            backgroundColor: AppColors.secondary,
-            foregroundColor: AppColors.primary,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            minimumSize: const Size(150, 40),
-          ),
-          onPressed: () async {
-            final pickedStart = await showDatePicker(
-              context: context,
-              initialDate: selectedStartDate ?? DateTime.now(),
-              firstDate: DateTime(2020),
-              lastDate: DateTime(2100),
-            );
-            if (pickedStart != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Now select the end date")),
-              );
+              alignment: Alignment.centerLeft,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    isConnected ? styledDropdown<String>(
+                      value: selectedType,
+                      hint: "By Type",
+                      items: const [
+                        DropdownMenuItem(value: 'free', child: Text("Free")),
+                        DropdownMenuItem(value: 'paid', child: Text("Paid")),
+                      ],
+                      onChanged: (value) {
+                        setState(() => selectedType = value);
+                        applyFilters();
+                      },
+                    ) : styledDropdown<String>(
+                      value: selectedType,
+                      hint: "By Type",
+                      items: const [
+                        DropdownMenuItem(value: 'free', child: Text("Free")),
+                        DropdownMenuItem(value: 'paid', child: Text("Paid")),
+                      ],
+                      onChanged: (value) {
+                        setState(() => selectedType = value);
+                        applyFiltersOffline();
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    isConnected ? FutureBuilder(
+                      future: _categoryController.getCategoriesStream().first,
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) return const SizedBox();
+                        return styledDropdown<String>(
+                          value: selectedCategoryId,
+                          hint: "By Category",
+                          items: snapshot.data!.map((cat) => DropdownMenuItem(
+                            value: cat.id,
+                            child: Text(cat.name),
+                          )).toList(),
+                          onChanged: (value) {
+                            setState(() => selectedCategoryId = value);
+                            applyFilters();
+                          },
+                        );
+                      },
+                    ) : styledDropdown<String>(
+                      value: selectedCategoryId,
+                      hint: "By Category",
+                      items: localCategories.map((cat) => DropdownMenuItem(
+                        value: cat.id,
+                        child: Text(cat.name),
+                      )).toList(),
+                      onChanged: (value) {
+                        setState(() => selectedCategoryId = value);
+                        applyFiltersOffline();
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    isConnected ? FutureBuilder(
+                      future: _skillController.getSkillsStream().first,
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) return const SizedBox();
+                        return styledDropdown<String>(
+                          value: selectedSkillId,
+                          hint: "By Skill",
+                          items: snapshot.data!.map((skill) => DropdownMenuItem(
+                            value: skill.id,
+                            child: Text(skill.name),
+                          )).toList(),
+                          onChanged: (value) {
+                            setState(() => selectedSkillId = value);
+                            applyFilters();
+                          },
+                        );
+                      },
+                    ) : styledDropdown<String>(
+                      value: selectedSkillId,
+                      hint: "By Skill",
+                      items: localSkills.map((skill) => DropdownMenuItem(
+                        value: skill.id,
+                        child: Text(skill.name),
+                      )).toList(),
+                      onChanged: (value) {
+                        setState(() => selectedSkillId = value);
+                        applyFiltersOffline();
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    isConnected ? styledDropdown<String>(
+                      value: selectedLocation,
+                      hint: "By Location",
+                      items: const [
+                        DropdownMenuItem(value: 'university', child: Text("University")),
+                        DropdownMenuItem(value: 'other', child: Text("Other")),
+                      ],
+                      onChanged: (value) {
+                        setState(() => selectedLocation = value);
+                        applyFilters();
+                      },
+                    ) : styledDropdown<String>(
+                      value: selectedLocation,
+                      hint: "By Location",
+                      items: const [
+                        DropdownMenuItem(value: 'university', child: Text("University")),
+                        DropdownMenuItem(value: 'other', child: Text("Other")),
+                      ],
+                      onChanged: (value) {
+                        setState(() => selectedLocation = value);
+                        applyFiltersOffline();
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    isConnected ? TextButton.icon(
+                      style: TextButton.styleFrom(
+                        backgroundColor: AppColors.secondary,
+                        foregroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        minimumSize: const Size(150, 40),
+                      ),
+                      onPressed: () async {
+                        final pickedStart = await showDatePicker(
+                          context: context,
+                          initialDate: selectedStartDate ?? DateTime.now(),
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2100),
+                        );
+                        if (pickedStart != null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Now select the end date")),
+                          );
 
-              final pickedEnd = await showDatePicker(
-                context: context,
-                initialDate: pickedStart,
-                firstDate: pickedStart,
-                lastDate: DateTime(2100),
-              );
-              if (pickedEnd != null) {
-                if (pickedStart.isAfter(pickedEnd)) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Start date must be before end date")),
-                  );
-                }
-              }
+                          final pickedEnd = await showDatePicker(
+                            context: context,
+                            initialDate: pickedStart,
+                            firstDate: pickedStart,
+                            lastDate: DateTime(2100),
+                          );
+                          if (pickedEnd != null) {
+                            if (pickedStart.isAfter(pickedEnd)) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Start date must be before end date")),
+                              );
+                            }
+                          }
 
-              if (pickedEnd != null) {
-                setState(() {
-                  selectedStartDate = pickedStart;
-                  selectedEndDate = pickedEnd;
-                });
-                applyFilters();
-              }
-            }
-          },
-          icon: const Icon(Icons.date_range, color: AppColors.primary),
-          label: Text(
-            selectedStartDate == null || selectedEndDate == null
-                ? "By Date"
-                : "${selectedStartDate!.day}/${selectedStartDate!.month} - ${selectedEndDate!.day}/${selectedEndDate!.month}",
-            style: const TextStyle(color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.w500),
-          ),
-        ):TextButton.icon(
-          style: TextButton.styleFrom(
-            backgroundColor: AppColors.secondary,
-            foregroundColor: AppColors.primary,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            minimumSize: const Size(150, 40),
-          ),
-          onPressed: () async {
-            final pickedStart = await showDatePicker(
-              context: context,
-              initialDate: selectedStartDate ?? DateTime.now(),
-              firstDate: DateTime(2020),
-              lastDate: DateTime(2100),
-            );
-            if (pickedStart != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Now select the end date")),
-              );
+                          if (pickedEnd != null) {
+                            setState(() {
+                              selectedStartDate = pickedStart;
+                              selectedEndDate = pickedEnd;
+                            });
+                            applyFilters();
+                          }
+                        }
+                      },
+                      icon: const Icon(Icons.date_range, color: AppColors.primary),
+                      label: Text(
+                        selectedStartDate == null || selectedEndDate == null
+                            ? "By Date"
+                            : "${selectedStartDate!.day}/${selectedStartDate!.month} - ${selectedEndDate!.day}/${selectedEndDate!.month}",
+                        style: const TextStyle(color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.w500),
+                      ),
+                    ) : TextButton.icon(
+                      style: TextButton.styleFrom(
+                        backgroundColor: AppColors.secondary,
+                        foregroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        minimumSize: const Size(150, 40),
+                      ),
+                      onPressed: () async {
+                        final pickedStart = await showDatePicker(
+                          context: context,
+                          initialDate: selectedStartDate ?? DateTime.now(),
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2100),
+                        );
+                        if (pickedStart != null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Now select the end date")),
+                          );
 
-              final pickedEnd = await showDatePicker(
-                context: context,
-                initialDate: pickedStart,
-                firstDate: pickedStart,
-                lastDate: DateTime(2100),
-              );
-              if (pickedEnd != null) {
-                if (pickedStart.isAfter(pickedEnd)) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Start date must be before end date")),
-                  );
-                }
-              }
+                          final pickedEnd = await showDatePicker(
+                            context: context,
+                            initialDate: pickedStart,
+                            firstDate: pickedStart,
+                            lastDate: DateTime(2100),
+                          );
+                          if (pickedEnd != null) {
+                            if (pickedStart.isAfter(pickedEnd)) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Start date must be before end date")),
+                              );
+                            }
+                          }
 
-              if (pickedEnd != null) {
-                setState(() {
-                  selectedStartDate = pickedStart;
-                  selectedEndDate = pickedEnd;
-                });
-                applyFiltersOffline();
-              }
-            }
-          },
-          icon: const Icon(Icons.date_range, color: AppColors.primary),
-          label: Text(
-            selectedStartDate == null || selectedEndDate == null
-                ? "By Date"
-                : "${selectedStartDate!.day}/${selectedStartDate!.month} - ${selectedEndDate!.day}/${selectedEndDate!.month}",
-            style: const TextStyle(color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.w500),
-          ),
-        ) 
-        ,
-      ],
-    ),
-  ),
-),
-            Align (
+                          if (pickedEnd != null) {
+                            setState(() {
+                              selectedStartDate = pickedStart;
+                              selectedEndDate = pickedEnd;
+                            });
+                            applyFiltersOffline();
+                          }
+                        }
+                      },
+                      icon: const Icon(Icons.date_range, color: AppColors.primary),
+                      label: Text(
+                        selectedStartDate == null || selectedEndDate == null
+                            ? "By Date"
+                            : "${selectedStartDate!.day}/${selectedStartDate!.month} - ${selectedEndDate!.day}/${selectedEndDate!.month}",
+                        style: const TextStyle(color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Align(
               alignment: Alignment.centerLeft,
               child: TextButton.icon(
-                  onPressed: clearFilters,
-                  style: TextButton.styleFrom(
-                    backgroundColor: AppColors.buttonGreen,
-                    foregroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    minimumSize: const Size(150, 40),
-                  ),
-                  icon: const Icon(Icons.clear, color: AppColors.primary),
-                  label: const Text("Clear Filters", style: TextStyle(color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.w500)),
-
-                )
+                onPressed: clearFilters,
+                style: TextButton.styleFrom(
+                  backgroundColor: AppColors.buttonGreen,
+                  foregroundColor: AppColors.primary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  minimumSize: const Size(150, 40),
+                ),
+                icon: const Icon(Icons.clear, color: AppColors.primary),
+                label: const Text("Clear Filters", style: TextStyle(color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.w500)),
+              ),
             ),
-
             const SizedBox(height: 20),
+          if (filteredEvents.isEmpty)
+            const Center(
+              child: Text("No events found", style: TextStyle(color: AppColors.secondaryText, fontSize: 16)),
+            ),
             Expanded(
               child: ListView.builder(
                 itemCount: filteredEvents.length,
                 itemBuilder: (context, index) {
                   final event = filteredEvents[index];
-                  //return buildEventCard(event, context);
                   return EventCard(event: event, onTap: () {
                     print("Evento seleccionado: ${event.name}");
-                     Navigator.push(
-                           context,
-                           MaterialPageRoute(
-                             builder: (context) => EventDetailScreen(eventId: event.id, userId: widget.userId, 
-                             ), 
-                           ),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EventDetailScreen(eventId: event.id, userId: widget.userId),
+                      ),
                     );
                   });
                 },

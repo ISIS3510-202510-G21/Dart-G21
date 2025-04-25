@@ -53,6 +53,7 @@ class LocalStorageRepository{
         if (!_eventBox.containsKey(event.id)) {
           await _eventBox.put(event.id, jsonEncode(event.toJson()));
         }
+
         Category_event? category = await categoryController.getCategoryById(event.category);
         if (category != null) {
           saveCategory(category);
@@ -65,7 +66,6 @@ class LocalStorageRepository{
         if (profile != null) {
           saveProfile(event.creator_id, profile);
         }
-
 
       }
     });
@@ -116,6 +116,7 @@ class LocalStorageRepository{
         if (!_categoryBox.containsKey(category.id)) {
           await _categoryBox.put(category.id, jsonEncode(category.toJson()));
         }
+
       }
     });
   }
@@ -162,6 +163,14 @@ class LocalStorageRepository{
         if (!_locationBox.containsKey(loc.id)) {
           await _locationBox.put(loc.id, jsonEncode(loc.toJson()));
         }
+
+      }
+    });
+  }
+  Future<void> saveLocation(Location location) async {
+    await _lock.synchronized(() async {
+      if (!_locationBox.containsKey(location.id)) {
+        await _locationBox.put(location.id, jsonEncode(location.toJson()));
       }
     });
   }
@@ -195,8 +204,9 @@ class LocalStorageRepository{
 
   Future<void> saveProfile(String userId, Profile profile) async {
     await _lock.synchronized(() async {
-      await _profileBox.clear();
-      await _profileBox.put(userId, jsonEncode(profile.toJson()));
+      if (!_profileBox.containsKey(userId)) {
+        await _profileBox.put(userId, jsonEncode(profile.toJson()));
+      } 
     });
   }
 
@@ -210,12 +220,16 @@ class LocalStorageRepository{
 
    Future<void> saveFollowersAndFollowing(String userId, List<String> followers, List<String> following) async {
     await _lock.synchronized(() async {
-      await _profileBox.clear();
-      await _profileBox.put('${userId}_followers', jsonEncode(followers));
-      await _profileBox.put('${userId}_following', jsonEncode(following));
+      if (!_profileBox.containsKey('${userId}_followers')) {
+        await _profileBox.put('${userId}_followers', jsonEncode(followers));
+      }
+      if (!_profileBox.containsKey('${userId}_following')) {
+        await _profileBox.put('${userId}_following', jsonEncode(following));
+      }
     });
   
   }
+
 
   Future<Map<String, List<String>>> getFollowersAndFollowing(String userId) async {
     final followersJson = _profileBox.get('${userId}_followers');
@@ -227,7 +241,23 @@ class LocalStorageRepository{
 
 }
 
+Future<void> saveUserName(String userId, String userName) async {
+    await _lock.synchronized(() async {
+      if (!_profileBox.containsKey('${userId}_username')) {
+        await _profileBox.put('${userId}_username', jsonEncode(userName));
+      }
+    });
+  }
 
+  Future<String?> getUserName(String userId) async {
+    final userNameJson = _profileBox.get('${userId}_username');
+    if (userNameJson != null) {
+      return jsonDecode(userNameJson);
+    }
+    return null;
+  }
+
+  
 
 
 }
