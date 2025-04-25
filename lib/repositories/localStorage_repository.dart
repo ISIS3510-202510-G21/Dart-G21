@@ -86,6 +86,25 @@ class LocalStorageRepository{
     yield events;
   }
 
+  Future<void> saveEventDraft(Event eventDraft) async {
+    final box = await Hive.openBox('event_drafts');
+    await box.put('current_draft', jsonEncode(eventDraft.toJson()));
+  }
+
+  Future<Event?> getEventDraft() async {
+    final box = await Hive.openBox('event_drafts');
+    if (box.containsKey('current_draft')) {
+      final draftJson = box.get('current_draft');
+      return Event.fromJson(Map<String, dynamic>.from(jsonDecode(draftJson)));
+    }
+    return null;
+  }
+
+  Future<void> deleteEventDraft() async {
+    final box = await Hive.openBox('event_drafts');
+    await box.delete('current_draft');
+  }
+
   /// ----------------------- Categories ------------------------------
   List<Category_event> getCategories() {
     return _categoryBox.values.map((e) => Category_event.fromJson(Map<String, dynamic>.from(jsonDecode(e)))).toList();
@@ -148,6 +167,14 @@ class LocalStorageRepository{
       }
     });
   }
+  Future<void> saveLocation(Location location) async {
+    await _lock.synchronized(() async {
+      if (!_locationBox.containsKey(location.id)) {
+        await _locationBox.put(location.id, jsonEncode(location.toJson()));
+      }
+    });
+  }
+
   Future<void> saveLocation(Location location) async {
     await _lock.synchronized(() async {
       if (!_locationBox.containsKey(location.id)) {

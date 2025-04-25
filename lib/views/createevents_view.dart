@@ -11,7 +11,8 @@ import 'package:dart_g21/models/category.dart';
 import 'package:dart_g21/models/location.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geocoding/geocoding.dart' as geo;
-
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'dart:async';
 
 
 class CreateEventScreen extends StatefulWidget {
@@ -52,6 +53,102 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   bool _isAddressValid = true;
   bool _isCheckingAddress = false;
 
+  //Detección de conexión
+  late Connectivity _connectivity;
+  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+  bool hasInternet = true;
+  Event _eventDraft = Event.empty();
+
+  @override 
+  void initState() {
+    super.initState();
+    _setUpConnectivity();
+    _loadDraftIfAvailable();
+  }
+
+  void _setUpConnectivity() {
+  _connectivity = Connectivity();
+  _connectivitySubscription = _connectivity.onConnectivityChanged.listen((results) {
+    final currentlyConnected = !results.contains(ConnectivityResult.none);
+
+    if (currentlyConnected != hasInternet) {
+      setState(() {
+        hasInternet = currentlyConnected;
+      });
+
+      if (currentlyConnected) {
+        // Mostrar Snackbar al reconectar
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Connection restored! You can now create the event."),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  });
+}
+
+  
+  //Guardamos el estado actual del formulario como un borrador local usando Hive a través del EventController. 
+  void _saveDraft() async {
+    await _eventController.saveEventDraft(_eventDraft);
+  }
+
+  //Recuperar la info cuando se abre la pantalla
+  Future<void> _loadDraftIfAvailable() async {
+    final draft = await _eventController.getEventDraft();
+    if (draft != null) {
+      print("DRAFT RECUPERADO:");
+      print("  name: ${draft.name}");
+      print("  address: ${draft.address}");
+      print("  city: ${draft.city}");
+      print("  university: ${draft.university}");
+      print("  details: ${draft.details}");
+      print("  skills: ${draft.skills}");
+      setState(() {
+        _eventDraft = draft;
+      });
+      _populateFormFields(_eventDraft);
+    }
+  }
+
+  //Carga los datos guardados en el draft del evento (localmente con Hive) y los asigna a los campos visuales del formulario para que el usuario 
+  //pueda continuar editando su evento desde donde lo dejó.
+  void _populateFormFields(Event event) {
+    setState(() {
+    _nameController.text = event.name ?? "";
+    _costController.text = event.cost.toString();
+    _descriptionController.text = event.description ?? "";
+    _imageUrlController.text = event.image ?? "";
+    selectedSkills = List<String>.from(event.skills ?? []);
+    categoryId = event.category;
+    selectedCategory = event.category;
+
+    fromDate = event.start_date;
+    toDate = event.end_date;
+    fromTime = TimeOfDay.fromDateTime(event.start_date);
+    toTime = TimeOfDay.fromDateTime(event.end_date);
+
+    //Draft que almacena address, city, university y details directamente en el objeto Event.
+    _addressController.text = event.address ?? '';
+    _detailsController.text = event.details ?? '';
+    selectedCity = event.city;
+    isUniversity = event.university;
+    });
+  }
+
+  void _onFieldChanged() {
+    _eventController.saveEventDraft(_eventDraft); // Guarda cada vez que cambia algo
+  }
+
+
+  @override
+  void dispose() {
+    _connectivitySubscription.cancel();
+    super.dispose();
+  }
 
   //Metodo para mostrar el listado de skills
   void toggleSkillSelection(String skillId) {
@@ -61,6 +158,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     } else if (selectedSkills.length < maxSkillSelection) {
       selectedSkills.add(skillId);
     }
+     _eventDraft.skills = selectedSkills; 
+    _saveDraft(); 
   });
   }
 
@@ -145,6 +244,10 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
 
     await _eventController.addEvent(newEvent);
+
+    //Eliminar el draft local después de guardar el evento
+    await _eventController.deleteEventDraft();
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("Event created successfully")),
     );
@@ -193,12 +296,30 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
           if (toDate != null && picked.isAfter(toDate!)) {
             _showErrorDialog("The end date must be after the start date.");
             fromDate = null; //reiniciar el campo si es inválido
-          }
+          } else {
+            _eventDraft.start_date = DateTime(
+              picked.year,
+              picked.month,
+              picked.day,
+              fromTime?.hour ?? 0,
+              fromTime?.minute ?? 0,
+            );
+            _saveDraft();
+        }
+
         } else {
           if (fromDate != null && picked.isBefore(fromDate!)) {
             _showErrorDialog("The end date must be after the start date.");
           } else {
             toDate = picked;
+            _eventDraft.end_date = DateTime(
+              picked.year,
+              picked.month,
+              picked.day,
+              toTime?.hour ?? 0,
+              toTime?.minute ?? 0,
+            );
+            _saveDraft();
           }
         }
       });
@@ -218,12 +339,29 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
           if (toTime != null && _isTimeBeforeOrEqual(picked, toTime!)) {
             _showErrorDialog("The end time must be after the start time.");
             fromTime = null; // reiniciar el campo si es inválido
+            } else {
+              _eventDraft.start_date = DateTime(
+                fromDate?.year ?? DateTime.now().year,
+                fromDate?.month ?? DateTime.now().month,
+                fromDate?.day ?? DateTime.now().day,
+                picked.hour,
+                picked.minute,
+              );
+              _saveDraft();
           }
         } else {
           if (fromTime != null && _isTimeBeforeOrEqual(picked, fromTime!)) {
             _showErrorDialog("The end time must be after the start time.");
           } else {
             toTime = picked;
+            _eventDraft.end_date = DateTime(
+              toDate?.year ?? DateTime.now().year,
+              toDate?.month ?? DateTime.now().month,
+              toDate?.day ?? DateTime.now().day,
+              picked.hour,
+              picked.minute,
+            );
+            _saveDraft();
           }
         }
       });
@@ -253,14 +391,48 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildHeader(context),
+                  if (!hasInternet)
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      "You are offline. Event data is being saved locally.",
+                      style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w500),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                   const SizedBox(height: 20),
-                  _buildLabeledInputField("Name", _nameController, 'Write the name of the event', Icons.event),
+                  //Nombre del evento
+                  _buildLabeledInputField("Name", _nameController, 
+                  'Write the name of the event', 
+                  Icons.event, 
+                  onChanged: (value) {
+                    _eventDraft.name = value;
+                    _saveDraft();
+                    },
+                  ),
                   const SizedBox(height: 15),
                   _buildLabeledCostField(), // restricciones numéricas en el campo de cost, para que solo se valga como input nums
                   const SizedBox(height: 15),
                   _buildLabeledDropdown("Category"),
                   const SizedBox(height: 15),
-                  _buildLabeledInputField("Description", _descriptionController, 'Write the description of your event...', Icons.description),
+                  //Descripción del evento
+                  _buildLabeledInputField(
+                    "Description",
+                    _descriptionController,
+                    'Write the description of your event...',
+                    Icons.description,
+                    onChanged: (value) {
+                      _eventDraft.description = value;
+                      _saveDraft();
+                    },
+                  ),
+                  //_buildLabeledInputField("Description", _descriptionController, 'Write the description of your event...', Icons.description),
                   const SizedBox(height: 15),
                   _buildLabeledDatePickers(),
                   const SizedBox(height: 15),
@@ -272,9 +444,31 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   const SizedBox(height: 15),
                   _buildLabeledUniversityDropdown("Is this a university event?"),
                   const SizedBox(height: 15),
-                  _buildLabeledInputField("Details", _detailsController, 'Write the details of the address', Icons.info),
+                  //Detalles del evento
+                  _buildLabeledInputField(
+                    "Details",
+                    _detailsController,
+                    'Write the details of the address',
+                    Icons.info,
+                    onChanged: (value) {
+                      _eventDraft.details = value;
+                      _saveDraft();
+                    },
+                  ),
+                  //_buildLabeledInputField("Details", _detailsController, 'Write the details of the address', Icons.info),
                   const SizedBox(height: 30),
-                  _buildLabeledInputField("Image URL", _imageUrlController, 'URL of the image', Icons.image),
+                  //Imagen del evento
+                  _buildLabeledInputField(
+                    "Image URL",
+                    _imageUrlController,
+                    'URL of the image',
+                    Icons.image,
+                    onChanged: (value) {
+                      _eventDraft.image = value;
+                      _saveDraft();
+                    },
+                  ),
+                  //_buildLabeledInputField("Image URL", _imageUrlController, 'URL of the image', Icons.image),
                   const SizedBox(height: 30),
                   Text("Skills (max 3)", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
@@ -309,7 +503,21 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     ),
                   ),
                   const SizedBox(height: 15),
-                  _buildCreateEventButton(),
+                  hasInternet
+                    ? _buildCreateEventButton()
+                    : Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          "You cannot create the event without an internet connection.",
+                          style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
                 ],
               ),
             ),
@@ -388,20 +596,21 @@ Widget _buildTimeField(String label, TimeOfDay? time, bool isFromTime) {
 }
 
   // mostrar un campo con un título en negro antes de la barra de entrada
-  Widget _buildLabeledInputField(String label, TextEditingController controller, String hintText, IconData icon) {
+  Widget _buildLabeledInputField(String label, TextEditingController controller, String hintText, IconData icon, {Function(String)? onChanged}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
         const SizedBox(height: 5),
-        _buildInputField(controller, hintText, icon),
+        _buildInputField(controller, hintText, icon, onChanged: onChanged),
       ],
     );
   }
 
-  Widget _buildInputField(TextEditingController controller, String hintText, IconData icon) {
+  Widget _buildInputField(TextEditingController controller, String hintText, IconData icon, {Function(String)? onChanged}) {
     return TextField(
       controller: controller,
+      onChanged: onChanged,
       decoration: InputDecoration(
         prefixIcon: Icon(icon, color: Color(0xFFE6E6E6)),
         hintText: hintText,
@@ -453,6 +662,8 @@ Widget _buildTimeField(String label, TimeOfDay? time, bool isFromTime) {
               print(" Usuario seleccionó: $newValue");
               print(" Categorías disponibles: ${categoryList.map((c) => c.name).toList()}");
               categoryId = newValue; // el ID ya viene del value del dropdown
+              _eventDraft.category = categoryId!;
+              _saveDraft();
             });
 
         /* onChanged: (String? newValue) {
@@ -533,6 +744,7 @@ Widget _buildTimeField(String label, TimeOfDay? time, bool isFromTime) {
   );
 }
 
+
 //Navigator.pushNamed(context, '/home'); // habilitar cuando este todooo
         
   Widget _buildLabeledCostField() {
@@ -559,6 +771,10 @@ Widget _buildCostField() {
       hintStyle: const TextStyle(color: Color(0xFF8D8D8D)),
       border: _buildInputBorder(),
     ),
+    onChanged: (value) {
+      _eventDraft.cost = int.tryParse(value) ?? 0;
+      _saveDraft();
+    },
   );
 }
 
@@ -583,7 +799,7 @@ Widget _buildCostField() {
       prefixIcon: Icon(Icons.location_city, color: Color(0xFFE6E6E6)),
       border: _buildInputBorder(),
       ),
-      value: selectedCity,
+      value: cities.contains(selectedCity) ? selectedCity : null,
       hint: const Text("Choose a city", style: TextStyle(color: AppColors.secondaryText)),
       items: cities.map((city) {
         return DropdownMenuItem<String>(
@@ -593,7 +809,9 @@ Widget _buildCostField() {
       }).toList(),
       onChanged: (String? newValue) {
         setState(() {
-          selectedCity = newValue!;
+          selectedCity = newValue!; 
+          _eventDraft.city = selectedCity;
+          _saveDraft();
         });
       },
     );
@@ -625,6 +843,8 @@ Widget _buildCostField() {
     onChanged: (bool? newValue) {
       setState(() {
         isUniversity = newValue!;
+        _eventDraft.university = isUniversity;
+        _saveDraft();
       });
     },
   );
@@ -649,7 +869,11 @@ Widget _buildLabeledUniversityDropdown(String label) {
         const SizedBox(height: 5),
         TextField(
           controller: _addressController,
-          onChanged: (value) => _validateAddressRealtime(value),
+          onChanged: (value) {
+            _eventDraft.address = value;
+            _saveDraft();
+            _validateAddressRealtime(value);
+          },
           decoration: InputDecoration(
             prefixIcon: const Icon(Icons.location_on, color: Color(0xFFE6E6E6)),
             suffixIcon: _addressController.text.trim().isEmpty

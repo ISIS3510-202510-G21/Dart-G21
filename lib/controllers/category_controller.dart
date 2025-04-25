@@ -2,7 +2,6 @@ import 'package:dart_g21/models/category.dart';
 import 'package:dart_g21/repositories/category_repository.dart';
 import 'package:dart_g21/repositories/localStorage_repository.dart';
 
-
 class CategoryController {
   final CategoryRepository _categoryRepository = CategoryRepository();
   final LocalStorageRepository _localStorageRepository = LocalStorageRepository();
@@ -27,6 +26,14 @@ class CategoryController {
     await _categoryRepository.deleteCategory(categoryId);
   }
 
+  Stream<List<Category_event>> getCategoriesStreamOffline() async* {
+    List<Category_event> categories = _localStorageRepository.getCategories();
+    yield categories;
+  }
+
+  Future<Category_event?> getCategoryByIdOffline(String categoryId) async {
+    return await _localStorageRepository.getCategoryById(categoryId);
+  }
 
   Future<List<Category_event>> getCachedCategories() async {
     return _localStorageRepository.getCategories();
