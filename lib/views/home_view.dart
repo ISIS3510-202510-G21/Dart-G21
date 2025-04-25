@@ -1,20 +1,14 @@
-import 'dart:collection';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-
 import 'package:dart_g21/views/chatbot_view.dart';
 import 'package:dart_g21/views/map_view.dart';
 import 'package:dart_g21/views/profile_view.dart';
 import 'package:dart_g21/views/searchevent_view.dart';
-import 'package:dart_g21/views/eventdetail_view.dart';
 import 'package:flutter/material.dart';
 import '../controllers/category_controller.dart';
 import '../controllers/event_controller.dart';
-import '../controllers/location_controller.dart';
 import '../controllers/user_controller.dart';
 import '../models/category.dart';
-import '../models/event.dart';
 import '../models/user.dart';
 import '../widgets/eventslist.dart';
 import '../widgets/navigation_bar_attendant.dart';
@@ -22,7 +16,7 @@ import '../widgets/navigation_bar_host.dart';
 import '../core/colors.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:dart_g21/models/location.dart' as app_models;
+
 import 'categoriesfilter_view.dart';
 import 'myevents_view.dart';
 
@@ -40,6 +34,9 @@ class _HomePage extends State<HomePage> {
   final CategoryController _categoryController = CategoryController();
   final UserController _userController = UserController();
   final EventController _eventController = EventController();
+  late final Connectivity _connectivity;
+  bool isConnected = true;
+  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
   final List<Color> colors = [
     AppColors.buttonRed,
     AppColors.buttonOrange,
@@ -48,6 +45,7 @@ class _HomePage extends State<HomePage> {
     AppColors.buttonDarkBlue,
     AppColors.buttonPurple
   ];
+
 
   /// main view
   @override
@@ -113,14 +111,23 @@ class _HomePage extends State<HomePage> {
                 SizedBox(height: 10),
                 _buildSectionTitle("Upcoming Events"),
                 EventsList(
-                  eventsStreamProvider: () => _eventController.getUpcomingEventsStream(), userId: widget.userId
+                  eventsStreamProvider: () => isConnected
+                      ? _eventController.getUpcomingEventsOnlineStream()
+                      : _eventController.getUpcomingEventsOfflineStream(),
+                  userId: widget.userId,
                 ),
                 _buildSectionTitle("Nearby Events"),
                 EventsList(
-                  eventsStreamProvider: () => _eventController.getTopNearbyEventsStream(_location),userId: widget.userId),
+                  eventsStreamProvider: () => isConnected
+                      ?_eventController.getTopNearbyEventsOnlineStream(_location)
+                      : _eventController.getTopNearbyEventsOfflineStream(_location),
+                    userId: widget.userId),
                 _buildSectionTitle("You Might Like"),
                 EventsList(
-                  eventsStreamProvider: () => _eventController.getRecommendedEventsStreamForUser(widget.userId), userId: widget.userId
+                  eventsStreamProvider: () => isConnected
+                      ?_eventController.getRecommendedEventsStreamForUserOnline(widget.userId)
+                      :_eventController.getRecommendedEventsStreamForUserOffline(),
+                    userId: widget.userId
                 ),
                 SizedBox(height: 20),
               ],
@@ -134,11 +141,6 @@ class _HomePage extends State<HomePage> {
 
   String _location = "Loading location...";
 
-  @override
-  void initState() {
-    super.initState();
-    _determinePosition();
-  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -172,7 +174,7 @@ class _HomePage extends State<HomePage> {
   /// bar with categories
   Widget _buildBarCategories() {
     return StreamBuilder<List<Category_event>>(
-      stream: _categoryController.getCategoriesStream(),
+      stream: getCategoriesConnection(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(child: CircularProgressIndicator());
@@ -215,6 +217,14 @@ class _HomePage extends State<HomePage> {
         );
       },
     );
+  }
+
+  Stream<List<Category_event>> getCategoriesConnection(){
+    if(isConnected){
+      return _categoryController.getCategoriesStream();
+    }else{
+      return _categoryController.getCategoriesStreamOffline();
+    }
   }
 
   /// gets user location and turn into location
@@ -381,6 +391,33 @@ class _HomePage extends State<HomePage> {
         ),
       ),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    setUpConnectivity();
+    _determinePosition();
+  }
+
+  void setUpConnectivity() {
+    _connectivity = Connectivity();
+    _connectivitySubscription = _connectivity.onConnectivityChanged.listen((
+        List<ConnectivityResult> results) async {
+      final prev = isConnected;
+      final currentlyConnected = !results.contains(ConnectivityResult.none);
+      if (prev != currentlyConnected) {
+        setState(() {
+          isConnected = currentlyConnected;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription.cancel();
+    super.dispose();
   }
 
 }
