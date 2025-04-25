@@ -326,21 +326,23 @@ Future<void> initHiveAndLoad() async {
                     ),
                     const SizedBox(width: 8),
                     isConnected ? FutureBuilder(
-                      future: _categoryController.getCategoriesStream().first,
+                      future: _categoryController.getCategoriesStream().first.then((categories) {
+                      return categories.map((cat) => DropdownMenuItem(
+                        value: cat.id,
+                        child: Text(cat.name),
+                      )).toList();
+                      }),
                       builder: (context, snapshot) {
-                        if (!snapshot.hasData) return const SizedBox();
-                        return styledDropdown<String>(
-                          value: selectedCategoryId,
-                          hint: "By Category",
-                          items: snapshot.data!.map((cat) => DropdownMenuItem(
-                            value: cat.id,
-                            child: Text(cat.name),
-                          )).toList(),
-                          onChanged: (value) {
-                            setState(() => selectedCategoryId = value);
-                            applyFilters();
-                          },
-                        );
+                      if (!snapshot.hasData) return const SizedBox();
+                      return styledDropdown<String>(
+                        value: selectedCategoryId,
+                        hint: "By Category",
+                        items: snapshot.data!,
+                        onChanged: (value) {
+                        setState(() => selectedCategoryId = value);
+                        applyFilters();
+                        },
+                      );
                       },
                     ) : styledDropdown<String>(
                       value: selectedCategoryId,
