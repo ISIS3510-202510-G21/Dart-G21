@@ -51,6 +51,11 @@ class LocalStorageRepository{
     await _lock.synchronized(() async {
       for (var event in events) {
         if (!_eventBox.containsKey(event.id)) {
+          print("SAVED ${_eventBox.values.length} events");
+          if (_eventBox.values.length > 10) {
+            await deleteOldEvents(); // Eliminar el evento más antiguo
+            print("5 events DELETED");
+          }
           await _eventBox.put(event.id, jsonEncode(event.toJson()));
         }
 
@@ -105,6 +110,20 @@ class LocalStorageRepository{
     await box.delete('current_draft');
   }
 
+  Future<void> deleteOldEvents() async {
+    await _lock.synchronized(() async {
+      List<Event> events = getEvents()
+          .where((event) => event.start_date.isBefore(DateTime.now()))
+          .toList()
+        ..sort((a, b) => a.start_date.compareTo(b.start_date));
+      for (var i = 0; i < 5 && i < events.length; i++) {
+        await _eventBox.delete(events[i].id);
+        print("Event DELETED: ${events[i].id}");
+      }
+    });
+  }
+
+  
   /// ----------------------- Categories ------------------------------
   List<Category_event> getCategories() {
     return _categoryBox.values.map((e) => Category_event.fromJson(Map<String, dynamic>.from(jsonDecode(e)))).toList();
@@ -135,6 +154,8 @@ class LocalStorageRepository{
     }
     return null;
   }
+
+
 
   /// ----------------------- Skills ------------------------------
   List<Skill> getSkills() {
@@ -175,13 +196,6 @@ class LocalStorageRepository{
     });
   }
 
-  Future<void> saveLocation(Location location) async {
-    await _lock.synchronized(() async {
-      if (!_locationBox.containsKey(location.id)) {
-        await _locationBox.put(location.id, jsonEncode(location.toJson()));
-      }
-    });
-  }
 
   /// ----------------------- Recommendations ------------------------------
   List<Event> getRecommends() {

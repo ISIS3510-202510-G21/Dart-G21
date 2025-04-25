@@ -367,7 +367,7 @@ class EventController {
 
   Future<void> deleteEventDraft() async {
     await _localStorageRepository.deleteEventDraft();
-
+  }
   Future<List<Event>> getCachedEvents() async {
     return _localStorageRepository.getEvents();
   }
@@ -378,12 +378,12 @@ class EventController {
         .toList()
       ..sort((a, b) => a.start_date.compareTo(b.start_date));
     yield events;
-    print(events);
   }
     
   Future<void> saveEventsToCache(List<Event> events) async {
-    await _localStorageRepository.saveEvents(events);
+    await _localStorageRepository.saveEvents(events, _categoryController, _locationController, _profileController);
   }
 
 }
+
 

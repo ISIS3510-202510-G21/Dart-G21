@@ -38,14 +38,6 @@ class CategoryController {
   Future<List<Category_event>> getCachedCategories() async {
     return _localStorageRepository.getCategories();
 
-  Stream<List<Category_event>> getCategoriesStreamOffline() async* {
-    List<Category_event> categories = _localStorageRepository.getCategories();
-    yield categories;
-  }
-
-  Future<Category_event?> getCategoryByIdOffline(String categoryId) async {
-    return await _localStorageRepository.getCategoryById(categoryId);
-
   }
 
   Future<void> saveCategoriesToCache(List<Category_event> categories) async {
