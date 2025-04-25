@@ -519,6 +519,10 @@ Future<void> initHiveAndLoad() async {
               ),
             ),
             const SizedBox(height: 20),
+          if (filteredEvents.isEmpty)
+            const Center(
+              child: Text("No events found", style: TextStyle(color: AppColors.secondaryText, fontSize: 16)),
+            ),
             Expanded(
               child: ListView.builder(
                 itemCount: filteredEvents.length,
