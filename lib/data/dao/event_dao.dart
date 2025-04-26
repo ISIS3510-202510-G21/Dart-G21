@@ -39,7 +39,7 @@ class EventDAO {
   // Obtener eventos recomendados para un usuario
   Stream<List<Event>> getRecommendedEventsStreamForUser(String userId) {
   return _firestore
-      .getDocumentById("recommendations", userId)
+      .getDocumentById("users", userId)
       .asStream()
       .asyncMap((doc) async {
         if (!doc.exists || doc.data() == null) {
@@ -47,7 +47,7 @@ class EventDAO {
         }
 
         // Obtener lista de IDs de eventos
-        final List<String> eventIds = List<String>.from((doc.data() as Map<String, dynamic>)["events"] ?? []);
+        final List<String> eventIds = List<String>.from((doc.data() as Map<String, dynamic>)["recommended_events"] ?? []);
 
         // Obtener detalles de los eventos en paralelo
         List<Event?> events = await Future.wait(
@@ -56,6 +56,22 @@ class EventDAO {
 
         return events.whereType<Event>().toList(); // Filtrar eventos válidos
       });
-}
+    }
+
+      Future<List<Event>> getFirstNEvents(int n) async {
+        final snapshot = await _firestore.getCollection("events").limit(n).get();
+        return snapshot.docs.map((doc) => Event.fromMap(doc.data() as Map<String, dynamic>, doc.id)).toList();
+      }
+
+      //Agregar un asistente a un evento
+      Future<void> addAttendeeToEvent(String eventId, String userId) async {
+        final userRef = _firestore.getCollection("users").doc(userId);
+        await _firestore.updateArrayReference(
+          targetCollection: "events",
+          targetDocId: eventId,
+          field: "attendees",
+          reference: userRef,
+        );
+      }
 
 }

@@ -30,4 +30,17 @@ class ProfileRepository {
     await _profileDao.deleteProfile(profileId);
   }
 
+  Future<void> updateCategoriesByUserId(String userId, List<String> categoryIds) {
+    return _profileDao.updateCategoriesByUserId(userId, categoryIds);
+  }
+
+  Future<void> registerEventToProfile(String profileId, String eventId) async {
+    await _profileDao.registerEventToProfile(profileId, eventId);
+  }
+
+  Future<String?> getProfileIdByUserId(String userId) async {
+    return await _profileDao.getProfileIdByUserId(userId);
+  }
+
+
 }

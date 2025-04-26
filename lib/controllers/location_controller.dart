@@ -2,10 +2,11 @@ import 'package:dart_g21/models/location.dart';
 import 'package:dart_g21/repositories/location_repository.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geocoding/geocoding.dart' as geo;
-
+import '../repositories/localStorage_repository.dart';
 
 class LocationController {
   final LocationRepository _locationRepository = LocationRepository();
+  final LocalStorageRepository _localStorageRepository = LocalStorageRepository();
 
   Stream<List<Location>> getLocationsStream() {
     return _locationRepository.getLocationsStream();
@@ -27,17 +28,17 @@ class LocationController {
     await _locationRepository.deleteLocation(locationId);
   }
 
-   Stream<Location?> getLocationByAddress(String address) {
+  Stream<Location?> getLocationByAddress(String address) {
     return _locationRepository.getLocationByAddress(address);
   }
 
-   Future<String?> addLocationAndReturnId(Location location) async {
-  await addLocation(location);
-  Location? createdLocation = await getLocationByAddressAndCity(location.address, location.city);
-  return createdLocation?.id; 
-}
+  Future<String?> addLocationAndReturnId(Location location) async {
+    await addLocation(location);
+    Location? createdLocation = await getLocationByAddressAndCity(location.address, location.city);
+    return createdLocation?.id; 
+  }
 
-Future<Location?> getLocationByAddressAndCity(String address, String city) async {
+  Future<Location?> getLocationByAddressAndCity(String address, String city) async {
     Stream<List<Location>> locationsStream = getLocationsStream();
     List<Location> locations = await locationsStream.first;
     try {
@@ -65,4 +66,30 @@ Future<Location?> getLocationByAddressAndCity(String address, String city) async
     }
     return null;
   }
+
+  Future<List<String>> getLocationIdsByUniversity(bool isUniversity) async {
+    return await _locationRepository.getLocationIdsByUniversity(isUniversity);
+  }
+
+  Future<List<Location>> getCachedLocations() async {
+    return _localStorageRepository.getLocations();
+  }
+
+  Future<void> saveLocationsToCache(List<Location> locations) async {
+    await _localStorageRepository.saveLocations(locations);
+  }
+
+  Future<Location?> getLocationByIdOffline(String locationId) async {
+    try {
+      List<Location> cachedLocations = await _localStorageRepository.getLocations();
+      for (final location in cachedLocations) {
+        if (location.id == locationId) {
+          return location;
+        }
+      }
+      return null; 
+    } catch (e) {
+      print('Error obteniendo ubicación offline: $e');
+      return null;
+}}
 }

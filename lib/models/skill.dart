@@ -1,10 +1,8 @@
-class Category_event {
+class Skill {
   String id;
   String name;
- 
 
-  Category_event({required this.id, required this.name});
-
+  Skill({required this.id,required this.name});
 
   // Convertir objeto a Map para Firestore
   Map<String, dynamic> toMap() {
@@ -13,16 +11,16 @@ class Category_event {
     };
   }
 
-  // Convertir Firestore Map a objeto User
-  factory Category_event.fromMap(Map<String, dynamic> map, String id) {
-    return Category_event(
-      id: id,
+  // Convertir Firestore Map a objeto Skill
+  factory Skill.fromMap(Map<String, dynamic> map, String id) {
+    return Skill(
+      id:id,
       name: map['name'],
     );
   }
 
-  factory Category_event.fromJson(Map<String, dynamic> json) {
-    return Category_event(
+  factory Skill.fromJson(Map<String, dynamic> json) {
+    return Skill(
       id: json['id'] as String,
       name: json['name'] as String,
     );
@@ -34,5 +32,5 @@ class Category_event {
       'name': name,
     };
   }
-}
 
+}

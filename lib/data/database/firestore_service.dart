@@ -90,7 +90,31 @@ Stream<Map<String, dynamic>?> getDocumentByField(
       });
   }
 
-
+  /// Método para añadir elementos a un array en un documento (arrayUnion)
+      Future<void> addReferenceToList({
+        required String collectionPath,
+        required String docId,
+        required String field,
+        required String referenceCollection,
+        required String referenceId,
+      }) async {
+        final ref = _db.collection(referenceCollection).doc(referenceId);
+        await _db.collection(collectionPath).doc(docId).update({
+          field: FieldValue.arrayUnion([ref])
+        });
+      }
+  
+  /// Método para actualizar un array de referencias en un documento (arrayUnion)
+      Future<void> updateArrayReference({
+        required String targetCollection,
+        required String targetDocId,
+        required String field,
+        required DocumentReference reference,
+      }) async {
+        await _db.collection(targetCollection).doc(targetDocId).update({
+          field: FieldValue.arrayUnion([reference]),
+        });
+      }
 
 
 }

@@ -29,4 +29,9 @@ class LocationRepository {
   Stream<Location?> getLocationByAddress(String address) {
   return _locationDao.getLocationByAddress(address); 
 }
+
+Future<List<String>> getLocationIdsByUniversity(bool isUniversity) async {
+  return await _locationDao.getLocationIdsByUniversity(isUniversity);
+}
+
 }
