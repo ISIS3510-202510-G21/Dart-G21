@@ -61,12 +61,18 @@ class _ProfilePageState extends State<ProfilePage> {
     Future<void> _loadOnlineData() async {
     
     final profileStream = _profileController.getProfileByUserId(widget.userId);
+    final userStream = _userController.getUserById(widget.userId);
     profileStream.listen((profile) async {
      
       if (profile != null) {
         setState(() {
           profile_user = profile;
         });
+
+        final user = await userStream;
+        if (user != null) {
+          await _profileController.saveUserNameToLocal(widget.userId, user.name);
+        }
 
         // Guardar datos en el almacenamiento local
         await _profileController.saveProfileToLocal(widget.userId, profile);
@@ -83,10 +89,11 @@ class _ProfilePageState extends State<ProfilePage> {
 
    Future<void> _loadOfflineData() async {
     final profile = await _profileController.getProfileFromLocal(widget.userId);
+    final name = await _profileController.getUserNameFromLocal(widget.userId);
     if (profile != null) {
       setState(() {
         profile_user = profile;
-        offlineName = profile_user.user_ref;
+        offlineName = name ?? "No name available";
         offlineHeadline = profile_user.headline;
         offlineDescription = profile_user.description;
         offlineFollowers = profile_user.followers.length.toString();

@@ -51,8 +51,14 @@ class LocalStorageRepository{
     await _lock.synchronized(() async {
       for (var event in events) {
         if (!_eventBox.containsKey(event.id)) {
+          print("SAVED ${_eventBox.values.length} events");
+          // if (_eventBox.values.length >= 10) {
+          //   await deleteOldEvents(); // Eliminar el evento más antiguo
+          //   print("5 events DELETED");
+          // }
           await _eventBox.put(event.id, jsonEncode(event.toJson()));
         }
+
         Category_event? category = await categoryController.getCategoryById(event.category);
         if (category != null) {
           saveCategory(category);
@@ -103,10 +109,42 @@ class LocalStorageRepository{
     if (eventJson != null) {
       event=Event.fromJson(Map<String, dynamic>.from(jsonDecode(eventJson)));
       return  location = await getLocationById(event.location_id);
+
+
+  Future<void> saveEventDraft(Event eventDraft) async {
+    final box = await Hive.openBox('event_drafts');
+    await box.put('current_draft', jsonEncode(eventDraft.toJson()));
+  }
+
+  Future<Event?> getEventDraft() async {
+    final box = await Hive.openBox('event_drafts');
+    if (box.containsKey('current_draft')) {
+      final draftJson = box.get('current_draft');
+      return Event.fromJson(Map<String, dynamic>.from(jsonDecode(draftJson)));
     }
     return null;
   }
 
+
+  Future<void> deleteEventDraft() async {
+    final box = await Hive.openBox('event_drafts');
+    await box.delete('current_draft');
+  }
+
+  Future<void> deleteOldEvents() async {
+    await _lock.synchronized(() async {
+      List<Event> events = getEvents()
+          .where((event) => event.start_date.isBefore(DateTime.now()))
+          .toList()
+        ..sort((a, b) => a.start_date.compareTo(b.start_date));
+      for (var i = 0; i < 5 && i < events.length; i++) {
+        await _eventBox.delete(events[i].id);
+        print("Event DELETED: ${events[i].id}");
+      }
+    });
+  }
+
+  
   /// ----------------------- Categories ------------------------------
   List<Category_event> getCategories() {
     return _categoryBox.values.map((e) => Category_event.fromJson(Map<String, dynamic>.from(jsonDecode(e)))).toList();
@@ -118,6 +156,7 @@ class LocalStorageRepository{
         if (!_categoryBox.containsKey(category.id)) {
           await _categoryBox.put(category.id, jsonEncode(category.toJson()));
         }
+
       }
     });
   }
@@ -136,6 +175,7 @@ class LocalStorageRepository{
     }
     return null;
   }
+
 
   /// ----------------------- Skills ------------------------------
   List<Skill> getSkills() {
@@ -164,6 +204,14 @@ class LocalStorageRepository{
         if (!_locationBox.containsKey(loc.id)) {
           await _locationBox.put(loc.id, jsonEncode(loc.toJson()));
         }
+
+      }
+    });
+  }
+  Future<void> saveLocation(Location location) async {
+    await _lock.synchronized(() async {
+      if (!_locationBox.containsKey(location.id)) {
+        await _locationBox.put(location.id, jsonEncode(location.toJson()));
       }
     });
   }
@@ -183,6 +231,7 @@ class LocalStorageRepository{
     }
     return null;
   }
+
 
   /// ----------------------- Recommendations ------------------------------
   List<Event> getRecommends() {
@@ -205,8 +254,9 @@ class LocalStorageRepository{
 
   Future<void> saveProfile(String userId, Profile profile) async {
     await _lock.synchronized(() async {
-      await _profileBox.clear();
-      await _profileBox.put(userId, jsonEncode(profile.toJson()));
+      if (!_profileBox.containsKey(userId)) {
+        await _profileBox.put(userId, jsonEncode(profile.toJson()));
+      } 
     });
   }
 
@@ -220,12 +270,16 @@ class LocalStorageRepository{
 
    Future<void> saveFollowersAndFollowing(String userId, List<String> followers, List<String> following) async {
     await _lock.synchronized(() async {
-      await _profileBox.clear();
-      await _profileBox.put('${userId}_followers', jsonEncode(followers));
-      await _profileBox.put('${userId}_following', jsonEncode(following));
+      if (!_profileBox.containsKey('${userId}_followers')) {
+        await _profileBox.put('${userId}_followers', jsonEncode(followers));
+      }
+      if (!_profileBox.containsKey('${userId}_following')) {
+        await _profileBox.put('${userId}_following', jsonEncode(following));
+      }
     });
   
   }
+
 
   Future<Map<String, List<String>>> getFollowersAndFollowing(String userId) async {
     final followersJson = _profileBox.get('${userId}_followers');
@@ -237,7 +291,23 @@ class LocalStorageRepository{
 
 }
 
+Future<void> saveUserName(String userId, String userName) async {
+    await _lock.synchronized(() async {
+      if (!_profileBox.containsKey('${userId}_username')) {
+        await _profileBox.put('${userId}_username', jsonEncode(userName));
+      }
+    });
+  }
 
+  Future<String?> getUserName(String userId) async {
+    final userNameJson = _profileBox.get('${userId}_username');
+    if (userNameJson != null) {
+      return jsonDecode(userNameJson);
+    }
+    return null;
+  }
+
+  
 
 
 }

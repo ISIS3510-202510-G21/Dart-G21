@@ -38,6 +38,7 @@ class _HomePage extends State<HomePage> {
   final EventController _eventController = EventController();
   late final Connectivity _connectivity;
   final AuthController _authController = AuthController();
+
   bool isConnected = true;
   late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
   final List<Color> colors = [
@@ -435,6 +436,7 @@ class _HomePage extends State<HomePage> {
     _connectivitySubscription.cancel();
     super.dispose();
   }
+
 
   Future<void> _logout() async {
     try {

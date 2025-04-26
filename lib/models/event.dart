@@ -15,6 +15,12 @@ class Event {
   List<String> skills;
   String creator_id; // ID del creador del evento
 
+  // --- Campos auxiliares SOLO para drafts ---
+  String? address;
+  String? city;
+  bool? university;
+  String? details;
+
   Event({
     required this.id,
     required this.name,
@@ -28,7 +34,34 @@ class Event {
     required this.attendees,
     required this.skills,
     required this.creator_id,
+    this.address,
+    this.city,
+    this.university,
+    this.details,
   });
+
+  //Para que en conecitividad eventual se inicialice el draft del formulario con valores seguros y vacíos
+  factory Event.empty() {
+    return Event(
+      id: '',
+      name: '',
+      cost: 0,
+      category: '',
+      description: '',
+      start_date: DateTime.now(),
+      end_date: DateTime.now().add(Duration(hours: 1)),
+      location_id: '',
+      image: '',
+      attendees: [],
+      skills: [],
+      creator_id: '',
+      address: '',
+      city: '',
+      university: false,
+      details: '',
+    );
+  }
+
 
   // Convertir objeto a Map para Firestore (guardando referencias)
   Map<String, dynamic> toMap() {
@@ -93,7 +126,10 @@ class Event {
     'description': description,
     'attendees': attendees,
     'creator_id': creator_id,
-
+    'address': address,
+    'city': city,
+    'university': university,
+    'details': details,
   };
 
   /// Método para construir un Event desde Map
@@ -110,6 +146,11 @@ class Event {
     description: json['description'] ?? '',
     attendees: List<String>.from(json['attendees'] ?? []),
     creator_id: json['creator_id'] ?? '',
+    //campos del draft
+    address: json['address'] ?? '',
+    city: json['city'] ?? '',
+    university: json['university'] ?? false,
+    details: json['details'] ?? '',
   );
 }
 

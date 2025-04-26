@@ -12,7 +12,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:dart_g21/models/location.dart' as app_models;
 import 'package:hive/hive.dart';
 import '../controllers/location_controller.dart';
-import 'category_controller.dart';
+import 'package:dart_g21/controllers/category_controller.dart';
+
 
 class EventController {
   final EventRepository _eventRepository = EventRepository();
@@ -20,6 +21,7 @@ class EventController {
   final LocalStorageRepository _localStorageRepository=LocalStorageRepository();
   final CategoryController _categoryController = CategoryController();
   final ProfileController _profileController = ProfileController();
+
 
   Stream<List<Event>> getEventsStream() {
     return _eventRepository.getEventsStream();
@@ -356,14 +358,35 @@ class EventController {
   await _eventRepository.addAttendeeToEvent(eventId, userId);
   }
 
+
+  Future<void> saveEventDraft(Event event) async {
+    await _localStorageRepository.saveEventDraft(event);
+  }
+
+  Future<Event?> getEventDraft() async {
+    return await _localStorageRepository.getEventDraft();
+  }
+
+  Future<void> deleteEventDraft() async {
+    await _localStorageRepository.deleteEventDraft();
+  }
+  Future<List<Event>> getCachedEvents() async {
+    return _localStorageRepository.getEvents();
+  }
+
+
   Stream<List<Event>> getEventsByCategoryStreamOffline(String categoryId) async* {
     List<Event> events = _localStorageRepository.getEvents()
         .where((event) => event.category == categoryId)
         .toList()
       ..sort((a, b) => a.start_date.compareTo(b.start_date));
     yield events;
-    print(events);
+  }
+    
+  Future<void> saveEventsToCache(List<Event> events) async {
+    await _localStorageRepository.saveEvents(events, _categoryController, _locationController, _profileController);
   }
 
-
 }
+
+
