@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dart_g21/controllers/profile_controller.dart';
 import 'package:dart_g21/controllers/skill_controller.dart';
+import 'package:dart_g21/controllers/user_controller.dart';
 import 'package:dart_g21/models/event.dart';
+import 'package:dart_g21/models/user.dart';
 import 'package:dart_g21/repositories/event_repository.dart';
 import 'package:dart_g21/repositories/localStorage_repository.dart';
 import 'package:flutter/cupertino.dart';
@@ -21,6 +23,7 @@ class EventController {
   final LocalStorageRepository _localStorageRepository=LocalStorageRepository();
   final CategoryController _categoryController = CategoryController();
   final ProfileController _profileController = ProfileController();
+  final UserController _userController = UserController();
 
 
   Stream<List<Event>> getEventsStream() {
@@ -101,7 +104,7 @@ class EventController {
           ..sort((a, b) => a.start_date.compareTo(b.start_date));
 
         final top5 = upcoming.take(5).toList();
-        _localStorageRepository.saveEvents(top5,_categoryController,_locationController,_profileController);
+        _localStorageRepository.saveEvents(top5,_categoryController,_locationController,_profileController, _userController);
         yield upcoming;
       }
   }
@@ -190,7 +193,7 @@ class EventController {
           } else {
             final topEvents = cityEvents.toList();
             final top5 = topEvents.take(5).toList();
-            _localStorageRepository.saveEvents(top5,_categoryController, _locationController,_profileController);
+            _localStorageRepository.saveEvents(top5,_categoryController, _locationController,_profileController, _userController);
             yield topEvents;
           }
         }
@@ -238,7 +241,7 @@ class EventController {
       }
       yield bogotaEvents;
       final top5= bogotaEvents.take(5).toList();
-      await _localStorageRepository.saveEvents(top5,_categoryController,_locationController,_profileController);
+      await _localStorageRepository.saveEvents(top5,_categoryController,_locationController,_profileController, _userController);
     }
   }
 
@@ -384,8 +387,12 @@ class EventController {
   }
     
   Future<void> saveEventsToCache(List<Event> events) async {
-    await _localStorageRepository.saveEvents(events, _categoryController, _locationController, _profileController);
+    await _localStorageRepository.saveEvents(events, _categoryController, _locationController, _profileController, _userController);
   }
+
+  Future<Event?> getEventByIdOffline(String eventId) async {
+    return await _localStorageRepository.getEventById(eventId);
+    }
 
 }
 

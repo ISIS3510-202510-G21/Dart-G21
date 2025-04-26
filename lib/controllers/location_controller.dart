@@ -78,4 +78,18 @@ class LocationController {
   Future<void> saveLocationsToCache(List<Location> locations) async {
     await _localStorageRepository.saveLocations(locations);
   }
+
+  Future<Location?> getLocationByIdOffline(String locationId) async {
+    try {
+      List<Location> cachedLocations = await _localStorageRepository.getLocations();
+      for (final location in cachedLocations) {
+        if (location.id == locationId) {
+          return location;
+        }
+      }
+      return null; 
+    } catch (e) {
+      print('Error obteniendo ubicación offline: $e');
+      return null;
+}}
 }

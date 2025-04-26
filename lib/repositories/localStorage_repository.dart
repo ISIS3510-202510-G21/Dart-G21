@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'package:dart_g21/controllers/location_controller.dart';
 import 'package:dart_g21/controllers/profile_controller.dart';
 import 'package:dart_g21/controllers/skill_controller.dart';
+import 'package:dart_g21/controllers/user_controller.dart';
 import 'package:dart_g21/models/profile.dart';
+import 'package:dart_g21/models/user.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:dart_g21/models/event.dart';
 import 'package:dart_g21/models/category.dart';
@@ -47,7 +49,7 @@ class LocalStorageRepository{
 
   Future<void> saveEvents(List<Event> events, CategoryController categoryController,
                           LocationController locationController,
-                          ProfileController profileController) async {
+                          ProfileController profileController, UserController userController) async {
     await _lock.synchronized(() async {
       for (var event in events) {
         if (!_eventBox.containsKey(event.id)) {
@@ -68,8 +70,14 @@ class LocalStorageRepository{
           saveLocation(location);
         }
         Profile? profile = await profileController.getProfileByUserId(event.creator_id).first;
+        
         if (profile != null) {
           saveProfile(event.creator_id, profile);
+          User? user = await userController.getUserById(event.creator_id);
+          if (user != null) {
+            saveUserName(event.creator_id, user.name);
+          }
+
         }
       }
     });
@@ -107,9 +115,11 @@ class LocalStorageRepository{
     Location? location;
     Event? event;
     if (eventJson != null) {
-      event=Event.fromJson(Map<String, dynamic>.from(jsonDecode(eventJson)));
-      return  location = await getLocationById(event.location_id);
-
+      event = Event.fromJson(Map<String, dynamic>.from(jsonDecode(eventJson)));
+      return location = await getLocationById(event.location_id);
+    }
+    return null;
+  }
 
   Future<void> saveEventDraft(Event eventDraft) async {
     final box = await Hive.openBox('event_drafts');
@@ -139,7 +149,7 @@ class LocalStorageRepository{
         ..sort((a, b) => a.start_date.compareTo(b.start_date));
       for (var i = 0; i < 5 && i < events.length; i++) {
         await _eventBox.delete(events[i].id);
-        print("Event DELETED: ${events[i].id}");
+  
       }
     });
   }
@@ -216,13 +226,7 @@ class LocalStorageRepository{
     });
   }
 
-  Future<void> saveLocation(Location location) async {
-    await _lock.synchronized(() async {
-      if (!_locationBox.containsKey(location.id)) {
-        await _locationBox.put(location.id, jsonEncode(location.toJson()));
-      }
-    });
-  }
+
 
   Future<Location?> getLocationById(String locationId) async {
     final locationJson = _locationBox.get(locationId);
@@ -287,8 +291,7 @@ class LocalStorageRepository{
     return {
       'followers': followersJson != null ? List<String>.from(jsonDecode(followersJson)) : [],
       'following': followingJson != null ? List<String>.from(jsonDecode(followingJson)) : [],
-};
-
+        };  
 }
 
 Future<void> saveUserName(String userId, String userName) async {
@@ -306,8 +309,6 @@ Future<void> saveUserName(String userId, String userName) async {
     }
     return null;
   }
-
+  }
   
-
-
-}
+  
