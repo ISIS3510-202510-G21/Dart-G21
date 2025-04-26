@@ -107,9 +107,9 @@ Future<void> _checkInitialConnectivityAndLoad() async {
   await initHiveAndLoad(); // Ahora sí, después de saber el estado real
 }
 
-Future<List<Event>> getCachedEvents10() async {
+Future<List<Event>> getCachedEvents5() async {
   final events = await _eventController.getCachedEvents();
-  return events.take(10).toList(); // Limitar a 10 eventos aquí
+  return events.take(5).toList(); // Limitar a 10 eventos aquí
 }
 Future<void> initHiveAndLoad() async {
 
@@ -118,7 +118,7 @@ Future<void> initHiveAndLoad() async {
   });
 
   if (!isConnected) {
-    final local = await getCachedEvents10(); 
+    final local = await getCachedEvents5(); 
     localCategories = await _categoryController.getCachedCategories();
     localSkills = await _skillController.getCachedSkills();
     localLocations = await _locationController.getCachedLocations();
@@ -134,7 +134,7 @@ Future<void> initHiveAndLoad() async {
     //final locations = await _locationController.getLocationsStream().first;
     final events = await _eventController.getFirstNEvents(20); 
 
-    await _eventController.saveEventsToCache(events.take(10).toList()); 
+    await _eventController.saveEventsToCache(events.take(5).toList()); 
     //await _categoryController.saveCategoriesToCache(categories);
     await _skillController.saveSkillsToCache(skills);
     //await _locationController.saveLocationsToCache(locations);
