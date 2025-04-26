@@ -14,6 +14,7 @@ import 'package:hive/hive.dart';
 import '../controllers/location_controller.dart';
 import 'package:dart_g21/controllers/category_controller.dart';
 
+
 class EventController {
   final EventRepository _eventRepository = EventRepository();
   final LocationController _locationController = LocationController();
@@ -357,6 +358,7 @@ class EventController {
   await _eventRepository.addAttendeeToEvent(eventId, userId);
   }
 
+
   Future<void> saveEventDraft(Event event) async {
     await _localStorageRepository.saveEventDraft(event);
   }
@@ -371,6 +373,7 @@ class EventController {
   Future<List<Event>> getCachedEvents() async {
     return _localStorageRepository.getEvents();
   }
+
 
   Stream<List<Event>> getEventsByCategoryStreamOffline(String categoryId) async* {
     List<Event> events = _localStorageRepository.getEvents()

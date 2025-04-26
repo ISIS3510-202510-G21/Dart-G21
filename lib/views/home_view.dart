@@ -5,6 +5,8 @@ import 'package:dart_g21/views/map_view.dart';
 import 'package:dart_g21/views/profile_view.dart';
 import 'package:dart_g21/views/searchevent_view.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../controllers/auth_controller.dart';
 import '../controllers/category_controller.dart';
 import '../controllers/event_controller.dart';
 import '../controllers/user_controller.dart';
@@ -35,6 +37,8 @@ class _HomePage extends State<HomePage> {
   final UserController _userController = UserController();
   final EventController _eventController = EventController();
   late final Connectivity _connectivity;
+  final AuthController _authController = AuthController();
+
   bool isConnected = true;
   late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
   final List<Color> colors = [
@@ -288,31 +292,44 @@ class _HomePage extends State<HomePage> {
 
   /// head bar with location
   Widget _buildUpBar() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        //const Icon(Icons.menu, color: AppColors.primary, size: 28),
-        Column(
-          children: [
-            const Text(
-              "Current Location",
-              style: TextStyle(
-                color: AppColors.primary,
-                fontSize: 12,
-              ),
+    return SizedBox(
+      height: 60, // Ajusta esta altura según necesites
+      child: Stack(
+        children: [
+          // Ubicación centrada
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  "Current Location",
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 12,
+                  ),
+                ),
+                Text(
+                  _location,
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
             ),
-            Text(
-              _location,
-              style: const TextStyle(
-                color: AppColors.primary,
-                fontWeight: FontWeight.bold,
-                fontSize: 11,
-              ),
+          ),
+          // Ícono de configuración en la esquina derecha
+          Positioned(
+            right: 16,
+            top: 16, // Ajusta esta posición según necesites
+            child: IconButton(
+              icon: const Icon(Icons.logout, color: AppColors.primary, size: 20),
+              onPressed: _logout, // <-- Corrección aquí
             ),
-          ],
-        ),
-        //const Icon(Icons.account_circle_outlined, color: AppColors.primary, size: 28),
-      ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -418,6 +435,34 @@ class _HomePage extends State<HomePage> {
   void dispose() {
     _connectivitySubscription.cancel();
     super.dispose();
+  }
+
+
+  Future<void> _logout() async {
+    try {
+      // 1. Cerrar sesión en el backend (por ejemplo, Firebase)
+      await _authController.signOut();
+
+      // 2. Limpiar datos locales
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      // 3. Redirigir al login
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/signin',
+              (route) => false,
+        );
+      }
+    } catch (e) {
+      // Manejo de errores
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al cerrar sesión: $e')),
+        );
+      }
+    }
   }
 
 }

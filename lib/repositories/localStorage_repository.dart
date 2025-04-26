@@ -71,7 +71,6 @@ class LocalStorageRepository{
         if (profile != null) {
           saveProfile(event.creator_id, profile);
         }
-
       }
     });
   }
@@ -90,6 +89,27 @@ class LocalStorageRepository{
         .toList();
     yield events;
   }
+  
+  Stream<List<Event>> getEventsByCity(String cityId) async* {
+    List<Event> events = getEvents();
+    List<Event> eventsCity=[];
+    Event event;
+    for (event in events) {
+      Location? location = await getLocationById(event.location_id);
+      if (location != null && location.city == cityId) {
+        eventsCity.add(event);
+      }
+    }
+  }
+
+  Future<Location?> getLocationOfEvent(String eventId) async {
+    final eventJson = _eventBox.get(eventId);
+    Location? location;
+    Event? event;
+    if (eventJson != null) {
+      event=Event.fromJson(Map<String, dynamic>.from(jsonDecode(eventJson)));
+      return  location = await getLocationById(event.location_id);
+
 
   Future<void> saveEventDraft(Event eventDraft) async {
     final box = await Hive.openBox('event_drafts');
@@ -104,6 +124,7 @@ class LocalStorageRepository{
     }
     return null;
   }
+
 
   Future<void> deleteEventDraft() async {
     final box = await Hive.openBox('event_drafts');
@@ -156,7 +177,6 @@ class LocalStorageRepository{
   }
 
 
-
   /// ----------------------- Skills ------------------------------
   List<Skill> getSkills() {
     return _skillBox.values.map((e) => Skill.fromJson(Map<String, dynamic>.from(jsonDecode(e)))).toList();
@@ -194,6 +214,22 @@ class LocalStorageRepository{
         await _locationBox.put(location.id, jsonEncode(location.toJson()));
       }
     });
+  }
+
+  Future<void> saveLocation(Location location) async {
+    await _lock.synchronized(() async {
+      if (!_locationBox.containsKey(location.id)) {
+        await _locationBox.put(location.id, jsonEncode(location.toJson()));
+      }
+    });
+  }
+
+  Future<Location?> getLocationById(String locationId) async {
+    final locationJson = _locationBox.get(locationId);
+    if (locationJson != null) {
+      return Location.fromJson(Map<String, dynamic>.from(jsonDecode(locationJson)));
+    }
+    return null;
   }
 
 

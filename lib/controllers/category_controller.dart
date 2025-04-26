@@ -37,7 +37,6 @@ class CategoryController {
 
   Future<List<Category_event>> getCachedCategories() async {
     return _localStorageRepository.getCategories();
-
   }
 
   Future<void> saveCategoriesToCache(List<Category_event> categories) async {
