@@ -401,7 +401,13 @@ Future<void> _loadOnlineData() async {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      Align(
+                      daysLeft>=0 ?Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          "$daysLeft days to go",
+                          style: const TextStyle(color: Color.fromARGB(255, 20, 104, 23), fontSize: 14),
+                        ),
+                      ):Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
                           "$daysLeft days left",
