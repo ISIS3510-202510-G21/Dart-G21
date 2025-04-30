@@ -130,8 +130,10 @@ Future<void> _loadOfflineData() async {
       creatorImage =profile?.picture ?? "";
     });
 
-    _category = await _categoryController.getCategoryByIdOffline(_event!.category);
-    _location = await _locationController.getLocationByIdOffline(_event!.location_id);
+   // _category = await _categoryController.getCategoryByIdOffline(_event!.category);
+    _category = await _categoryController.getCategoryByIdOfflineDrift(_event!.category);
+   // _location = await _locationController.getLocationByIdOffline(_event!.location_id);
+    _location = await _locationController.getLocationByIdOfflineDrift(_event!.location_id);
 }
 
 Future<void> _loadOnlineData() async {

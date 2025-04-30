@@ -119,9 +119,12 @@ Future<void> initHiveAndLoad() async {
 
   if (!isConnected) {
     final local = await getCachedEvents5(); 
-    localCategories = await _categoryController.getCachedCategories();
-    localSkills = await _skillController.getCachedSkills();
-    localLocations = await _locationController.getCachedLocations();
+    //localCategories = await _categoryController.getCachedCategories();
+    localCategories = await _categoryController.getCachedCategoriesDrift();
+    //localSkills = await _skillController.getCachedSkills();
+    localSkills = await _skillController.getCachedSkillsDrift();
+    //localLocations = await _locationController.getCachedLocations();
+    localLocations = await _locationController.getCachedLocationsDrift();
     local.sort((a, b) => a.start_date.compareTo(b.start_date)); 
     setState(() {
       allEvents = local;
@@ -136,8 +139,12 @@ Future<void> initHiveAndLoad() async {
 
     await _eventController.saveEventsToCache(events.take(5).toList()); 
     //await _categoryController.saveCategoriesToCache(categories);
-    await _skillController.saveSkillsToCache(skills);
-    //await _locationController.saveLocationsToCache(locations);
+    
+    
+    
+    //await _skillController.saveSkillsToCache(skills);
+    await _skillController.saveSkillsToCacheDrift(skills);
+    
 
     events.sort((a, b) => a.start_date.compareTo(b.start_date));
     setState(() {

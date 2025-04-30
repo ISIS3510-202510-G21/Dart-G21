@@ -227,7 +227,8 @@ class _HomePage extends State<HomePage> {
     if(isConnected){
       return _categoryController.getCategoriesStream();
     }else{
-      return _categoryController.getCategoriesStreamOffline();
+      //return _categoryController.getCategoriesStreamOffline();
+      return _categoryController.getCachedCategoriesDrift().asStream();
     }
   }
 

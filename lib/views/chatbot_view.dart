@@ -5,7 +5,10 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dart_g21/consts.dart';
 import 'package:dart_g21/controllers/category_controller.dart';
 import 'package:dart_g21/controllers/event_controller.dart';
+import 'package:dart_g21/data/database/app_database.dart';
+import 'package:dart_g21/models/category.dart';
 import 'package:dart_g21/models/event.dart';
+import 'package:dart_g21/repositories/drift_repository.dart';
 import 'package:dart_g21/repositories/localStorage_repository.dart';
 import 'package:http/http.dart' as http;
 import 'package:dart_g21/core/colors.dart';
@@ -477,7 +480,8 @@ setState(() {
   }
 
   void _showCategories() async {
-    final categories = LocalStorageRepository().getCategories();
+    final _categories = await DriftRepository(AppDatabase()).getCategoriesDrift();
+    List<Category_event> categories =_categories ;
     if (categories.isEmpty) {
       setState(() {
         _messages.insert(0, ChatMessage(

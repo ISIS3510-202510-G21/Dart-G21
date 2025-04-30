@@ -72,7 +72,8 @@ class _CategoriesFilterState extends State<CategoriesFilter> {
     if (isConnected) {
       category = await _categoryController.getCategoryById(widget.categoryId);
     } else {
-      category = await _categoryController.getCategoryByIdOffline(widget.categoryId);
+      //category = await _categoryController.getCategoryByIdOffline(widget.categoryId);
+      category = await _categoryController.getCategoryByIdOfflineDrift(widget.categoryId);
     }
     if (mounted) {
       setState(() {
