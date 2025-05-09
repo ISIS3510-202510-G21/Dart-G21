@@ -18,7 +18,7 @@ import '../widgets/navigation_bar_host.dart';
 import '../core/colors.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'categoriesfilter_view.dart';
 import 'myevents_view.dart';
 
@@ -397,6 +397,7 @@ class _HomePage extends State<HomePage> {
       child: FloatingActionButton(
         backgroundColor: AppColors.secondary,
         onPressed: () {
+          logChatbotClick(widget.userId); 
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => ChatBotPage(title: "ChatBot",)), 
@@ -411,6 +412,12 @@ class _HomePage extends State<HomePage> {
     );
   }
 
+  void logChatbotClick(String userId) {
+    FirebaseFirestore.instance.collection('chatbot_clicks').add({
+      'user_id': userId,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+  }
   @override
   void initState() {
     super.initState();
