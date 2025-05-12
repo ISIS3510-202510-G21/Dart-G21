@@ -652,8 +652,13 @@ Widget _buildTimeField(String label, TimeOfDay? time, bool isFromTime) {
         hint: const Text("Choose the category", style: TextStyle(color: Color(0xFF8D8D8D), fontSize: 16)),
         items: categoryList.map((category) {
           return DropdownMenuItem<String>(
-            value: category.id, //Guardas el ID directamente
-            child: Text(category.name),
+            value: category.id, 
+            child: Text(category.name, 
+                        style: const TextStyle(fontSize: 15),
+                        maxLines: 2,
+                        overflow: TextOverflow.visible, //evita que se corte
+                        softWrap: true,
+            ),
           );
         }).toList(),
         onChanged: (String? newValue) {
