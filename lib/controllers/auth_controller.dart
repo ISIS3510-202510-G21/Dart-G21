@@ -1,9 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/storage_service.dart'; 
 import '../services/auth_service.dart';
 import '../controllers/user_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../models/user.dart';
 import '../models/profile.dart';
+import '../models/signup_draft.dart'; // Ensure this file contains the SignUpDraft class definition
+import 'package:dart_g21/repositories/localStorage_repository.dart';
+import 'dart:io';
 
 class AuthController {
   final AuthService _authService = AuthService();
@@ -43,10 +47,22 @@ class AuthController {
         User? user = await _userController.getUserByEmail(email).first;
         String? user_id = user?.id;
 
+        // SUBIR IMAGEN Y THUMBNAIL SI HAY IMAGEN
+        String profilePicUrl = '';
+        String? thumbnailUrl;
+        if (profileImagePath.isNotEmpty) {
+          final File imageFile = File(profileImagePath);
+          final storageService = StorageService();
+          final urls = await storageService.uploadProfileImageAndThumbnail(id_user, imageFile);
+          profilePicUrl = urls['original']!;
+          thumbnailUrl = urls['thumbnail'];
+        } 
+
         //Crear perfil en la colección "profiles"
         Profile newProfile = Profile(
           id: id_user,
           picture: profileImagePath,
+          thumbnail: thumbnailUrl,
           headline: headline,
           description: description,
           events_associated: [],
@@ -72,4 +88,32 @@ class AuthController {
   Future<void> signOut() async {
     await _authService.signOut();
   }
+
+ // Guarda los datos del último usuario logueado localmente (en Hive)
+  Future<void> saveUserLocally(String userId, String email, String name) async {
+    final localStorage = LocalStorageRepository();
+    await localStorage.saveLastLoggedInUser(userId: userId, email: email, name: name);
+  }
+
+  // Recupera el último usuario logueado desde Hive
+  Future<Map<String, String>?> getLastLoggedInUser() async {
+    final localStorage = LocalStorageRepository();
+    return await localStorage.getLastLoggedInUser();
+  }
+
+  Future<void> saveSignUpDraftLocally(SignUpDraft draft) async {
+    final localStorage = LocalStorageRepository();
+    await localStorage.saveSignUpDraft(draft);
+  }
+
+  Future<SignUpDraft?> getSignUpDraftLocally() async {
+    final localStorage = LocalStorageRepository();
+    return await localStorage.getSignUpDraft();
+  }
+
+  Future<void> deleteSignUpDraftLocally() async {
+    final localStorage = LocalStorageRepository();
+    await localStorage.deleteSignUpDraft();
+  }
+
 }
