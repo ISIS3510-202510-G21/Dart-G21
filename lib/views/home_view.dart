@@ -18,7 +18,7 @@ import '../widgets/navigation_bar_host.dart';
 import '../core/colors.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
-
+import 'createevents_view.dart';
 import 'categoriesfilter_view.dart';
 import 'myevents_view.dart';
 
@@ -416,6 +416,10 @@ class _HomePage extends State<HomePage> {
     super.initState();
     setUpConnectivity();
     _determinePosition();
+    //nuevo
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkEventDraft();
+    });
   }
 
   void setUpConnectivity() {
@@ -431,6 +435,48 @@ class _HomePage extends State<HomePage> {
       }
     });
   }
+
+  void _checkEventDraft() async {
+    final EventController _eventController = EventController();
+    final draft = await _eventController.getEventDraft();
+    print("DRAFT ENCONTRADO: ${draft?.name}");
+
+    if (draft != null && draft.name != null && draft.name!.isNotEmpty) {
+      print("Mostrando banner...");
+
+      ScaffoldMessenger.of(context).showMaterialBanner(
+        MaterialBanner(
+          content: const Text('You have an unfinished event. Would you like to resume it?'),
+          backgroundColor: Colors.amber.shade100,
+          actions: [
+            TextButton(
+              onPressed: () async {
+                await _eventController.deleteEventDraft(); // borra el draft
+                Navigator.pop(context);
+              },
+              child: const Text('Discard'),
+            ),
+            TextButton(
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CreateEventScreen(userId: widget.userId),
+                  ),
+                );
+              },
+              child: const Text('Yes, resume'),
+            ),
+          ],
+        ),
+      );
+        } else {
+          print("No hay draft o el nombre está vacío");
+
+    }
+  }
+
 
   @override
   void dispose() {

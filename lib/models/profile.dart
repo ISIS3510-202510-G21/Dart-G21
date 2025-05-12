@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class Profile {
   String id;
   String picture;
+  String? thumbnail;
   String description;
   String headline;
   List<String> events_associated;
@@ -14,6 +15,7 @@ class Profile {
   Profile({
     required this.id,
     required this.picture,
+    required this.thumbnail,
     required this.description,
     required this.headline,
     required this.events_associated,
@@ -29,6 +31,7 @@ class Profile {
 
     return {
       'profile_picture': picture,
+      'thumbnail': thumbnail, //agregué esto
       'description': description,
       'headline': headline,
       'events_asociated': events_associated
@@ -52,6 +55,7 @@ class Profile {
     return Profile(
       id: id,
       picture: map['profile_picture'] ?? '',
+      thumbnail: map['thumbnail'] ?? null, //agregué esto
       description: map['description'] ?? '',
       headline: map['headline'] ?? '',
       events_associated: (map['events_asociated'] as List<dynamic>?)
@@ -80,6 +84,7 @@ class Profile {
     return Profile(
       id: json['id'] as String,
       picture: json['profile_picture'] as String,
+      thumbnail: json['thumbnail'],
       description: json['description'] as String,
       headline: json['headline'] as String,
       events_associated: List<String>.from(json['events_asociated']),
@@ -94,6 +99,7 @@ class Profile {
     return {
       'id': id,
       'profile_picture': picture,
+      'thumbnail': thumbnail,
       'description': description,
       'headline': headline,
       'events_asociated': events_associated,
