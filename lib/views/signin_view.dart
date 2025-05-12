@@ -1,4 +1,5 @@
 import 'package:dart_g21/controllers/user_controller.dart';
+import 'package:dart_g21/controllers/auth_controller.dart';
 import 'package:dart_g21/models/user.dart';
 import 'package:dart_g21/views/home_view.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:dart_g21/core/colors.dart';
 import 'package:dart_g21/services/auth_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:dart_g21/services/local_storage_service.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({Key? key}) : super(key: key);
@@ -20,7 +22,57 @@ class _SignInScreenState extends State<SignInScreen> {
   
   bool _isPasswordVisible = false;
   bool _rememberMe = false;
-  final _userController = UserController(); // Add this line
+  final _userController = UserController(); 
+  final authController = AuthController();
+
+  @override
+  void initState() {
+    super.initState();
+    _checkForSavedUser();
+  }
+
+  void _checkForSavedUser() async {
+    var connectivity = await Connectivity().checkConnectivity();
+    bool hasInternet = connectivity != ConnectivityResult.none;
+
+    if (!hasInternet) {
+      final savedUser = await authController.getLastLoggedInUser();
+      if (savedUser != null && mounted) {
+        ScaffoldMessenger.of(context).showMaterialBanner(
+          MaterialBanner(
+            content: Text(
+              "You are offline. Do you want to continue as ${savedUser['name']}?",
+              style: TextStyle(color: Colors.black),
+            ),
+            backgroundColor: Colors.amber.shade100,
+            actions: [
+              TextButton(
+                child: Text('Yes', style: TextStyle(color: Colors.black)),
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => HomePage(userId: savedUser['userId']!),
+                    ),
+                  );
+                },
+              ),
+              TextButton(
+                child: Text('Other user', style: TextStyle(color: Colors.red)),
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Connect to the internet to start with another user")),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -172,10 +224,12 @@ class _SignInScreenState extends State<SignInScreen> {
             User? user = await _userController.getUserByEmail(_emailController.text).first;
             String? user_id = user?.id;
 
-        if (user_id != null) {
+        if (user_id != null && user != null) {
           //Guardar en local storage para mantener sesión
             await LocalStorageService.saveUserId(user_id);
             print("Guardado en SharedPreferences: $user_id");
+          //Guardar en Hive 
+            await authController.saveUserLocally(user_id, user.email, user.name);
 
           Navigator.push(
             context,
