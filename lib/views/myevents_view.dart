@@ -38,10 +38,11 @@ class _MyEventsPageState extends State<MyEventsPage> {
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   late Box myEventsBox;
 
-  @override
+    @override
   void initState() {
     super.initState();
     _setupConnectivity();
+    _checkInitialConnectivityAndLoad();
     _initHive();
   }
 
@@ -85,6 +86,14 @@ void _setupConnectivity() {
     });
   }
 
+  Future<void> _checkInitialConnectivityAndLoad() async {
+  final result = await Connectivity().checkConnectivity();
+  setState(() {
+    isConnected = !result.contains(ConnectivityResult.none);
+  });
+
+
+}
 
   @override
   Widget build(BuildContext context) {
