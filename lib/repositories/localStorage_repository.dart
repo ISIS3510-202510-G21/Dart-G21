@@ -14,7 +14,7 @@ import 'package:dart_g21/models/category.dart';
 import 'package:dart_g21/models/location.dart' as model_location;
 import 'package:dart_g21/models/skill.dart' as model_skill;
 import 'package:synchronized/synchronized.dart';
-
+import '../models/signup_draft.dart'; 
 import '../controllers/category_controller.dart';
 
 class LocalStorageRepository{
@@ -326,6 +326,52 @@ Future<void> saveUserName(String userId, String userName) async {
     }
     return null;
   }
+
+  Future<void> saveLastLoggedInUser({
+    required String userId,
+    required String email,
+    required String name,
+  }) async {
+    final box = await Hive.openBox('last_user');
+    await box.put('userId', userId);
+    await box.put('email', email);
+    await box.put('name', name);
   }
+
+  Future<Map<String, String>?> getLastLoggedInUser() async {
+    final box = await Hive.openBox('last_user');
+    if (box.containsKey('userId') && box.containsKey('email') && box.containsKey('name')) {
+      return {
+        'userId': box.get('userId'),
+        'email': box.get('email'),
+        'name': box.get('name'),
+      };
+    }
+    return null;
+  }
+
+// ------------------- Sign Up Draft -----------------------
+
+Future<void> saveSignUpDraft(SignUpDraft draft) async {
+  final box = await Hive.openBox('signup_draft');
+  await box.put('data', draft.toJson());
+}
+
+Future<SignUpDraft?> getSignUpDraft() async {
+  final box = await Hive.openBox('signup_draft');
+  final data = box.get('data');
+  if (data != null) {
+    return SignUpDraft.fromJson(Map<String, dynamic>.from(data));
+  }
+  return null;
+}
+
+Future<void> deleteSignUpDraft() async {
+  final box = await Hive.openBox('signup_draft');
+  await box.delete('data');
+}
+
+
+}
   
   
