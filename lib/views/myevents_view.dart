@@ -42,6 +42,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
   void initState() {
     super.initState();
     _setupConnectivity();
+    _checkInitialConnectivityAndLoad();
     _initHive();
   }
 
@@ -84,6 +85,16 @@ void _setupConnectivity() {
       // }
     });
   }
+
+  Future<void> _checkInitialConnectivityAndLoad() async {
+  final result = await Connectivity().checkConnectivity();
+  setState(() {
+    isConnected = !result.contains(ConnectivityResult.none);
+  });
+
+
+}
+
 
 
   @override

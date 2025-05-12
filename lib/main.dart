@@ -9,6 +9,7 @@ import 'package:dart_g21/views/myevents_view.dart';
 import 'package:dart_g21/views/profile_view.dart';
 import 'package:dart_g21/views/searchevent_view.dart';
 import 'package:dart_g21/views/selectcategories_view.dart';
+import 'package:dart_g21/views/usersbyevent_view.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/views/signup_view.dart';
 import 'package:dart_g21/views/signin_view.dart';
@@ -95,7 +96,15 @@ await SystemChrome.setPreferredOrientations([
           eventId: args['eventId']!,
           userId: args['userId']!,
         );
-      },  // Pantalla de detalles del evento,
+      },
+      '/usersbyevent': (context) {
+        final args = ModalRoute.of(context)!.settings.arguments as Map<String, String>;
+        return AttendeesView(
+          attendeeIds: [args['attendeeIds']!],
+        
+        );
+        
+      }, // Pantalla de detalles del evento,
     },
   ));
 

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dart_g21/models/category.dart';
+import 'package:dart_g21/views/usersbyevent_view.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/controllers/event_controller.dart';
 import 'package:dart_g21/controllers/user_controller.dart';
@@ -302,28 +303,36 @@ Future<void> _loadOnlineData() async {
                           Container(width: 1, height: 40, color: Colors.grey.shade300),
 
                           // Location
-                          FutureBuilder<Location?>(
-                            future: _locationController.getLocationById(_event!.location_id),
-                            builder: (context, snapshot) {
-                              return Row(
+                            Row(
                                 children: [
-                                  const SizedBox(width: 12),
-                                  const Icon(Icons.location_on_outlined, color: Colors.grey),
+                                  const Icon(Icons.people_alt_outlined, size: 25, color: Colors.grey),
                                   const SizedBox(width: 6),
                                   Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Text("Location", style: TextStyle(fontSize: 14)),
-                                      Text(
-                                        snapshot.data?.address ?? "Unknown",
-                                        style: const TextStyle(fontSize: 14, color: AppColors.secondary),
-                                      ),
+                                      const Text("Attendees", style: TextStyle(fontSize: 14)),
+                                        GestureDetector(
+                                        onTap: () {
+
+                                            Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => AttendeesView(attendeeIds: _event!.attendees),
+                                          ),
+                                          );
+                                        
+                                         
+                                        },
+                                        child: Text(
+                                          "${_event!.attendees.length} people",
+                                          style: const TextStyle(color: AppColors.secondary, fontSize: 13, decoration: TextDecoration.underline),
+                                        ),
+                                        )
+                                      
                                     ],
                                   ),
                                 ],
-                              );
-                            },
-                          ),
+                              ),
                         ],
                       ),
                     ],
@@ -438,20 +447,19 @@ Future<void> _loadOnlineData() async {
                       const SizedBox(height: 8),
                       Text(_event!.description, style: const TextStyle(fontSize: 14)),
                       const SizedBox(height: 16),
+                      const Text("Location", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                      Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text("${_location?.address}, ${_location?.city}", style: const TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+                                if (_location?.details != null && _location!.details.isNotEmpty)
+                                  Text(_location?.details??"Unknown", style: const TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+                              ],
+                            ),
+                      const SizedBox(height: 16),
                       const Text("Category", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                       const SizedBox(height: 8),
-                      // Category
-                      FutureBuilder<Category_event?>(
-                        future: _categoryController.getCategoryById(_event!.category),
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData) return const Text("Loading...");
-                          final category = snapshot.data;
-                          return Text(
-                            category?.name ?? "Unknown",
-                            style: const TextStyle(fontSize: 14, color: AppColors.secondary),
-                          );
-                        },
-                      ),
+                      Text(_category?.name ?? "Unknown",style: const TextStyle(fontSize: 14, color: AppColors.secondary),), //CAMBIO PARA INTEGRAR
                       const SizedBox(height: 16),
                       isConnected?    const Text("Skills", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)): const Text(""),
                       const SizedBox(height: 8),
@@ -467,6 +475,8 @@ Future<void> _loadOnlineData() async {
                       ): const Text(
                         "",
                       ),
+                      
+
                     ],
                   ),
                 ),

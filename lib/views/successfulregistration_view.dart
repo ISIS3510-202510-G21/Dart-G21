@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_g21/core/colors.dart';
 import 'package:dart_g21/views/home_view.dart';
 import 'package:dart_g21/views/myevents_view.dart';
+import 'package:dart_g21/views/usersbyevent_view.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/models/event.dart';
 import 'package:dart_g21/controllers/profile_controller.dart'; 
@@ -195,10 +196,24 @@ class _SuccessfulregistrationViewState extends State<SuccessfulregistrationView>
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       const Text("Attendees", style: TextStyle(color: AppColors.secondaryText, fontWeight: FontWeight.w600, fontSize: 14)),
-                                      Text(
-                                        "${event!.attendees.length} people",
-                                        style: const TextStyle(color: Colors.blue, fontSize: 13),
-                                      )
+                                        GestureDetector(
+                                        onTap: () {
+
+                                          
+                                            Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => AttendeesView(attendeeIds: event!.attendees),
+                                          ),
+                                          );
+                                          
+                                         
+                                        },
+                                        child: Text(
+                                          "${event!.attendees.length} people",
+                                          style: const TextStyle(color: Colors.blue, fontSize: 13, decoration: TextDecoration.underline),
+                                        ),
+                                        )
                                       
                                     ],
                                   ),
