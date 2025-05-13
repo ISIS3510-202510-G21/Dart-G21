@@ -416,10 +416,6 @@ class _HomePage extends State<HomePage> {
     super.initState();
     setUpConnectivity();
     _determinePosition();
-    //nuevo
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   _checkEventDraft();
-    // });
   }
 
   void setUpConnectivity() {
@@ -449,33 +445,66 @@ class _HomePage extends State<HomePage> {
     if (draft != null && draft.name != null && draft.name!.isNotEmpty) {
       print("Mostrando banner...");
 
-      ScaffoldMessenger.of(context).showMaterialBanner(
-        MaterialBanner(
-          content: const Text('You have an unfinished event. Would you like to resume it?'),
-          backgroundColor: Colors.amber.shade100,
-          actions: [
-            TextButton(
-              onPressed: () async {
-                await _eventController.deleteEventDraft(); // borra el draft
-                Navigator.pop(context);
-              },
-              child: const Text('Discard'),
-            ),
-            TextButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => CreateEventScreen(userId: widget.userId),
-                  ),
-                );
-              },
-              child: const Text('Yes, resume'),
-            ),
-          ],
-        ),
-      );
+      showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return Dialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              backgroundColor: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.warning_amber_rounded, size: 48, color: Colors.amber),
+                    const SizedBox(height: 16),
+                    const Text(
+                      "You have an unfinished event",
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      "Would you like to continue editing it?",
+                      style: TextStyle(fontSize: 14),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        TextButton(
+                          style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+                          onPressed: () async {
+                            await _eventController.deleteEventDraft();
+                            Navigator.pop(context); // Close the dialog
+                          },
+                          child: const Text("Discard"),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.secondary,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context); // Close the dialog
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => CreateEventScreen(userId: widget.userId),
+                              ),
+                            );
+                          },
+                          child: const Text("Yes, resume", style: TextStyle(color: Colors.white)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
         } else {
           print("No hay draft o el nombre está vacío");
 
