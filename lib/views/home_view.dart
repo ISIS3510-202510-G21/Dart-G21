@@ -417,9 +417,9 @@ class _HomePage extends State<HomePage> {
     setUpConnectivity();
     _determinePosition();
     //nuevo
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkEventDraft();
-    });
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   _checkEventDraft();
+    // });
   }
 
   void setUpConnectivity() {
@@ -432,7 +432,12 @@ class _HomePage extends State<HomePage> {
         setState(() {
           isConnected = currentlyConnected;
         });
-      }
+      };
+      if (!prev && currentlyConnected) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkEventDraft();
+    });
+      };
     });
   }
 
