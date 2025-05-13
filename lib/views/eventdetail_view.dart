@@ -564,17 +564,22 @@ Future<void> _loadOnlineData() async {
                 ),
                 child: const Text("Book Event", style: TextStyle(color: Colors.white, fontSize: 16)),
               ),
-            ): SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: Text("")
-            )
-            ,
-
+            ): Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    "You cannot book this event without an internet connection.",
+                    style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
           ],
         ),
       ),
     );
   }
 }
-
