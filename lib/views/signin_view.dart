@@ -76,47 +76,6 @@ class _SignInScreenState extends State<SignInScreen> {
   }
 
 
- /*  void _checkForSavedUser() async {
-
-  if (!isConnected) {
-    final savedUser = await authController.getLastLoggedInUser();
-    if (savedUser != null && mounted) {
-      ScaffoldMessenger.of(context).showMaterialBanner(
-        MaterialBanner(
-          content: Text(
-            "You are offline. Do you want to continue as ${savedUser['name']}?",
-            style: TextStyle(color: Colors.black),
-          ),
-          backgroundColor: Colors.amber.shade100,
-          actions: [
-            TextButton(
-              child: Text('Yes', style: TextStyle(color: Colors.black)),
-              onPressed: () {
-                ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => HomePage(userId: savedUser['userId']!),
-                  ),
-                );
-              },
-            ),
-            TextButton(
-              child: Text('Other user', style: TextStyle(color: Colors.red)),
-              onPressed: () {
-                ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text("Connect to the internet to start with another user")),
-                );
-              },
-            ),
-          ],
-        ),
-      );
-    }
-  }
-} */
-
 void _checkForSavedUser() async {
   if (!isConnected) {
     final savedUser = await authController.getLastLoggedInUser();
