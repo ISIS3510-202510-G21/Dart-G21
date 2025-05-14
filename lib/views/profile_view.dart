@@ -48,6 +48,7 @@ class _ProfilePageState extends State<ProfilePage> {
   void initState() {
     super.initState();
     _setupConnectivity();
+    _checkInitialConnectivityAndLoad();
     _loadInitialData();
   }
  Future<void> _loadInitialData() async {
@@ -139,6 +140,20 @@ class _ProfilePageState extends State<ProfilePage> {
       }
     });
   }
+
+    Future<void> _checkInitialConnectivityAndLoad() async {
+  final result = await Connectivity().checkConnectivity();
+  setState(() {
+    isConnected = !result.contains(ConnectivityResult.none);
+  });
+  if (isConnected) {
+    _loadOnlineData();
+  } else {
+    _loadOfflineData();
+  }
+
+
+}
 
   @override
   void dispose() {

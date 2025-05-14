@@ -567,7 +567,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       await LocalStorageService.saveUserId(user_id!);
 
       //Cambie esto sprint 3!!!!
-        Navigator.push(
+        Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => SelectCategoriesScreen(userId: user_id!),

@@ -58,6 +58,7 @@ class _SignInScreenState extends State<SignInScreen> {
     });
       };
       
+      
 
     });
   }
@@ -127,7 +128,7 @@ void _checkForSavedUser() async {
                         ),
                         onPressed: () {
                           Navigator.pop(context);
-                          Navigator.push(
+                          Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
                               builder: (_) => HomePage(userId: savedUser['userId']!),

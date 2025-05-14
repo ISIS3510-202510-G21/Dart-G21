@@ -431,6 +431,7 @@ class _HomePage extends State<HomePage> {
   void initState() {
     super.initState();
     setUpConnectivity();
+    _checkInitialConnectivityAndLoad();
     _determinePosition();
   }
 
@@ -452,6 +453,15 @@ class _HomePage extends State<HomePage> {
       };
     });
   }
+
+  Future<void> _checkInitialConnectivityAndLoad() async {
+  final result = await Connectivity().checkConnectivity();
+  setState(() {
+    isConnected = !result.contains(ConnectivityResult.none);
+  });
+
+
+}
 
   void _checkEventDraft() async {
     final EventController _eventController = EventController();
