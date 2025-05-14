@@ -119,19 +119,23 @@ class _HomePage extends State<HomePage> {
                       ? _eventController.getUpcomingEventsOnlineStream()
                       : _eventController.getUpcomingEventsOfflineStream(),
                   userId: widget.userId,
+                  section: "Upcoming",
                 ),
                 _buildSectionTitle("Nearby Events"),
                 EventsList(
                   eventsStreamProvider: () => isConnected
                       ?_eventController.getTopNearbyEventsOnlineStream(_location)
                       : _eventController.getTopNearbyEventsOfflineStream(_location),
-                    userId: widget.userId),
+                    userId: widget.userId,
+                    section: "Nearby",
+                ),
                 _buildSectionTitle("You Might Like"),
                 EventsList(
                   eventsStreamProvider: () => isConnected
                       ?_eventController.getRecommendedEventsStreamForUserOnline(widget.userId)
                       :_eventController.getRecommendedEventsStreamForUserOffline(),
-                    userId: widget.userId
+                    userId: widget.userId,
+                    section: "Recommendations",
                 ),
                 SizedBox(height: 20),
               ],
@@ -201,6 +205,7 @@ class _HomePage extends State<HomePage> {
                   padding: const EdgeInsets.symmetric(horizontal: 5),
                   child: ElevatedButton(
                       onPressed: () {
+                        logInteraction("Categories");
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -363,6 +368,7 @@ class _HomePage extends State<HomePage> {
         ),
         style: const TextStyle(color: Colors.white),
         onTap: () {
+          logInteraction("Search");
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -397,6 +403,7 @@ class _HomePage extends State<HomePage> {
       child: FloatingActionButton(
         backgroundColor: AppColors.secondary,
         onPressed: () {
+          logInteraction("Chatbot");
           logChatbotClick(widget.userId); 
           Navigator.push(
             context,
@@ -472,6 +479,14 @@ class _HomePage extends State<HomePage> {
         );
       }
     }
+  }
+
+  Future<void> logInteraction(String interaction) async {
+    await FirebaseFirestore.instance.collection('home_interactions').add({
+      'timestamp': FieldValue.serverTimestamp(),
+      'userId': widget.userId,
+      'interactionType': interaction,
+    });
   }
 
 }
