@@ -83,15 +83,27 @@ class _CategoriesFilterState extends State<CategoriesFilter> {
   }
 
   // Filtros y ordenamiento en memoria
-  Future<List<Event>> _applyFiltersAndSort(List<Event> events) async {
-    List<Event> filtered = events;
-    if (isSelected[0]) {
-      filtered = await _eventController.getFreeEventsStream(filtered).first;
-    } else if (isSelected[1]) {
-      filtered = await _eventController.getPaidEventsStream(filtered).first;
-    }
-    filtered = await _eventController.getEventsSortedByDate(filtered, selectedSort).first;
-    return filtered;
+  Future<List<Event>> _applyFiltersAndSort(List<Event> events) {
+    return Future.value(events)
+        .then((filtered) async {
+      if (isSelected[0]) {
+        filtered =
+        await _eventController.getFreeEventsStream(filtered).first;
+      } else if (isSelected[1]) {
+        filtered =
+        await _eventController.getPaidEventsStream(filtered).first;
+      }
+      return filtered;
+    })
+        .then((filtered) {
+      return _eventController
+          .getEventsSortedByDate(filtered, selectedSort)
+          .first;
+    })
+        .catchError((e, stack) {
+      print('Error en _applyFiltersAndSort: $e');
+      return <Event>[];
+    });
   }
 
   @override

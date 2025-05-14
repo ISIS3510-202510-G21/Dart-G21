@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_g21/views/eventdetail_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -6,11 +7,13 @@ import '../controllers/location_controller.dart';
 import '../core/colors.dart';
 import '../models/event.dart';
 import '../models/location.dart' as app_models;
+import '../data/database/firestore_service.dart';
 
 class EventsList extends StatefulWidget {
   final Stream<List<Event>> Function() eventsStreamProvider;
-  final String userId; 
-  const EventsList({Key? key, required this.eventsStreamProvider, required this.userId}) : super(key: key);
+  final String userId;
+  final String section;
+  const EventsList({Key? key, required this.eventsStreamProvider, required this.userId, required this.section}) : super(key: key);
 
 
   @override
@@ -21,6 +24,7 @@ class _EventsListState extends State<EventsList> {
   int _visibleCount = 5;
   int _lastEventsCount = 0;
   final ScrollController _scrollController = ScrollController();
+  bool _hasLoggedInteraction = false;
 
   @override
   void initState() {
@@ -35,6 +39,11 @@ class _EventsListState extends State<EventsList> {
         _visibleCount += 5;
       });
     }
+    if( !_hasLoggedInteraction){
+      logInteraction();
+      _hasLoggedInteraction=true;
+    }
+
   }
 
   @override
@@ -222,6 +231,14 @@ class _EventsListState extends State<EventsList> {
       ),
     ),
     );
+  }
+
+  Future<void> logInteraction() async {
+    await FirebaseFirestore.instance.collection('home_interactions').add({
+      'timestamp': FieldValue.serverTimestamp(),
+      'userId': widget.userId,
+      'interactionType': widget.section,
+    });
   }
 
 }

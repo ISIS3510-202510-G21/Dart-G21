@@ -173,7 +173,7 @@ class _SuccessfulregistrationViewState extends State<SuccessfulregistrationView>
                                       const Text("Cost", style: TextStyle(color: AppColors.secondaryText, fontWeight: FontWeight.w600, fontSize: 14)),
                                       Text(
                                         isFree ? "FREE" : "\$${event!.cost}",
-                                        style: const TextStyle(color: Colors.blue, fontSize: 13),
+                                        style: const TextStyle(color: AppColors.secondary, fontSize: 13),
                                       )
                                     ],
                                   ),
@@ -197,7 +197,7 @@ class _SuccessfulregistrationViewState extends State<SuccessfulregistrationView>
                                       const Text("Attendees", style: TextStyle(color: AppColors.secondaryText, fontWeight: FontWeight.w600, fontSize: 14)),
                                       Text(
                                         "${event!.attendees.length} people",
-                                        style: const TextStyle(color: Colors.blue, fontSize: 13),
+                                        style: const TextStyle(color: AppColors.secondary, fontSize: 13),
                                       )
                                       
                                     ],

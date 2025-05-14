@@ -316,10 +316,7 @@ Future<void> _loadOnlineData() async {
                           Container(width: 1, height: 40, color: Colors.grey.shade300),
 
                           // Location
-                          FutureBuilder<Location?>(
-                            future: _locationController.getLocationById(_event!.location_id),
-                            builder: (context, snapshot) {
-                              return Row(
+                          Row(
                                 children: [
                                   const SizedBox(width: 12),
                                   const Icon(Icons.location_on_outlined, color: Colors.grey),
@@ -329,15 +326,13 @@ Future<void> _loadOnlineData() async {
                                     children: [
                                       const Text("Location", style: TextStyle(fontSize: 14)),
                                       Text(
-                                        snapshot.data?.address ?? "Unknown",
+                                        _location?.address ?? "Unknown",
                                         style: const TextStyle(fontSize: 14, color: AppColors.secondary),
                                       ),
                                     ],
                                   ),
                                 ],
-                              );
-                            },
-                          ),
+                              ),
                         ],
                       ),
                     ],
@@ -455,17 +450,7 @@ Future<void> _loadOnlineData() async {
                       const Text("Category", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                       const SizedBox(height: 8),
                       // Category
-                      FutureBuilder<Category_event?>(
-                        future: _categoryController.getCategoryById(_event!.category),
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData) return const Text("Loading...");
-                          final category = snapshot.data;
-                          return Text(
-                            category?.name ?? "Unknown",
-                            style: const TextStyle(fontSize: 14, color: AppColors.secondary),
-                          );
-                        },
-                      ),
+                      Text(_category?.name ?? "Unknown",style: const TextStyle(fontSize: 14, color: AppColors.secondary),),
                       const SizedBox(height: 16),
                       isConnected?    const Text("Skills", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)): const Text(""),
                       const SizedBox(height: 8),
@@ -593,17 +578,22 @@ Future<void> _loadOnlineData() async {
                 ),
                 child: const Text("Book Event", style: TextStyle(color: Colors.white, fontSize: 16)),
               ),
-            ): SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: Text("")
-            )
-            ,
-
+            ): Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    "You cannot book this event without an internet connection.",
+                    style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
           ],
         ),
       ),
     );
   }
 }
-
