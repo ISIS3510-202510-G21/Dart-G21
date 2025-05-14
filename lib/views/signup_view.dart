@@ -100,68 +100,56 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
 
-  bool _hasInternet = true;
-   late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+   bool isConnected = true;
+  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
   late final Connectivity _connectivity;
 
   @override
   void initState() {
     super.initState();
-    //setUpConnectivity();
-    //_loadDraftIfAvailable();
-    _connectivity = Connectivity();
-    _connectivitySubscription = _connectivity.onConnectivityChanged.listen(_handleConnectivityChange);
-    
-    // También chequeamos al iniciar por si ya está sin internet
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final result = await _connectivity.checkConnectivity();
-      if (result == ConnectivityResult.none) {
-        _hasInternet = false;
-        _loadDraftIfAvailable();  // Mostrar notificación de usuario guardado
-      }
-  });
+    setUpConnectivity();
+    _checkInitialConnectivity();
+     WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadDraftIfAvailable(); // ahora es seguro mostrar banners
+      }); 
+
   }
 
-  void _handleConnectivityChange(List<ConnectivityResult> results) {
-  final currentlyConnected = !results.contains(ConnectivityResult.none);
-  if (mounted && currentlyConnected != _hasInternet) {
-    setState(() {
-      _hasInternet = currentlyConnected;
-    });
-
-    // Si volvemos a estar offline, sugerimos continuar con el usuario anterior
-    if (!currentlyConnected) {
-      _loadDraftIfAvailable();
-    }
-  }
-}
-
-
-  /* void setUpConnectivity() {
+   void setUpConnectivity() {
     _connectivity = Connectivity();
     _connectivitySubscription = _connectivity.onConnectivityChanged.listen((
         List<ConnectivityResult> results) async {
-      final prev = _hasInternet;
+      final prev = isConnected;
       final currentlyConnected = !results.contains(ConnectivityResult.none);
       if (prev != currentlyConnected) {
         setState(() {
-          _hasInternet = currentlyConnected;
+          isConnected = currentlyConnected;
         });
       };
       if (!prev && currentlyConnected) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadDraftIfAvailable();
+    
     });
       };
-    });
-  } */
+      
 
-  /* Future<void> _checkInternet() async {
-    final connectivity = await Connectivity().checkConnectivity();
-    setState(() {
-      _hasInternet = connectivity != ConnectivityResult.none;
     });
-  } */
+  }
+
+   Future<void> _checkInitialConnectivity() async {
+    final result = await Connectivity().checkConnectivity();
+    setState(() {isConnected = !result.contains(ConnectivityResult.none);
+   
+    });
+    if (isConnected) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadDraftIfAvailable();
+      });
+    }
+
+  }
+ 
 
   Future<void> _loadDraftIfAvailable() async {
     final draft = await _authController.getSignUpDraftLocally();
@@ -185,7 +173,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           backgroundColor: Colors.amber.shade100,
           actions: [
             TextButton(
-              child: const Text("Descartar", style: TextStyle(color: Colors.black)),
+              child: const Text("Discard", style: TextStyle(color: Colors.black)),
               onPressed: () async {
                 await _authController.deleteSignUpDraftLocally();
                 ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
@@ -461,11 +449,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
       final email = _emailController.text.trim();
       final password = _passwordController.text;
       final confirmPassword = _confirmPasswordController.text;
-      
-      var connectivity = await Connectivity().checkConnectivity();
-      bool hasInternet = connectivity != ConnectivityResult.none;
 
-      if (!hasInternet) {
+      if (!isConnected) {
         final draft = SignUpDraft(
           email: email,
           name: name,

@@ -34,6 +34,7 @@ class _SignInScreenState extends State<SignInScreen> {
   void initState() {
     super.initState();
      setUpConnectivity(); // comienza a escuchar cambios en red
+     _checkInitialConnectivity(); // verifica la conectividad inicial
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _checkForSavedUser(); // ahora es seguro mostrar banners
       }); 
@@ -50,20 +51,34 @@ class _SignInScreenState extends State<SignInScreen> {
           isConnected = currentlyConnected;
         });
       };
-      if (!prev && currentlyConnected) {
+      if (prev && !currentlyConnected) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkForSavedUser();
+    
     });
       };
+      
+
     });
+  }
+
+   Future<void> _checkInitialConnectivity() async {
+    final result = await Connectivity().checkConnectivity();
+    setState(() {isConnected = !result.contains(ConnectivityResult.none);
+   
+    });
+    if (!isConnected) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkForSavedUser();
+      });
+    }
+
   }
 
 
   void _checkForSavedUser() async {
-  var connectivity = await Connectivity().checkConnectivity();
-  bool hasInternet = connectivity != ConnectivityResult.none;
 
-  if (!hasInternet) {
+  if (!isConnected) {
     final savedUser = await authController.getLastLoggedInUser();
     if (savedUser != null && mounted) {
       ScaffoldMessenger.of(context).showMaterialBanner(
