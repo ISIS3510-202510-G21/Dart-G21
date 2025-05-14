@@ -1,15 +1,17 @@
 import 'dart:io';
-
+import 'dart:async';
 import 'package:dart_g21/controllers/user_controller.dart';
+import 'package:dart_g21/controllers/auth_controller.dart';
 import 'package:dart_g21/models/user.dart';
+import 'package:dart_g21/models/signup_draft.dart';
 import 'package:dart_g21/views/home_view.dart';
 import 'package:dart_g21/views/selectcategories_view.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/core/colors.dart';
 import 'package:dart_g21/services/auth_service.dart';
 import 'package:dart_g21/services/local_storage_service.dart';
-import '../controllers/auth_controller.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
@@ -28,6 +30,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _headlineController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   
+  String? _selectedUserType;
+  String _profileImagePath = '';
+
   XFile? _profileImage;
   final ImagePicker _picker = ImagePicker();
 
@@ -94,6 +99,189 @@ class _SignUpScreenState extends State<SignUpScreen> {
   String? selectedUserType;
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
+
+  bool isConnected = true;
+  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+  late final Connectivity _connectivity;
+
+  @override
+  void initState() {
+    super.initState();
+    setUpConnectivity();
+    _checkInitialConnectivity();
+    _loadDraftIfAvailable(); 
+
+  }
+
+   void setUpConnectivity() {
+    _connectivity = Connectivity();
+    _connectivitySubscription = _connectivity.onConnectivityChanged.listen((
+        List<ConnectivityResult> results) async {
+      final prev = isConnected;
+      final currentlyConnected = !results.contains(ConnectivityResult.none);
+      if (prev != currentlyConnected) {
+        setState(() {
+          isConnected = currentlyConnected;
+        });
+      };
+      if (!prev && currentlyConnected) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadDraftIfAvailable();
+    
+    });
+      };
+      
+
+    });
+  }
+
+   Future<void> _checkInitialConnectivity() async {
+    final result = await Connectivity().checkConnectivity();
+    setState(() {isConnected = !result.contains(ConnectivityResult.none);
+   
+    });
+    if (isConnected) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadDraftIfAvailable();
+      });
+    }
+
+  }
+ 
+  void _populateFormFields(SignUpDraft draft) {
+      setState(() {
+        _emailController.text = draft.email;
+        _nameController.text = draft.name;
+        _passwordController.text = draft.password;
+        _headlineController.text = draft.headline;
+        _descriptionController.text = draft.description;
+        _selectedUserType = draft.userType;
+        _profileImagePath = draft.profileImagePath;
+      });
+    }
+
+    Future<void> _loadDraftIfAvailable() async {
+    final draft = await _authController.getSignUpDraftLocally();
+    if (draft != null && mounted) {
+      _populateFormFields(draft);
+
+      ScaffoldMessenger.of(context).showMaterialBanner(
+        MaterialBanner(
+          content: const Text(
+            "We've recovered your previous registration. Do you want to continue with that data?",
+            style: TextStyle(color: Colors.black),
+          ),
+          backgroundColor: Colors.amber.shade100,
+          actions: [
+            TextButton(
+              child: const Text("Discard", style: TextStyle(color: Colors.black)),
+              onPressed: () async {
+                await _authController.deleteSignUpDraftLocally();
+                ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
+                _clearFormFields(); // nuevo método
+              },
+            ),
+            TextButton(
+              child: const Text("Continue", style: TextStyle(color: Colors.blue)),
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
+              },
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  void _clearFormFields() {
+    setState(() {
+      _emailController.clear();
+      _nameController.clear();
+      _passwordController.clear();
+      _headlineController.clear();
+      _descriptionController.clear();
+      _selectedUserType = null;
+      _profileImagePath = '';
+    });
+  }
+
+  void _onFieldChanged() {
+    final draft = SignUpDraft(
+      email: _emailController.text.trim(),
+      name: _nameController.text.trim(),
+      password: _passwordController.text.trim(),
+      userType: _selectedUserType ?? '',
+      headline: _headlineController.text.trim(),
+      description: _descriptionController.text.trim(),
+      profileImagePath: _profileImagePath ?? '',
+    );
+    _authController.saveSignUpDraftLocally(draft);
+  }
+
+/*   Future<void> _loadDraftIfAvailable() async {
+    final draft = await _authController.getSignUpDraftLocally();
+    if (draft != null && mounted) {
+      setState(() {
+        _emailController.text = draft.email;
+        _nameController.text = draft.name;
+        _passwordController.text = draft.password;
+        _headlineController.text = draft.headline;
+        _descriptionController.text = draft.description;
+        _selectedUserType = draft.userType;
+        _profileImagePath = draft.profileImagePath;
+      });
+
+      ScaffoldMessenger.of(context).showMaterialBanner(
+        MaterialBanner(
+          content: const Text(
+            "We've recovered your previous registration. Do you want to continue with that data?",
+            style: TextStyle(color: Colors.black),
+          ),
+          backgroundColor: Colors.amber.shade100,
+          actions: [
+            TextButton(
+              child: const Text("Discard", style: TextStyle(color: Colors.black)),
+              onPressed: () async {
+                await _authController.deleteSignUpDraftLocally();
+                ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
+                setState(() {
+                  _emailController.clear();
+                  _nameController.clear();
+                  _passwordController.clear();
+                  _headlineController.clear();
+                  _descriptionController.clear();
+                  _selectedUserType = null;
+                  _profileImagePath = '';
+                });
+              },
+            ),
+            TextButton(
+              child: const Text("Continue", style: TextStyle(color: Colors.blue)),
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
+              },
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  Future<void> _saveDraft() async {
+    final draft = SignUpDraft(
+      email: _emailController.text.trim(),
+      name: _nameController.text.trim(),
+      password: _passwordController.text.trim(),
+      userType: _selectedUserType ?? '',
+      headline: _headlineController.text.trim(),
+      description: _descriptionController.text.trim(),
+      profileImagePath: _profileImagePath ?? '',
+    );
+    await _authController.saveSignUpDraftLocally(draft);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("You're offline. We're saving your registration so you can complete it later.")),
+    );
+  } */
 
   @override
   void dispose() {
@@ -319,7 +507,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Widget _buildSignUpButton() {
-  return SizedBox(
+  return isConnected
+    ? SizedBox(
     width: double.infinity,
     height: 48,
     child: ElevatedButton(
@@ -368,6 +557,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
         _descriptionController.text.trim(),
         _profileImage?.path ?? "", //si no hay imagen seleccionada, queda vacío
       );
+
+      // Borrar draft porque ya se registró
+      await _authController.deleteSignUpDraftLocally();
 
       User? user = await _userController.getUserByEmail(email).first;
       String? user_id = user?.id;
@@ -424,7 +616,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
         ],
       ),
     ),
-  );
+  ): 
+  Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.red.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Text(
+            "You cannot complete the registration without an internet connection.",
+            style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
+            textAlign: TextAlign.center,
+          ),
+        );
 }
 
   Widget _buildDivider() {

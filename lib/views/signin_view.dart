@@ -1,4 +1,5 @@
 import 'package:dart_g21/controllers/user_controller.dart';
+import 'package:dart_g21/controllers/auth_controller.dart';
 import 'package:dart_g21/models/user.dart';
 import 'package:dart_g21/views/home_view.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,8 @@ import 'package:dart_g21/core/colors.dart';
 import 'package:dart_g21/services/auth_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:dart_g21/services/local_storage_service.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'dart:async';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({Key? key}) : super(key: key);
@@ -20,13 +23,178 @@ class _SignInScreenState extends State<SignInScreen> {
   
   bool _isPasswordVisible = false;
   bool _rememberMe = false;
-  final _userController = UserController(); // Add this line
+  final _userController = UserController(); 
+  final authController = AuthController();
+
+  bool isConnected = true;
+  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+  late final Connectivity _connectivity;
+
+  @override
+  void initState() {
+    super.initState();
+     setUpConnectivity(); // comienza a escuchar cambios en red
+     _checkInitialConnectivity(); // verifica la conectividad inicial
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkForSavedUser(); // ahora es seguro mostrar banners
+      }); 
+  }
+
+  void setUpConnectivity() {
+    _connectivity = Connectivity();
+    _connectivitySubscription = _connectivity.onConnectivityChanged.listen((
+        List<ConnectivityResult> results) async {
+      final prev = isConnected;
+      final currentlyConnected = !results.contains(ConnectivityResult.none);
+      if (prev != currentlyConnected) {
+        setState(() {
+          isConnected = currentlyConnected;
+        });
+      };
+      if (prev && !currentlyConnected) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkForSavedUser();
+    
+    });
+      };
+      
+
+    });
+  }
+
+   Future<void> _checkInitialConnectivity() async {
+    final result = await Connectivity().checkConnectivity();
+    setState(() {isConnected = !result.contains(ConnectivityResult.none);
+   
+    });
+    if (!isConnected) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkForSavedUser();
+      });
+    }
+
+  }
+
+
+ /*  void _checkForSavedUser() async {
+
+  if (!isConnected) {
+    final savedUser = await authController.getLastLoggedInUser();
+    if (savedUser != null && mounted) {
+      ScaffoldMessenger.of(context).showMaterialBanner(
+        MaterialBanner(
+          content: Text(
+            "You are offline. Do you want to continue as ${savedUser['name']}?",
+            style: TextStyle(color: Colors.black),
+          ),
+          backgroundColor: Colors.amber.shade100,
+          actions: [
+            TextButton(
+              child: Text('Yes', style: TextStyle(color: Colors.black)),
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => HomePage(userId: savedUser['userId']!),
+                  ),
+                );
+              },
+            ),
+            TextButton(
+              child: Text('Other user', style: TextStyle(color: Colors.red)),
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Connect to the internet to start with another user")),
+                );
+              },
+            ),
+          ],
+        ),
+      );
+    }
+  }
+} */
+
+void _checkForSavedUser() async {
+  if (!isConnected) {
+    final savedUser = await authController.getLastLoggedInUser();
+    if (savedUser != null && mounted) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            backgroundColor: Colors.white,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.person_outline, size: 48, color: Colors.blueAccent),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Offline Login Detected",
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Do you want to continue as ${savedUser['name']}?",
+                    style: const TextStyle(fontSize: 14),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      TextButton(
+                        style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Connect to the internet to log in with another user."),
+                            ),
+                          );
+                        },
+                        child: const Text("Other user"),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.secondary,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => HomePage(userId: savedUser['userId']!),
+                            ),
+                          );
+                        },
+                        child: const Text("Yes, continue", style: TextStyle(color: Colors.white)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    }
+  }
+}
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+    _connectivitySubscription.cancel();
   }
 
   @override
@@ -172,10 +340,12 @@ class _SignInScreenState extends State<SignInScreen> {
             User? user = await _userController.getUserByEmail(_emailController.text).first;
             String? user_id = user?.id;
 
-        if (user_id != null) {
+        if (user_id != null && user != null) {
           //Guardar en local storage para mantener sesión
             await LocalStorageService.saveUserId(user_id);
             print("Guardado en SharedPreferences: $user_id");
+          //Guardar en Hive 
+            await authController.saveUserLocally(user_id, user.email, user.name);
 
           Navigator.push(
             context,

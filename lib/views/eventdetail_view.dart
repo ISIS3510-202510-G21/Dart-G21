@@ -127,7 +127,15 @@ Future<void> _loadOfflineData() async {
     setState(() {
       creatorName = name ?? "Unknown";
       creatorHeadline = profile?.headline ?? "No headline provided";
-      creatorImage =profile?.picture ?? "";
+      //creatorImage =profile?.picture ?? "";
+      //verificar si existe un profile antes de intentar acceder a sus propiedades
+      if (profile != null) {
+        creatorImage = (profile.thumbnail != null && profile.thumbnail!.isNotEmpty)
+            ? profile.thumbnail!
+            : profile.picture;
+      } else {
+        creatorImage = "";
+      }
     });
 
    // _category = await _categoryController.getCategoryByIdOffline(_event!.category);
@@ -151,7 +159,10 @@ Future<void> _loadOnlineData() async {
         setState(() {
           creatorName = user?.name ?? "Unknown";
           creatorHeadline = profile.headline;
-          creatorImage = profile.picture;
+          //creatorImage = profile.picture;
+          creatorImage = (profile.thumbnail != null && profile.thumbnail!.isNotEmpty)
+            ? profile.thumbnail!
+            : profile.picture;
         });
 
         // Guardamos para offline
@@ -178,7 +189,10 @@ Future<void> _loadOnlineData() async {
       if (profile != null) {
         final user = await _userController.getUserById(creatorId);
         setState(() {
-          creatorImage = profile.picture;
+          //creatorImage = profile.picture;
+          creatorImage = (profile.thumbnail != null && profile.thumbnail!.isNotEmpty)
+            ? profile.thumbnail!
+            : profile.picture;
           creatorHeadline = profile.headline;
           creatorName = user?.name ?? "Unknown";
         });

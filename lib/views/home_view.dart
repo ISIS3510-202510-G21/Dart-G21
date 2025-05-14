@@ -18,6 +18,7 @@ import '../widgets/navigation_bar_host.dart';
 import '../core/colors.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'createevents_view.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'categoriesfilter_view.dart';
 import 'myevents_view.dart';
@@ -443,9 +444,89 @@ class _HomePage extends State<HomePage> {
         setState(() {
           isConnected = currentlyConnected;
         });
-      }
+      };
+      if (!prev && currentlyConnected) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkEventDraft();
+    });
+      };
     });
   }
+
+  void _checkEventDraft() async {
+    final EventController _eventController = EventController();
+    final draft = await _eventController.getEventDraft();
+    print("DRAFT ENCONTRADO: ${draft?.name}");
+
+    if (draft != null && draft.name != null && draft.name!.isNotEmpty) {
+      print("Mostrando banner...");
+
+      showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return Dialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              backgroundColor: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.warning_amber_rounded, size: 48, color: Colors.amber),
+                    const SizedBox(height: 16),
+                    const Text(
+                      "You have an unfinished event",
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      "Would you like to continue editing it?",
+                      style: TextStyle(fontSize: 14),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        TextButton(
+                          style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+                          onPressed: () async {
+                            await _eventController.deleteEventDraft();
+                            Navigator.pop(context); // Close the dialog
+                          },
+                          child: const Text("Discard"),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.secondary,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context); // Close the dialog
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => CreateEventScreen(userId: widget.userId),
+                              ),
+                            );
+                          },
+                          child: const Text("Yes, resume", style: TextStyle(color: Colors.white)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+        } else {
+          print("No hay draft o el nombre está vacío");
+
+    }
+  }
+
 
   @override
   void dispose() {

@@ -1,4 +1,5 @@
 import '../repositories/user_repository.dart';
+import '../repositories/localStorage_repository.dart';
 import '../models/user.dart';
 
 class UserController {
@@ -28,4 +29,9 @@ class UserController {
   Stream<User?> getUserByEmail(String email) {
     return _userRepo.getUserByEmail(email);
   }
+
+  Future<Map<String, String>?> getLastLoggedInUser() async {
+    return await LocalStorageRepository().getLastLoggedInUser();
+  }
+
 }
