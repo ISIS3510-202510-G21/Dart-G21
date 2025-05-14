@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'dart:async';
 import 'package:dart_g21/controllers/user_controller.dart';
 import 'package:dart_g21/controllers/auth_controller.dart';
 import 'package:dart_g21/models/user.dart';
@@ -101,20 +101,67 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _isConfirmPasswordVisible = false;
 
   bool _hasInternet = true;
+   late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+  late final Connectivity _connectivity;
 
   @override
   void initState() {
     super.initState();
-    _checkInternet();
-    _loadDraftIfAvailable();
+    //setUpConnectivity();
+    //_loadDraftIfAvailable();
+    _connectivity = Connectivity();
+    _connectivitySubscription = _connectivity.onConnectivityChanged.listen(_handleConnectivityChange);
+    
+    // También chequeamos al iniciar por si ya está sin internet
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final result = await _connectivity.checkConnectivity();
+      if (result == ConnectivityResult.none) {
+        _hasInternet = false;
+        _loadDraftIfAvailable();  // Mostrar notificación de usuario guardado
+      }
+  });
   }
 
-  Future<void> _checkInternet() async {
+  void _handleConnectivityChange(List<ConnectivityResult> results) {
+  final currentlyConnected = !results.contains(ConnectivityResult.none);
+  if (mounted && currentlyConnected != _hasInternet) {
+    setState(() {
+      _hasInternet = currentlyConnected;
+    });
+
+    // Si volvemos a estar offline, sugerimos continuar con el usuario anterior
+    if (!currentlyConnected) {
+      _loadDraftIfAvailable();
+    }
+  }
+}
+
+
+  /* void setUpConnectivity() {
+    _connectivity = Connectivity();
+    _connectivitySubscription = _connectivity.onConnectivityChanged.listen((
+        List<ConnectivityResult> results) async {
+      final prev = _hasInternet;
+      final currentlyConnected = !results.contains(ConnectivityResult.none);
+      if (prev != currentlyConnected) {
+        setState(() {
+          _hasInternet = currentlyConnected;
+        });
+      };
+      if (!prev && currentlyConnected) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadDraftIfAvailable();
+    });
+      };
+    });
+  } */
+
+  /* Future<void> _checkInternet() async {
     final connectivity = await Connectivity().checkConnectivity();
     setState(() {
       _hasInternet = connectivity != ConnectivityResult.none;
     });
-  }
+  } */
 
   Future<void> _loadDraftIfAvailable() async {
     final draft = await _authController.getSignUpDraftLocally();
