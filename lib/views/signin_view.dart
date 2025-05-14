@@ -76,7 +76,7 @@ class _SignInScreenState extends State<SignInScreen> {
   }
 
 
-  void _checkForSavedUser() async {
+ /*  void _checkForSavedUser() async {
 
   if (!isConnected) {
     final savedUser = await authController.getLastLoggedInUser();
@@ -115,8 +115,79 @@ class _SignInScreenState extends State<SignInScreen> {
       );
     }
   }
-}
+} */
 
+void _checkForSavedUser() async {
+  if (!isConnected) {
+    final savedUser = await authController.getLastLoggedInUser();
+    if (savedUser != null && mounted) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            backgroundColor: Colors.white,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.person_outline, size: 48, color: Colors.blueAccent),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Offline Login Detected",
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Do you want to continue as ${savedUser['name']}?",
+                    style: const TextStyle(fontSize: 14),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      TextButton(
+                        style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Connect to the internet to log in with another user."),
+                            ),
+                          );
+                        },
+                        child: const Text("Other user"),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.secondary,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => HomePage(userId: savedUser['userId']!),
+                            ),
+                          );
+                        },
+                        child: const Text("Yes, continue", style: TextStyle(color: Colors.white)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    }
+  }
+}
 
   @override
   void dispose() {

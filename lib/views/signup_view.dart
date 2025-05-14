@@ -100,7 +100,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
 
-   bool isConnected = true;
+  bool isConnected = true;
   late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
   late final Connectivity _connectivity;
 
@@ -109,9 +109,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.initState();
     setUpConnectivity();
     _checkInitialConnectivity();
-     WidgetsBinding.instance.addPostFrameCallback((_) {
-        _loadDraftIfAvailable(); // ahora es seguro mostrar banners
-      }); 
+    _loadDraftIfAvailable(); 
 
   }
 
@@ -150,8 +148,77 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   }
  
+  void _populateFormFields(SignUpDraft draft) {
+      setState(() {
+        _emailController.text = draft.email;
+        _nameController.text = draft.name;
+        _passwordController.text = draft.password;
+        _headlineController.text = draft.headline;
+        _descriptionController.text = draft.description;
+        _selectedUserType = draft.userType;
+        _profileImagePath = draft.profileImagePath;
+      });
+    }
 
-  Future<void> _loadDraftIfAvailable() async {
+    Future<void> _loadDraftIfAvailable() async {
+    final draft = await _authController.getSignUpDraftLocally();
+    if (draft != null && mounted) {
+      _populateFormFields(draft);
+
+      ScaffoldMessenger.of(context).showMaterialBanner(
+        MaterialBanner(
+          content: const Text(
+            "We've recovered your previous registration. Do you want to continue with that data?",
+            style: TextStyle(color: Colors.black),
+          ),
+          backgroundColor: Colors.amber.shade100,
+          actions: [
+            TextButton(
+              child: const Text("Discard", style: TextStyle(color: Colors.black)),
+              onPressed: () async {
+                await _authController.deleteSignUpDraftLocally();
+                ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
+                _clearFormFields(); // nuevo método
+              },
+            ),
+            TextButton(
+              child: const Text("Continue", style: TextStyle(color: Colors.blue)),
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
+              },
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  void _clearFormFields() {
+    setState(() {
+      _emailController.clear();
+      _nameController.clear();
+      _passwordController.clear();
+      _headlineController.clear();
+      _descriptionController.clear();
+      _selectedUserType = null;
+      _profileImagePath = '';
+    });
+  }
+
+  void _onFieldChanged() {
+    final draft = SignUpDraft(
+      email: _emailController.text.trim(),
+      name: _nameController.text.trim(),
+      password: _passwordController.text.trim(),
+      userType: _selectedUserType ?? '',
+      headline: _headlineController.text.trim(),
+      description: _descriptionController.text.trim(),
+      profileImagePath: _profileImagePath ?? '',
+    );
+    _authController.saveSignUpDraftLocally(draft);
+  }
+
+/*   Future<void> _loadDraftIfAvailable() async {
     final draft = await _authController.getSignUpDraftLocally();
     if (draft != null && mounted) {
       setState(() {
@@ -214,7 +281,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("You're offline. We're saving your registration so you can complete it later.")),
     );
-  }
+  } */
 
   @override
   void dispose() {
@@ -440,7 +507,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Widget _buildSignUpButton() {
-  return SizedBox(
+  return isConnected
+    ? SizedBox(
     width: double.infinity,
     height: 48,
     child: ElevatedButton(
@@ -449,24 +517,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
       final email = _emailController.text.trim();
       final password = _passwordController.text;
       final confirmPassword = _confirmPasswordController.text;
-
-      if (!isConnected) {
-        final draft = SignUpDraft(
-          email: email,
-          name: name,
-          password: password,
-          headline: _headlineController.text.trim(),
-          description: _descriptionController.text.trim(),
-          userType: selectedUserType ?? '',
-          profileImagePath: _profileImage?.path ?? '',
-        );
-        await _authController.saveSignUpDraftLocally(draft);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("You're offline. We're saving your login to resume later.")),
-        );
-        return;
-      }
 
       //Validaciones de campos vacíos
       if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty || selectedUserType == null) {
@@ -566,7 +616,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
         ],
       ),
     ),
-  );
+  ): 
+  Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.red.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Text(
+            "You cannot complete the registration without an internet connection.",
+            style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
+            textAlign: TextAlign.center,
+          ),
+        );
 }
 
   Widget _buildDivider() {
