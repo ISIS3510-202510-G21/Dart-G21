@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../controllers/event_controller.dart';
 import '../controllers/location_controller.dart';
 import '../repositories/localStorage_repository.dart';
@@ -182,6 +183,7 @@ class _MapView extends State<MapView> {
                 child: const Text('Show Detail'),
                 onPressed: () {
                   Navigator.of(context).pop(); // Cierra el diálogo
+                  logEventDetailClick(widget.userId);
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -204,6 +206,13 @@ class _MapView extends State<MapView> {
         );
       },
     );
+  }
+
+  void logEventDetailClick(String userId) {
+    FirebaseFirestore.instance.collection('eventdetail_clicks').add({
+      'user_id': userId,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
   }
 
   Future<void> downloadBogotaMapImageIfNeeded() async {
@@ -392,6 +401,7 @@ class _MapView extends State<MapView> {
                               child: const Text('View Detail'),
                               onPressed: () {
                                 Navigator.of(context).pop(); // Cierra el diálogo
+                                logEventDetailClick(widget.userId);
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(

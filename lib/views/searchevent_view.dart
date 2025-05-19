@@ -15,6 +15,7 @@ import 'package:dart_g21/models/location.dart';
 import 'package:dart_g21/models/skill.dart';
 import 'package:dart_g21/core/colors.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SearchEventView extends StatefulWidget {
   final String userId;
@@ -557,6 +558,7 @@ Future<void> initHiveAndLoad() async {
                   final event = filteredEvents[index];
                   return EventCard(event: event, onTap: () {
                     print("Evento seleccionado: ${event.name}");
+                    logEventDetailClick(widget.userId);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -574,3 +576,10 @@ Future<void> initHiveAndLoad() async {
     );
   }
 }
+
+void logEventDetailClick(String userId) {
+    FirebaseFirestore.instance.collection('eventdetail_clicks').add({
+      'user_id': userId,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+  }

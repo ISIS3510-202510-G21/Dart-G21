@@ -13,6 +13,7 @@ import 'package:dart_g21/widgets/navigation_bar_host.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MyEventsPage extends StatefulWidget {
   final String userId;
@@ -195,6 +196,7 @@ void _setupConnectivity() {
       child: InkWell(
         onTap: () {
           print("Evento seleccionado: \${event.name}");
+          logEventDetailClick(widget.userId);
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -338,3 +340,10 @@ void _setupConnectivity() {
   String _getWeekday(int day) => ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][day - 1];
   String _getMonth(int month) => ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][month - 1];
 }
+
+void logEventDetailClick(String userId) {
+    FirebaseFirestore.instance.collection('eventdetail_clicks').add({
+      'user_id': userId,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+  }
