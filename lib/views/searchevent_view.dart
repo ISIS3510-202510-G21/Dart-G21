@@ -69,9 +69,11 @@ void _setupConnectivity() {
       });
 
       //Recarga datos según el nuevo estado de conexión
+
       initHiveAndLoad();
 
       if (isConnected) {
+        //_loadRemoteDataIfConnected();
         // ScaffoldMessenger.of(context).showSnackBar(
         //   SnackBar(
         //     content: const Text("Connection Restored", style: TextStyle(color: AppColors.primary, fontSize: 16)),
@@ -105,20 +107,20 @@ Future<void> _checkInitialConnectivityAndLoad() async {
     isConnected = !result.contains(ConnectivityResult.none);
   });
   print("Estado inicial de conexión corregido: $isConnected");
- initHiveAndLoad();
-
+  initHiveAndLoad();
 }
 
-Future<List<Event>> getCachedEvents5() async {
+Future<List<Event>> getCachedEvents() async {
   final events = await _eventController.getCachedEvents();
-  return events.take(5).toList();
+  return events;
 }
+
 Future<void> initHiveAndLoad() async {
   setState(() {
     isLoading = true;
   });
   if (!isConnected) {
-    final localEvents = await getCachedEvents5();
+    final localEvents = await getCachedEvents();
     final categories = await _categoryController.getCachedCategoriesDrift();
     final skills = await _skillController.getCachedSkillsDrift();
     final locations = await _locationController.getCachedLocationsDrift();
@@ -143,13 +145,8 @@ Future<void> initHiveAndLoad() async {
       });
     }
   } else {
-    final stopwatch = Stopwatch()..start();
     final events = await _eventController.getFirstNEvents(20);
-    print('Eventos descargados en: ${stopwatch.elapsedMilliseconds} ms');
-    stopwatch.reset();
     final skills = await _skillController.getSkillsStream().first;
-    print('Skills descargadas en: ${stopwatch.elapsedMilliseconds} ms');
-    await _eventController.saveEventsToCache(events.take(5).toList());
     await _skillController.saveSkillsToCacheDrift(skills);
     events.sort((a, b) => a.start_date.compareTo(b.start_date));
     if (!listEquals(allEvents, events)) {
@@ -214,7 +211,6 @@ void applyFiltersOffline() {
   result.sort((a, b) => a.start_date.compareTo(b.start_date));
 
   if (!listEquals(filteredEvents, result)) {
-    filteredEvents.clear(); 
     setState(() {
       filteredEvents = result;
     });
