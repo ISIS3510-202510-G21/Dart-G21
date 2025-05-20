@@ -55,9 +55,6 @@ class _SearchEventViewState extends State<SearchEventView> {
     super.initState();
     _setupConnectivity();
     _checkInitialConnectivityAndLoad();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      initHiveAndLoad(); 
-    });
   }
 
 void _setupConnectivity() {
