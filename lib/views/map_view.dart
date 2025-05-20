@@ -183,7 +183,7 @@ class _MapView extends State<MapView> {
                 child: const Text('Show Detail'),
                 onPressed: () {
                   Navigator.of(context).pop(); // Cierra el diálogo
-                  logEventDetailClick(widget.userId);
+                  logEventDetailClick(widget.userId, event.name);
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -208,10 +208,11 @@ class _MapView extends State<MapView> {
     );
   }
 
-  void logEventDetailClick(String userId) {
+  void logEventDetailClick(String userId, String eventName) {
     FirebaseFirestore.instance.collection('eventdetail_clicks').add({
       'user_id': userId,
       'timestamp': FieldValue.serverTimestamp(),
+      'name': eventName,
     });
   }
 
@@ -401,7 +402,7 @@ class _MapView extends State<MapView> {
                               child: const Text('View Detail'),
                               onPressed: () {
                                 Navigator.of(context).pop(); // Cierra el diálogo
-                                logEventDetailClick(widget.userId);
+                                logEventDetailClick(widget.userId, e.event.name);
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(

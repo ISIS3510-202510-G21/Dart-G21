@@ -196,7 +196,7 @@ void _setupConnectivity() {
       child: InkWell(
         onTap: () {
           print("Evento seleccionado: \${event.name}");
-          logEventDetailClick(widget.userId);
+          logEventDetailClick(widget.userId, event.name);
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -341,9 +341,10 @@ void _setupConnectivity() {
   String _getMonth(int month) => ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][month - 1];
 }
 
-void logEventDetailClick(String userId) {
+void logEventDetailClick(String userId, String eventName) {
     FirebaseFirestore.instance.collection('eventdetail_clicks').add({
       'user_id': userId,
       'timestamp': FieldValue.serverTimestamp(),
+      'name': eventName,
     });
-  }
+}

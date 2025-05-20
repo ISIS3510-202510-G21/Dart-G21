@@ -112,7 +112,7 @@ class _EventsListState extends State<EventsList> {
   Widget _buildEventCard(Event event) {
     return GestureDetector(
     onTap: () {
-      logEventDetailClick(widget.userId);
+      logEventDetailClick(widget.userId, event.name);
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -234,10 +234,11 @@ class _EventsListState extends State<EventsList> {
     );
   }
 
-  void logEventDetailClick(String userId) {
+  void logEventDetailClick(String userId, String eventName) {
     FirebaseFirestore.instance.collection('eventdetail_clicks').add({
       'user_id': userId,
       'timestamp': FieldValue.serverTimestamp(),
+      'name': eventName,
     });
   }
 

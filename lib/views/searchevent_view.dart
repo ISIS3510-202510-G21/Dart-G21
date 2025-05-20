@@ -558,7 +558,7 @@ Future<void> initHiveAndLoad() async {
                   final event = filteredEvents[index];
                   return EventCard(event: event, onTap: () {
                     print("Evento seleccionado: ${event.name}");
-                    logEventDetailClick(widget.userId);
+                    logEventDetailClick(widget.userId, event.name);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -577,9 +577,10 @@ Future<void> initHiveAndLoad() async {
   }
 }
 
-void logEventDetailClick(String userId) {
+void logEventDetailClick(String userId, String eventName) {
     FirebaseFirestore.instance.collection('eventdetail_clicks').add({
       'user_id': userId,
       'timestamp': FieldValue.serverTimestamp(),
+      'name': eventName,
     });
-  }
+}

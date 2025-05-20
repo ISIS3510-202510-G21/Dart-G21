@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/core/colors.dart';
@@ -150,7 +151,7 @@ class _CategoriesFilterState extends State<CategoriesFilter> {
                         return EventCard(
                           event: filteredEvents[index],
                           onTap: () {
-                            logEventDetailClick(widget.userId);
+                            logEventDetailClick(widget.userId, filteredEvents[index].name);
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -174,10 +175,11 @@ class _CategoriesFilterState extends State<CategoriesFilter> {
     );
   }
 
-  void logEventDetailClick(String userId) {
+  void logEventDetailClick(String userId, String eventName) {
     FirebaseFirestore.instance.collection('eventdetail_clicks').add({
       'user_id': userId,
       'timestamp': FieldValue.serverTimestamp(),
+      'name': eventName,
     });
   }
 
