@@ -200,7 +200,7 @@ Future<void> _loadOfflineAttendees() async {
       builder: (context, snapshot) {
         final mostPopularInterestName = snapshot.data ?? "Cargando...";
         return Container(
-          width: double.infinity, // Ocupa todo el ancho disponible
+          width: double.infinity, 
           margin: const EdgeInsets.all(10),
           child: Card(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
