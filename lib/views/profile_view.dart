@@ -40,10 +40,12 @@ class _ProfilePageState extends State<ProfilePage> {
   bool isConnected = true;
   late final Connectivity _connectivity;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+
   StreamSubscription? _profileSubscription; 
   late Box profileBox;
   String offlineName = "";
   String onlineName = "";
+
   String offlineHeadline = "";
   String offlineDescription = "";
   String offlineFollowers = "";
@@ -64,6 +66,7 @@ class _ProfilePageState extends State<ProfilePage> {
     } else {
       _loadOfflineData();
     }
+
   }
 
   Future<void> _loadOnlineData() async {
@@ -76,7 +79,6 @@ class _ProfilePageState extends State<ProfilePage> {
           profile_user = profile;
           
         });
-
         final user = await userStream;
         setState(() {
           onlineName = user?.name ?? "";
@@ -336,11 +338,14 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+
   Widget buildInterestChip(String label, Color color) {
     return Chip(
       label: Text(label, style: TextStyle(color: AppColors.primary, fontSize: 14)),
       backgroundColor: color,
+
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
     );
   }
 }
+

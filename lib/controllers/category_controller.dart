@@ -9,6 +9,7 @@ class CategoryController {
   final LocalStorageRepository _localStorageRepository = LocalStorageRepository();
   final DriftRepository _driftRepository = DriftRepository(AppDatabase());
 
+
   Stream<List<Category_event>> getCategoriesStream() {
     return _categoryRepository.getCategoriesStream();
   }
@@ -63,5 +64,6 @@ class CategoryController {
     List<Category_event> categories = await _driftRepository.getCategoriesDrift();
     yield categories;
   }
+
 
 }

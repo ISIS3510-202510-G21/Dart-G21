@@ -48,7 +48,6 @@ class _ChatBotPageState extends State<ChatBotPage> {
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   final categoryController = CategoryController();
   final EventController eventController = EventController();
-
   @override
   void initState() {
     super.initState();
@@ -135,6 +134,7 @@ You can ask me about:
   });
   
 }
+
   @override
   void dispose() {
     _connectivitySubscription?.cancel();
@@ -195,6 +195,7 @@ You can ask me about:
                 } else {
                   await handleOfflineInteraction(m);
                 }
+
               },
               messages: _messages,
               inputOptions: InputOptions(
@@ -238,6 +239,7 @@ You can ask me about:
                         ),
                       ),
                       if (isCurrentUser)
+
                         CachedNetworkImage(
                           imageUrl: message.user.profileImage ?? '',
                           imageBuilder: (context, imageProvider) => CircleAvatar(
@@ -248,6 +250,7 @@ You can ask me about:
                           errorWidget: (context, url, error) => Icon(Icons.person, size: 40, color: Colors.grey),
                         ),
                         
+
                       SizedBox(width: 10),
                     ],
                   );
@@ -289,6 +292,7 @@ You can ask me about:
 
 
     Tipos de Usuarios:
+
                   - Organizadores voluntarios: crean eventos gratuitos.
                   - Organizadores pagos: pueden cobrar por la participación.
                   - Asistentes gratuitos: se registran en eventos sin costo.
@@ -300,23 +304,27 @@ You can ask me about:
                      - Publicación premium: \$15 (más visibilidad y destacada).
 
                   2. Tarifa por Aumentar Visibilidad:
+
                      - Estándar: Incluida en la publicación.
                      - Destacada: \$10/semana (más prioridad en búsqueda).
                      - Evento destacado: \$25/semana (portada de la app).
                      - Promoción exclusiva: \$50/semana (notificaciones push y redes sociales).
-
                   3. Comisión por Venta de Tickets:
+
                      - 10% en tickets <\$10.
                      - 8% en tickets de \$10 a \$50.
                      - 5% en tickets >\$50.
 
                    Beneficios para Organizadores:
+
                   - Creación fácil de eventos con formulario simplificado.
                   - Herramientas de promoción para maximizar la asistencia.
                   - Integración con redes sociales y plataformas universitarias.
                   - Recomendaciones personalizadas para los asistentes.
 
+
     Solo responde preguntas sobre eventos, recomendación de eventos, categorías de eventos, organizadores, costos, visibilidad de eventos y fechas de eventos. No hables de cómo registrarse ni de políticas de privacidad. También puedes hablar sobre la monetización de eventos y los tipos de usuarios. Tambien puedes hablar de cualquier tema relacionado como si los usuarios tienen dudas de conceptos o quieren aprender algo nuevo.
+
 
     Si vas a mostrar listas, tienes que hacerlo si o si por marcadores "-" (bulletpoints, guiones u otros), y si es necesario, corta la información para que no sea demasiado larga. Si no tienes información suficiente, responde con "No tengo información suficiente para responder a esa pregunta".
     Si vas a mostrar eventos, asegúrate de que sean relevantes y estén relacionados con la pregunta. Si no hay eventos disponibles, responde con "No hay eventos disponibles en este momento".

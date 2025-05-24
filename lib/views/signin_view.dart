@@ -10,6 +10,7 @@ import 'package:dart_g21/services/local_storage_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:async';
 
+
 class SignInScreen extends StatefulWidget {
   const SignInScreen({Key? key}) : super(key: key);
 
@@ -311,6 +312,7 @@ void _checkForSavedUser() async {
             print("Guardado en SharedPreferences: $user_id");
           //Guardar en Hive 
             await authController.saveUserLocally(user_id, user.email, user.name);
+
 
           Navigator.push(
             context,

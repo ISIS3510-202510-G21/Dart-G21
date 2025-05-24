@@ -19,7 +19,6 @@ import '../controllers/category_controller.dart';
 
 class LocalStorageRepository{
   final driftRepository = DriftRepository(AppDatabase());
-
   static final LocalStorageRepository _instance = LocalStorageRepository._internal();
 
   factory LocalStorageRepository() => _instance;
@@ -75,6 +74,7 @@ class LocalStorageRepository{
         if (location != null) {
           //saveLocation(location);
           driftRepository.saveLocationDrift(location);
+
         }
         Profile? profile = await profileController.getProfileByUserId(event.creator_id).first;
         
@@ -86,6 +86,7 @@ class LocalStorageRepository{
           }
 
         }
+
         if (event.skills != null) {
           for (var skillId in event.skills!) {
             model_skill.Skill? skill = await skillController.getSkillById(skillId);
@@ -95,6 +96,7 @@ class LocalStorageRepository{
             }
           }
         }
+
 
       }
     });
@@ -121,6 +123,7 @@ class LocalStorageRepository{
     Event event;
     for (event in events) {
       model_location.Location? location = await getLocationById(event.location_id);
+
       if (location != null && location.city == cityId) {
         eventsCity.add(event);
       }
@@ -210,6 +213,7 @@ class LocalStorageRepository{
   }
 
   Future<void> saveSkills(List<model_skill.Skill> skills) async {
+
     await _lock.synchronized(() async {
       for (var skill in skills) {
         if (!_skillBox.containsKey(skill.id)) {
@@ -226,6 +230,7 @@ class LocalStorageRepository{
   }
 
   Future<void> saveLocations(List<model_location.Location> locations) async {
+
     await _lock.synchronized(() async {
       for (var loc in locations) {
         if (!_locationBox.containsKey(loc.id)) {
@@ -236,6 +241,7 @@ class LocalStorageRepository{
     });
   }
   Future<void> saveLocation(model_location.Location location) async {
+
     await _lock.synchronized(() async {
       if (!_locationBox.containsKey(location.id)) {
         await _locationBox.put(location.id, jsonEncode(location.toJson()));
@@ -249,6 +255,7 @@ class LocalStorageRepository{
     final locationJson = _locationBox.get(locationId);
     if (locationJson != null) {
       return model_location.Location.fromJson(Map<String, dynamic>.from(jsonDecode(locationJson)));
+
     }
     return null;
   }
@@ -327,6 +334,7 @@ Future<void> saveUserName(String userId, String userName) async {
     return null;
   }
 
+
   Future<void> saveLastLoggedInUser({
     required String userId,
     required String email,
@@ -373,5 +381,6 @@ Future<void> deleteSignUpDraft() async {
 
 
 }
+
   
   

@@ -405,6 +405,7 @@ class _MapView extends State<MapView> {
                                 await precacheImage(NetworkImage(e.event.image), context);
                                 Navigator.of(context).pop(); // Cierra el diálogo
                                 logEventDetailClick(widget.userId, e.event.name);
+
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(

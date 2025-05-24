@@ -5,6 +5,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dart_g21/views/eventdetail_view.dart';
 import 'package:dart_g21/widgets/eventcard_view.dart';
 import 'package:flutter/foundation.dart';
+
 import 'package:flutter/material.dart';
 import 'package:dart_g21/controllers/event_controller.dart';
 import 'package:dart_g21/controllers/category_controller.dart';
@@ -16,7 +17,9 @@ import 'package:dart_g21/models/location.dart';
 import 'package:dart_g21/models/skill.dart';
 import 'package:dart_g21/core/colors.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 
 class SearchEventView extends StatefulWidget {
   final String userId;
@@ -55,6 +58,7 @@ class _SearchEventViewState extends State<SearchEventView> {
     super.initState();
     _setupConnectivity();
     _checkInitialConnectivityAndLoad();
+
   }
 
 void _setupConnectivity() {
@@ -70,10 +74,12 @@ void _setupConnectivity() {
 
       //Recarga datos según el nuevo estado de conexión
 
+
       initHiveAndLoad();
 
       if (isConnected) {
         //_loadRemoteDataIfConnected();
+
         // ScaffoldMessenger.of(context).showSnackBar(
         //   SnackBar(
         //     content: const Text("Connection Restored", style: TextStyle(color: AppColors.primary, fontSize: 16)),
@@ -107,6 +113,7 @@ Future<void> _checkInitialConnectivityAndLoad() async {
     isConnected = !result.contains(ConnectivityResult.none);
   });
   print("Estado inicial de conexión corregido: $isConnected");
+
   initHiveAndLoad();
 }
 
@@ -211,10 +218,12 @@ void applyFiltersOffline() {
   result.sort((a, b) => a.start_date.compareTo(b.start_date));
 
   if (!listEquals(filteredEvents, result)) {
+
     setState(() {
       filteredEvents = result;
     });
   }
+
 }
 
 
@@ -247,6 +256,7 @@ void applyFiltersOffline() {
   }
 
 
+
 void applySearchFilter(String value) {
   final results = allEvents
     .where((e) => e.name.toLowerCase().contains(value.toLowerCase()))
@@ -259,6 +269,7 @@ void applySearchFilter(String value) {
     });
   }
 }
+
 
 
   Widget styledDropdown<T>({
@@ -333,10 +344,12 @@ void applySearchFilter(String value) {
                 prefixIcon: Icon(Icons.search, color: AppColors.secondary),
                 border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
               ),
+
              onChanged: (value) {
                   clearFilters();
                   applySearchFilter(value);
                 },
+
             ),
             const SizedBox(height: 10),
             Align(
@@ -357,6 +370,7 @@ void applySearchFilter(String value) {
                             setState(() => selectedType = value);
                             applyFilters();
                           }
+
                       },
                     ) : styledDropdown<String>(
                       value: selectedType,
@@ -370,6 +384,7 @@ void applySearchFilter(String value) {
                             setState(() => selectedType = value);
                             applyFiltersOffline();
                           }
+
                       },
                     ),
                     const SizedBox(width: 8),
@@ -387,10 +402,12 @@ void applySearchFilter(String value) {
                         hint: "By Category",
                         items: snapshot.data!,
                         onChanged: (value) {
+
                         if (selectedCategoryId != value) {
                             setState(() => selectedCategoryId = value);
                             applyFilters();
                           }
+
                         },
                       );
                       },
@@ -402,10 +419,12 @@ void applySearchFilter(String value) {
                         child: Text(cat.name),
                       )).toList(),
                       onChanged: (value) {
+
                         if (selectedCategoryId != value) {
                             setState(() => selectedCategoryId = value);
                             applyFiltersOffline();
                           }
+
                       },
                     ),
                     const SizedBox(width: 8),
@@ -421,10 +440,12 @@ void applySearchFilter(String value) {
                             child: Text(skill.name),
                           )).toList(),
                           onChanged: (value) {
+
                             if (selectedSkillId != value) {
                                 setState(() => selectedSkillId = value);
                                 applyFilters();
                               }
+
                           },
                         );
                       },
@@ -436,10 +457,12 @@ void applySearchFilter(String value) {
                         child: Text(skill.name),
                       )).toList(),
                       onChanged: (value) {
+
                         if (selectedSkillId != value) {
                             setState(() => selectedSkillId = value);
                             applyFiltersOffline();
                           }
+
                       },
                     ),
                     const SizedBox(width: 8),
@@ -451,10 +474,12 @@ void applySearchFilter(String value) {
                         DropdownMenuItem(value: 'other', child: Text("Other")),
                       ],
                       onChanged: (value) {
+
                         if (selectedLocation != value) {
                             setState(() => selectedLocation = value);
                             applyFilters();
                           }
+
                       },
                     ) : styledDropdown<String>(
                       value: selectedLocation,
@@ -464,10 +489,12 @@ void applySearchFilter(String value) {
                         DropdownMenuItem(value: 'other', child: Text("Other")),
                       ],
                       onChanged: (value) {
+
                       if (selectedLocation != value) {
                             setState(() => selectedLocation = value);
                             applyFiltersOffline();
                           }
+
                       },
                     ),
                     const SizedBox(width: 8),
@@ -505,6 +532,7 @@ void applySearchFilter(String value) {
                           }
 
                           if (pickedEnd != null && selectedStartDate != pickedStart && selectedEndDate != pickedEnd) {
+
                             setState(() {
                               selectedStartDate = pickedStart;
                               selectedEndDate = pickedEnd;
@@ -554,6 +582,7 @@ void applySearchFilter(String value) {
                           }
 
                           if (pickedEnd != null && selectedStartDate != pickedStart && selectedEndDate != pickedEnd) {
+
                             setState(() {
                               selectedStartDate = pickedStart;
                               selectedEndDate = pickedEnd;
@@ -608,10 +637,12 @@ void applySearchFilter(String value) {
                 itemCount: filteredEvents.length,
                 itemBuilder: (context, index) {
                   final event = filteredEvents[index];
+
                   return EventCard(event: event, onTap: () async {
                     print("Evento seleccionado: ${event.name}");
                     await precacheImage(NetworkImage(event.image), context);
                     logEventDetailClick(widget.userId, event.name);
+
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -628,6 +659,7 @@ void applySearchFilter(String value) {
       ),
     );
   }
+
 }
 
 void logEventDetailClick(String userId, String eventName) {
@@ -636,4 +668,5 @@ void logEventDetailClick(String userId, String eventName) {
       'timestamp': FieldValue.serverTimestamp(),
       'name': eventName,
     });
+
 }

@@ -15,16 +15,19 @@ class EventsList extends StatefulWidget {
   const EventsList({Key? key, required this.eventsStreamProvider, required this.userId, required this.section}) : super(key: key);
 
 
+
   @override
   _EventsListState createState() => _EventsListState();
 }
 
 class _EventsListState extends State<EventsList> {
+
   int _lastEventsCount = 0;
   final ScrollController _scrollController = ScrollController();
   bool _hasLoggedInteraction = false;
   final Map<String, app_models.Location?> _locationCache = {};
   final ValueNotifier<int> _visibleCount = ValueNotifier<int>(5);
+
 
 
   @override
@@ -42,6 +45,7 @@ class _EventsListState extends State<EventsList> {
       logInteraction();
       _hasLoggedInteraction=true;
     }
+
 
   }
 
@@ -110,6 +114,7 @@ class _EventsListState extends State<EventsList> {
             },
           );
 
+
         },
       ),
     );
@@ -120,6 +125,7 @@ class _EventsListState extends State<EventsList> {
     onTap: () async{
       await precacheImage(NetworkImage(event.image), context);
       logEventDetailClick(widget.userId, event.name);
+
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -206,6 +212,7 @@ class _EventsListState extends State<EventsList> {
                         Expanded(
                           child: FutureBuilder<app_models.Location?>(
                             future:  _getLocation(event.location_id),
+
                             builder: (context, snapshot) {
                               if (snapshot.connectionState == ConnectionState.waiting) {
                                 return const Text(
@@ -241,6 +248,7 @@ class _EventsListState extends State<EventsList> {
     );
   }
 
+
   void logEventDetailClick(String userId, String eventName) {
     FirebaseFirestore.instance.collection('eventdetail_clicks').add({
       'user_id': userId,
@@ -263,5 +271,6 @@ class _EventsListState extends State<EventsList> {
     _locationCache[id] = location;
     return location;
   }
+
 
 }

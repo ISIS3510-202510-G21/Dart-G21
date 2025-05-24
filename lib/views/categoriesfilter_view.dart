@@ -106,6 +106,7 @@ class _CategoriesFilterState extends State<CategoriesFilter> {
       print('Error en _applyFiltersAndSort: $e');
       return <Event>[];
     });
+
   }
 
   @override

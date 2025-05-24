@@ -13,6 +13,7 @@ import 'package:dart_g21/services/local_storage_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
+
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
 
@@ -567,14 +568,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       // Borrar draft porque ya se registró
       await _authController.deleteSignUpDraftLocally();
-
       User? user = await _userController.getUserByEmail(email).first;
       String? user_id = user?.id;
       
       await LocalStorageService.saveUserId(user_id!);
 
-      //Cambie esto sprint 3!!!!
         Navigator.pushReplacement(
+=
             context,
             MaterialPageRoute(
               builder: (context) => SelectCategoriesScreen(userId: user_id!),

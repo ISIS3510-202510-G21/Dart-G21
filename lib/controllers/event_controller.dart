@@ -27,6 +27,7 @@ class EventController {
   final SkillController skillController = SkillController();
 
 
+
   Stream<List<Event>> getEventsStream() {
     return _eventRepository.getEventsStream();
   }
@@ -389,6 +390,7 @@ class EventController {
     
   Future<void> saveEventsToCache(List<Event> events) async {
     await _localStorageRepository.saveEvents(events, _categoryController, _locationController, _profileController, _userController, skillController);
+
   }
 
   Future<Event?> getEventByIdOffline(String eventId) async {

@@ -11,6 +11,7 @@ class LocationController {
   final LocalStorageRepository _localStorageRepository = LocalStorageRepository();
   final DriftRepository _driftRepository = DriftRepository(AppDatabase());
 
+
   Stream<List<model.Location>> getLocationsStream() {
     return _locationRepository.getLocationsStream();
   }
@@ -31,6 +32,7 @@ class LocationController {
     await _locationRepository.deleteLocation(locationId);
   }
 
+
   Stream<model.Location?> getLocationByAddress(String address) {
     return _locationRepository.getLocationByAddress(address);
   }
@@ -44,6 +46,7 @@ class LocationController {
   Future<model.Location?> getLocationByAddressAndCity(String address, String city) async {
     Stream<List<model.Location>> locationsStream = getLocationsStream();
     List<model.Location> locations = await locationsStream.first;
+
     try {
       return locations.firstWhere((loc) => loc.address == address && loc.city == city);
     } catch (e) {
@@ -74,6 +77,7 @@ class LocationController {
     return await _locationRepository.getLocationIdsByUniversity(isUniversity);
   }
 
+
   Future<List<model.Location>> getCachedLocations() async {
     return _localStorageRepository.getLocations();
   }
@@ -85,6 +89,7 @@ class LocationController {
   Future<model.Location?> getLocationByIdOffline(String locationId) async {
     try {
       List<model.Location> cachedLocations = await _localStorageRepository.getLocations();
+
       for (final location in cachedLocations) {
         if (location.id == locationId) {
           return location;
@@ -111,6 +116,7 @@ class LocationController {
   Future<model.Location?> getLocationByIdOfflineDrift(String id) async {
     return await _driftRepository.getLocationByIdDrift(id);
   }
+
 
 
 }

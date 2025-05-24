@@ -71,7 +71,9 @@ class _SelectCategoriesScreenState extends State<SelectCategoriesScreen> {
     );
     Navigator.pushReplacementNamed(context, '/home', arguments: widget.userId);
   } catch (e) {
+
     print("Error saving categories: $e");
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("Error saving categories")),
     );
@@ -88,6 +90,7 @@ class _SelectCategoriesScreenState extends State<SelectCategoriesScreen> {
         elevation: 0,
         toolbarHeight: 0, //ocultar la appbar visualmente
       ),
+
       body: SafeArea(
   child: SingleChildScrollView(
     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -156,6 +159,7 @@ class _SelectCategoriesScreenState extends State<SelectCategoriesScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.secondary,
                 padding: const EdgeInsets.symmetric(vertical: 14),
+
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
                 ),
@@ -177,7 +181,5 @@ class _SelectCategoriesScreenState extends State<SelectCategoriesScreen> {
 ),
     );
 
-
- 
   }
 }

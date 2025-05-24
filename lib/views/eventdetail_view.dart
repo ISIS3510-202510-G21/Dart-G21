@@ -129,6 +129,7 @@ Future<void> _loadOfflineData() async {
     setState(() {
       creatorName = name ?? "Unknown";
       creatorHeadline = profile?.headline ?? "No headline provided";
+
       //creatorImage =profile?.picture ?? "";
       //verificar si existe un profile antes de intentar acceder a sus propiedades
       if (profile != null) {
@@ -145,6 +146,7 @@ Future<void> _loadOfflineData() async {
     _category = await _categoryController.getCategoryByIdOfflineDrift(_event!.category);
    // _location = await _locationController.getLocationByIdOffline(_event!.location_id);
     _location = await _locationController.getLocationByIdOfflineDrift(_event!.location_id);
+
 }
 
 Future<void> _loadOnlineData() async {
@@ -152,7 +154,9 @@ Future<void> _loadOnlineData() async {
     if (fetchedEvent != null) {
       setState(() {
         _event = fetchedEvent;
+
         _skillsFuture = _skillController.getSkillsByIds(_event?.skills ?? []);
+
       });
     }
 
@@ -167,6 +171,7 @@ Future<void> _loadOnlineData() async {
           /* creatorImage = (profile.thumbnail != null && profile.thumbnail!.isNotEmpty)
             ? profile.thumbnail!
             : profile.picture; */
+
         });
 
         // Guardamos para offline
@@ -323,6 +328,7 @@ Future<void> _loadOnlineData() async {
                           Row(
                                 children: [
                                   const Icon(Icons.people_alt_outlined, size: 25, color: Colors.grey),
+
                                   const SizedBox(width: 6),
                                   Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -350,6 +356,7 @@ Future<void> _loadOnlineData() async {
                                   ),
                                 ],
                               ),
+
                         ],
                       ),
                     ],
@@ -436,6 +443,7 @@ Future<void> _loadOnlineData() async {
                           style: const TextStyle(color: Color.fromARGB(255, 20, 104, 23), fontSize: 14),
                         ),
                       ):Align(
+
                         alignment: Alignment.centerLeft,
                         child: Text(
                           "$daysLeft days left",
@@ -477,11 +485,13 @@ Future<void> _loadOnlineData() async {
                       const Text("Category", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                       const SizedBox(height: 8),
                       Text(_category?.name ?? "Unknown",style: const TextStyle(fontSize: 14, color: AppColors.secondary),), //CAMBIO PARA INTEGRAR
+
                       const SizedBox(height: 16),
                       isConnected?    const Text("Skills", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)): const Text(""),
                       const SizedBox(height: 8),
                       isConnected? FutureBuilder<List<String>>(
                         future: _skillsFuture,
+
                         builder: (context, snapshot) {
                           if (!snapshot.hasData) return const Text("Loading...");
                           return Text(
@@ -492,7 +502,6 @@ Future<void> _loadOnlineData() async {
                       ): const Text(
                         "",
                       ),   
-
                     ],
                   ),
                 ),
@@ -624,3 +633,4 @@ Future<void> _loadOnlineData() async {
     );
   }
 }
+

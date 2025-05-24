@@ -121,6 +121,7 @@ class _HomePage extends State<HomePage> {
                       : _eventController.getUpcomingEventsOfflineStream(),
                   userId: widget.userId,
                   section: "Upcoming",
+
                 ),
                 _buildSectionTitle("Nearby Events"),
                 EventsList(
@@ -207,6 +208,7 @@ class _HomePage extends State<HomePage> {
                   child: ElevatedButton(
                       onPressed: () {
                         logInteraction("Categories");
+
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -235,6 +237,7 @@ class _HomePage extends State<HomePage> {
     }else{
       //return _categoryController.getCategoriesStreamOffline();
       return _categoryController.getCachedCategoriesDrift().asStream();
+
     }
   }
 
@@ -369,7 +372,9 @@ class _HomePage extends State<HomePage> {
         ),
         style: const TextStyle(color: Colors.white),
         onTap: () {
+
           logInteraction("Search");
+
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -420,6 +425,7 @@ class _HomePage extends State<HomePage> {
     );
   }
 
+
   void logChatbotClick(String userId) {
     FirebaseFirestore.instance.collection('chatbot_clicks').add({
       'user_id': userId,
@@ -427,11 +433,14 @@ class _HomePage extends State<HomePage> {
     });
   }
 
+
   @override
   void initState() {
     super.initState();
     setUpConnectivity();
+
     _checkInitialConnectivityAndLoad();
+
     _determinePosition();
   }
 
@@ -538,6 +547,7 @@ class _HomePage extends State<HomePage> {
   }
 
 
+
   @override
   void dispose() {
     _connectivitySubscription.cancel();
@@ -579,5 +589,6 @@ class _HomePage extends State<HomePage> {
       'interactionType': interaction,
     });
   }
+
 
 }

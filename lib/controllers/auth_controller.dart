@@ -87,6 +87,7 @@ class AuthController {
       
       throw Exception("Error en el registro del usuario");
     }
+
   }
 
   //Método para salir de la sesión

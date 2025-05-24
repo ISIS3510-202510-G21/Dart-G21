@@ -22,6 +22,7 @@ class SkillController {
   }
 
   Future<void> updateSkill(model.Skill skill) async {
+
     await _skillRepository.updateSkill(skill);
   }
 
@@ -37,6 +38,7 @@ class SkillController {
     List<String> skillNames = [];
     for (String id in skillIds) {
       model.Skill? skill = await getSkillById(id);
+
       if (skill != null) {
         skillNames.add(skill.name);
       }
@@ -59,4 +61,5 @@ class SkillController {
   Future<void> saveSkillsToCacheDrift(List<model.Skill> skills) async {
     await _driftRepository.saveSkillsDrift(skills);
   }
+
 }

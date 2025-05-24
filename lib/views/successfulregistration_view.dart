@@ -3,6 +3,7 @@ import 'package:dart_g21/core/colors.dart';
 import 'package:dart_g21/views/home_view.dart';
 import 'package:dart_g21/views/myevents_view.dart';
 import 'package:dart_g21/views/usersbyevent_view.dart';
+
 import 'package:flutter/material.dart';
 import 'package:dart_g21/models/event.dart';
 import 'package:dart_g21/controllers/profile_controller.dart'; 
@@ -175,6 +176,7 @@ class _SuccessfulregistrationViewState extends State<SuccessfulregistrationView>
                                       Text(
                                         isFree ? "FREE" : "\$${event!.cost}",
                                         style: const TextStyle(color: AppColors.secondary, fontSize: 13),
+
                                       )
                                     ],
                                   ),
@@ -214,6 +216,7 @@ class _SuccessfulregistrationViewState extends State<SuccessfulregistrationView>
                                           style: const TextStyle(color: AppColors.secondary, fontSize: 13, decoration: TextDecoration.underline),
                                         ),
                                         )
+
                                       
                                     ],
                                   ),
@@ -361,3 +364,4 @@ class _SuccessfulregistrationViewState extends State<SuccessfulregistrationView>
   return '$hour:$minute $period';
 }
 }
+

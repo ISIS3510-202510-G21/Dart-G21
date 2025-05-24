@@ -207,6 +207,7 @@ void _handleDelete(String eventId) async {
   } catch (e) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Error removing event")),
+
     );
   }
 }
@@ -233,6 +234,8 @@ void _navigateToDetail(String eventId) {
     return _buildListView();
   }
 
+
+
   Widget buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -249,4 +252,5 @@ void logEventDetailClick(String userId, String eventName) {
       'timestamp': FieldValue.serverTimestamp(),
       'name': eventName,
     });
+
 }
