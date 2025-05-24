@@ -481,7 +481,7 @@ Future<void> _loadOnlineData() async {
                       isConnected?    const Text("Skills", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)): const Text(""),
                       const SizedBox(height: 8),
                       isConnected? FutureBuilder<List<String>>(
-                        future: _skillController.getSkillsByIds(_event!.skills),
+                        future: _skillsFuture,
                         builder: (context, snapshot) {
                           if (!snapshot.hasData) return const Text("Loading...");
                           return Text(
