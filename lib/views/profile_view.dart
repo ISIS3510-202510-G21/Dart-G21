@@ -22,7 +22,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:dart_g21/services/local_storage_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-
 class ProfilePage extends StatefulWidget {
   final String userId;
   ProfilePage({Key? key, required this.userId}) : super(key: key);
@@ -41,15 +40,11 @@ class _ProfilePageState extends State<ProfilePage> {
   late final Connectivity _connectivity;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
 
-  StreamSubscription? _profileSubscription; 
-  late Box profileBox;
-  String offlineName = "";
+  StreamSubscription? _profileSubscription;
   String onlineName = "";
-
+  String offlineName = "";
   String offlineHeadline = "";
   String offlineDescription = "";
-  String offlineFollowers = "";
-  String offlineFollowing = "";
   Profile profile_user = Profile(id: '', user_ref: '', headline: '', events_associated: [], picture: '', description: '', followers: [], following: [], interests: []);
 
   @override
@@ -66,7 +61,6 @@ class _ProfilePageState extends State<ProfilePage> {
     } else {
       _loadOfflineData();
     }
-
   }
 
   Future<void> _loadOnlineData() async {
@@ -77,17 +71,14 @@ class _ProfilePageState extends State<ProfilePage> {
       if (profile != null && profile_user.id != profile.id) {
         setState(() {
           profile_user = profile;
-          
         });
         final user = await userStream;
         setState(() {
           onlineName = user?.name ?? "";
         });
         if (user != null) {
-         
           await _profileController.saveUserNameToLocal(widget.userId, user.name);
         }
-
         await _profileController.saveProfileToLocal(widget.userId, profile);
         await _profileController.saveFollowersAndFollowingToLocal(
           widget.userId,
@@ -107,8 +98,6 @@ class _ProfilePageState extends State<ProfilePage> {
         offlineName = name ?? "No name available";
         offlineHeadline = profile_user.headline;
         offlineDescription = profile_user.description;
-        offlineFollowers = profile_user.followers.length.toString();
-        offlineFollowing = profile_user.following.length.toString();
       });
     }
   }
@@ -130,7 +119,7 @@ class _ProfilePageState extends State<ProfilePage> {
       } else if (prev && !isConnected) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text("Connection lost, Offline mode activated", style: TextStyle(color: AppColors.primary, fontSize: 16,)),
+            content: const Text("Connection lost, Offline mode activated", style: TextStyle(color: AppColors.primary, fontSize: 16)),
             backgroundColor: AppColors.buttonRed,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -164,80 +153,73 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> logout(BuildContext context) async {
     await _authController.signOut();
     await LocalStorageService.clearUserId();
-
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      '/signin',
-      (route) => false,
-    );
+    Navigator.pushNamedAndRemoveUntil(context, '/signin', (route) => false);
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        SizedBox(height: 40),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16),
+        const SizedBox(height: 40),
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 16),
           child: Row(
-            children: const [
-              Text(
-                "Profile",
-                style: TextStyle(
-                  fontSize: 24,
-                  color: Colors.black,
-                  fontWeight: FontWeight.normal,
-                ),
-              ),
+            children: [
+              Text("Profile", style: TextStyle(fontSize: 24, color: Colors.black, fontWeight: FontWeight.normal)),
             ],
           ),
         ),
         Expanded(
           child: isConnected
               ? ListView(
-                padding: EdgeInsets.zero,
-                children: <Widget>[
-                  buildTop(profile_user),
-                  ProfileHeader(name: onlineName, headline: profile_user.headline),
-                  SizedBox(height: 10),
-                  FollowerStats(
-                    followers: profile_user.followers.length.toString(),
-                    following: profile_user.following.length.toString(),
-                  ),
-                  SizedBox(height: 20),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AboutSection(description: profile_user.description),
-                        SizedBox(height: 20),
-                        buildInterestSection(profile_user),
-                      ],
-                    ),
-                  ),
-                ],
-              )
+            padding: EdgeInsets.zero,
+            children: <Widget>[
+              buildTop(profile_user),
+              ProfileHeader(name: onlineName, headline: profile_user.headline),
+              const SizedBox(height: 10),
+              FollowerStats(
+                profileController: _profileController,
+                userController: _userController,
+                userId: widget.userId,
+              ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AboutSection(description: profile_user.description),
+                    const SizedBox(height: 20),
+                    buildInterestSection(profile_user),
+                  ],
+                ),
+              ),
+            ],
+          )
               : ListView(
-                padding: EdgeInsets.zero,
-                children: <Widget>[
-                  buildTop(profile_user),
-                  ProfileHeader(name: offlineName, headline: offlineHeadline),
-                  SizedBox(height: 10),
-                  FollowerStats(followers: offlineFollowers, following: offlineFollowing),
-                  SizedBox(height: 20),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AboutSection(description: offlineDescription),
-                        
-        ],
-      ),
-    ),
-  ],
-),
+            padding: EdgeInsets.zero,
+            children: <Widget>[
+              buildTop(profile_user),
+              ProfileHeader(name: offlineName, headline: offlineHeadline),
+              const SizedBox(height: 10),
+              FollowerStats(
+                profileController: _profileController,
+                userController: _userController,
+                userId: widget.userId,
+                isOffline: true,
+              ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AboutSection(description: offlineDescription),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -267,51 +249,51 @@ class _ProfilePageState extends State<ProfilePage> {
       backgroundColor: Colors.grey.shade300,
       child: hasImage
           ? ClipOval(
-              child: CachedNetworkImage(
-                imageUrl: imagePath,
-                width: 180,
-                height: 180,
-                fit: BoxFit.cover,
-                cacheManager: CacheManager(
-                  Config(
-                    'customCacheKey',
-                    stalePeriod: const Duration(days: 7),
-                    maxNrOfCacheObjects: 100,
-                  ),
-                ),
-                placeholder: (context, url) => Container(
-                  width: 180,
-                  height: 180,
-                  color: Colors.grey.shade200,
-                  child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  width: 180,
-                  height: 180,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.image_not_supported, size: 60, color: Colors.grey),
-                ),
-              ),
-            )
+        child: CachedNetworkImage(
+          imageUrl: imagePath,
+          width: 180,
+          height: 180,
+          fit: BoxFit.cover,
+          cacheManager: CacheManager(
+            Config(
+              'customCacheKey',
+              stalePeriod: const Duration(days: 7),
+              maxNrOfCacheObjects: 100,
+            ),
+          ),
+          placeholder: (context, url) => Container(
+            width: 180,
+            height: 180,
+            color: Colors.grey.shade200,
+            child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          ),
+          errorWidget: (context, url, error) => Container(
+            width: 180,
+            height: 180,
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.image_not_supported, size: 60, color: Colors.grey),
+          ),
+        ),
+      )
           : const Icon(Icons.person, size: 60, color: Colors.white),
     );
   }
 
   Widget buildInterestSection(Profile profile) {
-    Map<String, String> categoryCache = {}; 
+    Map<String, String> categoryCache = {};
     List<Color> colors = [AppColors.buttonPurple, AppColors.buttonRed, AppColors.buttonOrange, AppColors.secondary, AppColors.buttonGreen, AppColors.buttonLightBlue];
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
+          children: const [
             Text('Interest', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ],
         ),
-        SizedBox(height: 20),
+        const SizedBox(height: 20),
         Wrap(
           spacing: 10,
           runSpacing: 10,
@@ -321,15 +303,15 @@ class _ProfilePageState extends State<ProfilePage> {
                 future: categoryCache.containsKey(interest)
                     ? Future.value(categoryCache[interest])
                     : _categoryController.getCategoryById(interest).then((cat) {
-                        final name = cat?.name ?? 'Unknown';
-                        categoryCache[interest] = name;
-                        return name;
-                      }),
+                  final name = cat?.name ?? 'Unknown';
+                  categoryCache[interest] = name;
+                  return name;
+                }),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
                     return buildInterestChip(snapshot.data!, colors[interest.hashCode % colors.length]);
                   }
-                  return Text('Loading...');
+                  return const Text('Loading...');
                 },
               ),
           ],
@@ -338,14 +320,11 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-
   Widget buildInterestChip(String label, Color color) {
     return Chip(
-      label: Text(label, style: TextStyle(color: AppColors.primary, fontSize: 14)),
+      label: Text(label, style: const TextStyle(color: AppColors.primary, fontSize: 14)),
       backgroundColor: color,
-
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
     );
   }
 }
-

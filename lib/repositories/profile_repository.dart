@@ -42,5 +42,21 @@ class ProfileRepository {
     return await _profileDao.getProfileIdByUserId(userId);
   }
 
+  Stream<List<String>> getFollowers(String profileId) {
+    return _profileDao.getFollowersStream(profileId);
+  }
+
+  Stream<List<String>> getFollowing(String profileId) {
+    return _profileDao.getFollowingStream(profileId);
+  }
+
+  Future<void> followUser(String currentUserId, String targetUserId) async {
+    return await _profileDao.followUser(currentUserId, targetUserId);
+  }
+
+  Future<void> unfollowUser(String currentUserId, String targetUserId) async {
+    return await _profileDao.unfollowUser(currentUserId, targetUserId);
+  }
+
 
 }
