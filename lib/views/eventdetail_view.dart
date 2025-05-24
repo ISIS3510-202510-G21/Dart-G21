@@ -318,20 +318,33 @@ Future<void> _loadOnlineData() async {
                           // SEPARADOR
                           Container(width: 1, height: 40, color: Colors.grey.shade300),
 
-                          // Location
+                          // Cambio de Location a Attendee!
                           Row(
                                 children: [
-                                  const SizedBox(width: 12),
-                                  const Icon(Icons.location_on_outlined, color: Colors.grey),
+                                  const Icon(Icons.people_alt_outlined, size: 25, color: Colors.grey),
                                   const SizedBox(width: 6),
                                   Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Text("Location", style: TextStyle(fontSize: 14)),
-                                      Text(
-                                        _location?.address ?? "Unknown",
-                                        style: const TextStyle(fontSize: 14, color: AppColors.secondary),
-                                      ),
+                                      const Text("Attendees", style: TextStyle(fontSize: 14)),
+                                        GestureDetector(
+                                        onTap: () {
+
+                                            Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => AttendeesView(attendeeIds: _event!.attendees),
+                                          ),
+                                          );
+                                        
+                                         
+                                        },
+                                        child: Text(
+                                          "${_event!.attendees.length} people",
+                                          style: const TextStyle(color: AppColors.secondary, fontSize: 13, decoration: TextDecoration.underline),
+                                        ),
+                                        )
+                                      
                                     ],
                                   ),
                                 ],
@@ -450,16 +463,24 @@ Future<void> _loadOnlineData() async {
                       const SizedBox(height: 8),
                       Text(_event!.description, style: const TextStyle(fontSize: 14)),
                       const SizedBox(height: 16),
+                      const Text("Location", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                      Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text("${_location?.address}, ${_location?.city}", style: const TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+                                if (_location?.details != null && _location!.details.isNotEmpty)
+                                  Text(_location?.details??"Unknown", style: const TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+                              ],
+                            ),
+                      const SizedBox(height: 16),
                       const Text("Category", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                       const SizedBox(height: 8),
-                      // Category
-                      Text(_category?.name ?? "Unknown",style: const TextStyle(fontSize: 14, color: AppColors.secondary),),
+                      Text(_category?.name ?? "Unknown",style: const TextStyle(fontSize: 14, color: AppColors.secondary),), //CAMBIO PARA INTEGRAR
                       const SizedBox(height: 16),
                       isConnected?    const Text("Skills", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)): const Text(""),
                       const SizedBox(height: 8),
                       isConnected? FutureBuilder<List<String>>(
-                        //future: _skillController.getSkillsByIds(_event!.skills),
-                        future: _skillsFuture,
+                        future: _skillController.getSkillsByIds(_event!.skills),
                         builder: (context, snapshot) {
                           if (!snapshot.hasData) return const Text("Loading...");
                           return Text(
@@ -469,7 +490,8 @@ Future<void> _loadOnlineData() async {
                         },
                       ): const Text(
                         "",
-                      ),
+                      ),   
+
                     ],
                   ),
                 ),
