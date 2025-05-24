@@ -53,15 +53,20 @@ class AuthController {
         if (profileImagePath.isNotEmpty) {
           final File imageFile = File(profileImagePath);
           final storageService = StorageService();
-          final url = await storageService.uploadProfileImage(id_user, imageFile);
-          profilePicUrl = url;
+          try {
+              final url = await storageService.uploadProfileImage(id_user, imageFile);
+              profilePicUrl = url;
+            } catch (e) {
+              print("Error uploading image: $e");
+              profilePicUrl = ''; // fallback para evitar que rompa
+            }
           //thumbnailUrl = urls['thumbnail'];
         } 
 
         //Crear perfil en la colección "profiles"
         Profile newProfile = Profile(
           id: id_user,
-          picture: profileImagePath,
+          picture: profilePicUrl,
           //thumbnail: thumbnailUrl,
           headline: headline,
           description: description,
