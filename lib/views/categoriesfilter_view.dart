@@ -82,7 +82,7 @@ class _CategoriesFilterState extends State<CategoriesFilter> {
     }
   }
 
-  // Filtros y ordenamiento en memoria
+
   Future<List<Event>> _applyFiltersAndSort(List<Event> events) async {
     List<Event> filtered = events;
     if (isSelected[0]) {
