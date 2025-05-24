@@ -556,8 +556,9 @@ Future<void> initHiveAndLoad() async {
                 itemCount: filteredEvents.length,
                 itemBuilder: (context, index) {
                   final event = filteredEvents[index];
-                  return EventCard(event: event, onTap: () {
+                  return EventCard(event: event, onTap: () async {
                     print("Evento seleccionado: ${event.name}");
+                    await precacheImage(NetworkImage(event.image), context);
                     logEventDetailClick(widget.userId, event.name);
                     Navigator.push(
                       context,

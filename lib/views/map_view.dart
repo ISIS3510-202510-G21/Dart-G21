@@ -181,9 +181,10 @@ class _MapView extends State<MapView> {
             actions: [
               TextButton(
                 child: const Text('Show Detail'),
-                onPressed: () {
+                onPressed: () async {
                   Navigator.of(context).pop(); // Cierra el diálogo
                   logEventDetailClick(widget.userId, event.name);
+                  await precacheImage(NetworkImage(event.image), context);
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -400,7 +401,8 @@ class _MapView extends State<MapView> {
                           actions: [
                             TextButton(
                               child: const Text('View Detail'),
-                              onPressed: () {
+                              onPressed: () async {
+                                await precacheImage(NetworkImage(e.event.image), context);
                                 Navigator.of(context).pop(); // Cierra el diálogo
                                 logEventDetailClick(widget.userId, e.event.name);
                                 Navigator.push(

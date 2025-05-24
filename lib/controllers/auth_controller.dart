@@ -49,20 +49,20 @@ class AuthController {
 
         // SUBIR IMAGEN Y THUMBNAIL SI HAY IMAGEN
         String profilePicUrl = '';
-        String? thumbnailUrl;
+        //String? thumbnailUrl;
         if (profileImagePath.isNotEmpty) {
           final File imageFile = File(profileImagePath);
           final storageService = StorageService();
-          final urls = await storageService.uploadProfileImageAndThumbnail(id_user, imageFile);
-          profilePicUrl = urls['original']!;
-          thumbnailUrl = urls['thumbnail'];
+          final url = await storageService.uploadProfileImage(id_user, imageFile);
+          profilePicUrl = url;
+          //thumbnailUrl = urls['thumbnail'];
         } 
 
         //Crear perfil en la colección "profiles"
         Profile newProfile = Profile(
           id: id_user,
           picture: profileImagePath,
-          thumbnail: thumbnailUrl,
+          //thumbnail: thumbnailUrl,
           headline: headline,
           description: description,
           events_associated: [],

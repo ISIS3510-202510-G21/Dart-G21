@@ -35,6 +35,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   final LocationController _locationController = LocationController();
   final SkillController _skillController = SkillController();
   late final Connectivity _connectivity;
+  late Future<List<String>> _skillsFuture;
 
   Event? _event;
   String creatorName = "";
@@ -130,9 +131,10 @@ Future<void> _loadOfflineData() async {
       //creatorImage =profile?.picture ?? "";
       //verificar si existe un profile antes de intentar acceder a sus propiedades
       if (profile != null) {
-        creatorImage = (profile.thumbnail != null && profile.thumbnail!.isNotEmpty)
+        creatorImage =profile?.picture ?? "";
+        /* creatorImage = (profile.thumbnail != null && profile.thumbnail!.isNotEmpty)
             ? profile.thumbnail!
-            : profile.picture;
+            : profile.picture; */
       } else {
         creatorImage = "";
       }
@@ -149,6 +151,7 @@ Future<void> _loadOnlineData() async {
     if (fetchedEvent != null) {
       setState(() {
         _event = fetchedEvent;
+        _skillsFuture = _skillController.getSkillsByIds(_event?.skills ?? []);
       });
     }
 
@@ -159,10 +162,10 @@ Future<void> _loadOnlineData() async {
         setState(() {
           creatorName = user?.name ?? "Unknown";
           creatorHeadline = profile.headline;
-          //creatorImage = profile.picture;
-          creatorImage = (profile.thumbnail != null && profile.thumbnail!.isNotEmpty)
+          creatorImage = profile.picture;
+          /* creatorImage = (profile.thumbnail != null && profile.thumbnail!.isNotEmpty)
             ? profile.thumbnail!
-            : profile.picture;
+            : profile.picture; */
         });
 
         // Guardamos para offline
@@ -189,10 +192,10 @@ Future<void> _loadOnlineData() async {
       if (profile != null) {
         final user = await _userController.getUserById(creatorId);
         setState(() {
-          //creatorImage = profile.picture;
-          creatorImage = (profile.thumbnail != null && profile.thumbnail!.isNotEmpty)
+          creatorImage = profile.picture;
+          /* creatorImage = (profile.thumbnail != null && profile.thumbnail!.isNotEmpty)
             ? profile.thumbnail!
-            : profile.picture;
+            : profile.picture; */
           creatorHeadline = profile.headline;
           creatorName = user?.name ?? "Unknown";
         });
@@ -315,20 +318,33 @@ Future<void> _loadOnlineData() async {
                           // SEPARADOR
                           Container(width: 1, height: 40, color: Colors.grey.shade300),
 
-                          // Location
+                          // Cambio de Location a Attendee!
                           Row(
                                 children: [
-                                  const SizedBox(width: 12),
-                                  const Icon(Icons.location_on_outlined, color: Colors.grey),
+                                  const Icon(Icons.people_alt_outlined, size: 25, color: Colors.grey),
                                   const SizedBox(width: 6),
                                   Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Text("Location", style: TextStyle(fontSize: 14)),
-                                      Text(
-                                        _location?.address ?? "Unknown",
-                                        style: const TextStyle(fontSize: 14, color: AppColors.secondary),
-                                      ),
+                                      const Text("Attendees", style: TextStyle(fontSize: 14)),
+                                        GestureDetector(
+                                        onTap: () {
+
+                                            Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => AttendeesView(attendeeIds: _event!.attendees),
+                                          ),
+                                          );
+                                        
+                                         
+                                        },
+                                        child: Text(
+                                          "${_event!.attendees.length} people",
+                                          style: const TextStyle(color: AppColors.secondary, fontSize: 13, decoration: TextDecoration.underline),
+                                        ),
+                                        )
+                                      
                                     ],
                                   ),
                                 ],
@@ -447,10 +463,19 @@ Future<void> _loadOnlineData() async {
                       const SizedBox(height: 8),
                       Text(_event!.description, style: const TextStyle(fontSize: 14)),
                       const SizedBox(height: 16),
+                      const Text("Location", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                      Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text("${_location?.address}, ${_location?.city}", style: const TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+                                if (_location?.details != null && _location!.details.isNotEmpty)
+                                  Text(_location?.details??"Unknown", style: const TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+                              ],
+                            ),
+                      const SizedBox(height: 16),
                       const Text("Category", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                       const SizedBox(height: 8),
-                      // Category
-                      Text(_category?.name ?? "Unknown",style: const TextStyle(fontSize: 14, color: AppColors.secondary),),
+                      Text(_category?.name ?? "Unknown",style: const TextStyle(fontSize: 14, color: AppColors.secondary),), //CAMBIO PARA INTEGRAR
                       const SizedBox(height: 16),
                       isConnected?    const Text("Skills", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)): const Text(""),
                       const SizedBox(height: 8),
@@ -465,7 +490,8 @@ Future<void> _loadOnlineData() async {
                         },
                       ): const Text(
                         "",
-                      ),
+                      ),   
+
                     ],
                   ),
                 ),
