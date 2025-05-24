@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/core/colors.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../controllers/category_controller.dart';
 import '../controllers/event_controller.dart';
 import '../models/category.dart';
@@ -148,15 +150,19 @@ class _CategoriesFilterState extends State<CategoriesFilter> {
                       itemBuilder: (context, index) {
                         return EventCard(
                           event: filteredEvents[index],
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => EventDetailScreen(
-                                eventId: filteredEvents[index].id,
-                                userId: widget.userId,
+                          onTap: () async {
+                            await precacheImage(NetworkImage(filteredEvents[index].image), context);
+                            logEventDetailClick(widget.userId, filteredEvents[index].name);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => EventDetailScreen(
+                                  eventId: filteredEvents[index].id,
+                                  userId: widget.userId,
+                                ),
                               ),
-                            ),
-                          ),
+                            );
+                          },
                         );
                       },
                     );
@@ -168,6 +174,14 @@ class _CategoriesFilterState extends State<CategoriesFilter> {
         ],
       ),
     );
+  }
+
+  void logEventDetailClick(String userId, String eventName) {
+    FirebaseFirestore.instance.collection('eventdetail_clicks').add({
+      'user_id': userId,
+      'timestamp': FieldValue.serverTimestamp(),
+      'name': eventName,
+    });
   }
 
   Widget _buildFilterBar() {

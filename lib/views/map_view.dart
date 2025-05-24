@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../controllers/event_controller.dart';
 import '../controllers/location_controller.dart';
 import '../repositories/localStorage_repository.dart';
@@ -180,8 +181,10 @@ class _MapView extends State<MapView> {
             actions: [
               TextButton(
                 child: const Text('Show Detail'),
-                onPressed: () {
+                onPressed: () async {
                   Navigator.of(context).pop(); // Cierra el diálogo
+                  logEventDetailClick(widget.userId, event.name);
+                  await precacheImage(NetworkImage(event.image), context);
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -204,6 +207,14 @@ class _MapView extends State<MapView> {
         );
       },
     );
+  }
+
+  void logEventDetailClick(String userId, String eventName) {
+    FirebaseFirestore.instance.collection('eventdetail_clicks').add({
+      'user_id': userId,
+      'timestamp': FieldValue.serverTimestamp(),
+      'name': eventName,
+    });
   }
 
   Future<void> downloadBogotaMapImageIfNeeded() async {
@@ -390,8 +401,10 @@ class _MapView extends State<MapView> {
                           actions: [
                             TextButton(
                               child: const Text('View Detail'),
-                              onPressed: () {
+                              onPressed: () async {
+                                await precacheImage(NetworkImage(e.event.image), context);
                                 Navigator.of(context).pop(); // Cierra el diálogo
+                                logEventDetailClick(widget.userId, e.event.name);
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(

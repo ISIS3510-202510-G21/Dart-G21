@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dart_g21/views/eventdetail_view.dart';
 import 'package:dart_g21/widgets/eventcard_view.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/controllers/event_controller.dart';
 import 'package:dart_g21/controllers/category_controller.dart';
@@ -15,6 +16,7 @@ import 'package:dart_g21/models/location.dart';
 import 'package:dart_g21/models/skill.dart';
 import 'package:dart_g21/core/colors.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SearchEventView extends StatefulWidget {
   final String userId;
@@ -52,7 +54,7 @@ class _SearchEventViewState extends State<SearchEventView> {
   void initState() {
     super.initState();
     _setupConnectivity();
-    _checkInitialConnectivityAndLoad(); 
+    _checkInitialConnectivityAndLoad();
   }
 
 void _setupConnectivity() {
@@ -67,9 +69,11 @@ void _setupConnectivity() {
       });
 
       //Recarga datos según el nuevo estado de conexión
-      await initHiveAndLoad();
+
+      initHiveAndLoad();
 
       if (isConnected) {
+        //_loadRemoteDataIfConnected();
         // ScaffoldMessenger.of(context).showSnackBar(
         //   SnackBar(
         //     content: const Text("Connection Restored", style: TextStyle(color: AppColors.primary, fontSize: 16)),
@@ -103,94 +107,116 @@ Future<void> _checkInitialConnectivityAndLoad() async {
     isConnected = !result.contains(ConnectivityResult.none);
   });
   print("Estado inicial de conexión corregido: $isConnected");
-
-  await initHiveAndLoad(); // Ahora sí, después de saber el estado real
+  initHiveAndLoad();
 }
 
-Future<List<Event>> getCachedEvents5() async {
+Future<List<Event>> getCachedEvents() async {
   final events = await _eventController.getCachedEvents();
-  return events.take(5).toList(); // Limitar a 10 eventos aquí
+  return events;
 }
+
 Future<void> initHiveAndLoad() async {
-
-   setState(() {
-    isLoading = true; // Inicia la carga
+  setState(() {
+    isLoading = true;
   });
-
   if (!isConnected) {
-    final local = await getCachedEvents5(); 
-    //localCategories = await _categoryController.getCachedCategories();
-    localCategories = await _categoryController.getCachedCategoriesDrift();
-    //localSkills = await _skillController.getCachedSkills();
-    localSkills = await _skillController.getCachedSkillsDrift();
-    //localLocations = await _locationController.getCachedLocations();
-    localLocations = await _locationController.getCachedLocationsDrift();
-    local.sort((a, b) => a.start_date.compareTo(b.start_date)); 
-    setState(() {
-      allEvents = local;
-      filteredEvents = local; 
-      isLoading = false; 
-    });
+    final localEvents = await getCachedEvents();
+    final categories = await _categoryController.getCachedCategoriesDrift();
+    final skills = await _skillController.getCachedSkillsDrift();
+    final locations = await _locationController.getCachedLocationsDrift();
+    localEvents.sort((a, b) => a.start_date.compareTo(b.start_date));
+    if (!listEquals(allEvents, localEvents)) {
+      allEvents.clear();
+      filteredEvents.clear();
+      localCategories.clear();
+      localSkills.clear();
+      localLocations.clear();
+      setState(() {
+        allEvents = List.from(localEvents);
+        filteredEvents = List.from(localEvents);
+        localCategories = List.from(categories);
+        localSkills = List.from(skills);
+        localLocations = List.from(locations);
+        isLoading = false;
+      });
+    } else {
+      setState(() {
+        isLoading = false;
+      });
+    }
   } else {
-    //final categories = await _categoryController.getCategoriesStream().first;
+    final events = await _eventController.getFirstNEvents(20);
     final skills = await _skillController.getSkillsStream().first;
-    //final locations = await _locationController.getLocationsStream().first;
-    final events = await _eventController.getFirstNEvents(20); 
-
-    await _eventController.saveEventsToCache(events.take(5).toList()); 
-    //await _categoryController.saveCategoriesToCache(categories);
-    
-    
-    
-    //await _skillController.saveSkillsToCache(skills);
     await _skillController.saveSkillsToCacheDrift(skills);
-    
-
     events.sort((a, b) => a.start_date.compareTo(b.start_date));
-    setState(() {
-      allEvents = events; 
-      filteredEvents = events; 
-      isLoading = false;
-    });
+    if (!listEquals(allEvents, events)) {
+      allEvents.clear();
+      filteredEvents.clear();
+      setState(() {
+        allEvents = List.from(events);
+        filteredEvents = List.from(events);
+        isLoading = false;
+      });
+    } else {
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 }
 
-  @override
-  void dispose() {
-    _connectivitySubscription.cancel();
-    super.dispose();
+
+@override
+void dispose() {
+  _connectivitySubscription.cancel();
+  allEvents.clear();
+  filteredEvents.clear();
+  localSkills.clear();
+  localCategories.clear();
+  localLocations.clear();
+  super.dispose();
+}
+
+void applyFiltersOffline() {
+  List<Event> result = List.from(allEvents); 
+
+  if (selectedType != null) {
+    result = result.where((e) => selectedType == 'free' ? e.cost == 0 : e.cost > 0).toList();
   }
 
-  void applyFiltersOffline() {
-    List<Event> result = allEvents;
+  if (selectedCategoryId != null) {
+    result = result.where((e) => e.category == selectedCategoryId).toList();
+  }
 
-    if (selectedType != null) {
-      result = result.where((e) => selectedType == 'free' ? e.cost == 0 : e.cost > 0).toList();
-    }
-    if (selectedCategoryId != null) {
-      result = result.where((e) => e.category == selectedCategoryId).toList();
-    }
-    if (selectedSkillId != null) {
-      result = result.where((e) => e.skills.contains(selectedSkillId)).toList();
-    }
-    if (selectedLocation != null) {
-      List<String> matchingLocationIds = localLocations
-        .where((location) => location.university == (selectedLocation == 'university'))
-        .map((location) => location.id)
-        .toList();
-      result = result.where((e) => matchingLocationIds.contains(e.location_id)).toList();
-    }
-    if (selectedStartDate != null && selectedEndDate != null) {
-      result = result.where((e) =>
-        e.start_date.isAfter(selectedStartDate!.subtract(const Duration(days: 0))) &&
-        e.start_date.isBefore(selectedEndDate!.add(const Duration(days: 1)))).toList();
-    }
+  if (selectedSkillId != null) {
+    result = result.where((e) => e.skills.contains(selectedSkillId)).toList();
+  }
 
-    result.sort((a, b) => a.start_date.compareTo(b.start_date));
+  if (selectedLocation != null) {
+    final matchingLocationIds = localLocations
+      .where((location) => location.university == (selectedLocation == 'university'))
+      .map((location) => location.id)
+      .toList();
+
+    result = result.where((e) => matchingLocationIds.contains(e.location_id)).toList();
+  }
+
+  if (selectedStartDate != null && selectedEndDate != null) {
+    result = result.where((e) =>
+      e.start_date.isAfter(selectedStartDate!.subtract(const Duration(days: 0))) &&
+      e.start_date.isBefore(selectedEndDate!.add(const Duration(days: 1)))
+    ).toList();
+  }
+
+  result.sort((a, b) => a.start_date.compareTo(b.start_date));
+
+  if (!listEquals(filteredEvents, result)) {
     setState(() {
       filteredEvents = result;
     });
   }
+}
+
 
   void applyFilters() async {
     final result = await _eventController.filterEvents(
@@ -219,6 +245,21 @@ Future<void> initHiveAndLoad() async {
       filteredEvents = allEvents;
     });
   }
+
+
+void applySearchFilter(String value) {
+  final results = allEvents
+    .where((e) => e.name.toLowerCase().contains(value.toLowerCase()))
+    .toList();
+
+
+  if (!listEquals(results, filteredEvents)) {
+    setState(() {
+      filteredEvents = results;
+    });
+  }
+}
+
 
   Widget styledDropdown<T>({
     required T? value,
@@ -292,14 +333,10 @@ Future<void> initHiveAndLoad() async {
                 prefixIcon: Icon(Icons.search, color: AppColors.secondary),
                 border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
               ),
-              onChanged: (value) {
-                setState(() {
+             onChanged: (value) {
                   clearFilters();
-                  filteredEvents = allEvents
-                    .where((e) => e.name.toLowerCase().contains(value.toLowerCase()))
-                    .toList();
-                });
-              },
+                  applySearchFilter(value);
+                },
             ),
             const SizedBox(height: 10),
             Align(
@@ -316,8 +353,10 @@ Future<void> initHiveAndLoad() async {
                         DropdownMenuItem(value: 'paid', child: Text("Paid")),
                       ],
                       onChanged: (value) {
-                        setState(() => selectedType = value);
-                        applyFilters();
+                        if (selectedType != value) {
+                            setState(() => selectedType = value);
+                            applyFilters();
+                          }
                       },
                     ) : styledDropdown<String>(
                       value: selectedType,
@@ -327,8 +366,10 @@ Future<void> initHiveAndLoad() async {
                         DropdownMenuItem(value: 'paid', child: Text("Paid")),
                       ],
                       onChanged: (value) {
-                        setState(() => selectedType = value);
-                        applyFiltersOffline();
+                        if (selectedType != value) {
+                            setState(() => selectedType = value);
+                            applyFiltersOffline();
+                          }
                       },
                     ),
                     const SizedBox(width: 8),
@@ -346,8 +387,10 @@ Future<void> initHiveAndLoad() async {
                         hint: "By Category",
                         items: snapshot.data!,
                         onChanged: (value) {
-                        setState(() => selectedCategoryId = value);
-                        applyFilters();
+                        if (selectedCategoryId != value) {
+                            setState(() => selectedCategoryId = value);
+                            applyFilters();
+                          }
                         },
                       );
                       },
@@ -359,8 +402,10 @@ Future<void> initHiveAndLoad() async {
                         child: Text(cat.name),
                       )).toList(),
                       onChanged: (value) {
-                        setState(() => selectedCategoryId = value);
-                        applyFiltersOffline();
+                        if (selectedCategoryId != value) {
+                            setState(() => selectedCategoryId = value);
+                            applyFiltersOffline();
+                          }
                       },
                     ),
                     const SizedBox(width: 8),
@@ -376,8 +421,10 @@ Future<void> initHiveAndLoad() async {
                             child: Text(skill.name),
                           )).toList(),
                           onChanged: (value) {
-                            setState(() => selectedSkillId = value);
-                            applyFilters();
+                            if (selectedSkillId != value) {
+                                setState(() => selectedSkillId = value);
+                                applyFilters();
+                              }
                           },
                         );
                       },
@@ -389,8 +436,10 @@ Future<void> initHiveAndLoad() async {
                         child: Text(skill.name),
                       )).toList(),
                       onChanged: (value) {
-                        setState(() => selectedSkillId = value);
-                        applyFiltersOffline();
+                        if (selectedSkillId != value) {
+                            setState(() => selectedSkillId = value);
+                            applyFiltersOffline();
+                          }
                       },
                     ),
                     const SizedBox(width: 8),
@@ -402,8 +451,10 @@ Future<void> initHiveAndLoad() async {
                         DropdownMenuItem(value: 'other', child: Text("Other")),
                       ],
                       onChanged: (value) {
-                        setState(() => selectedLocation = value);
-                        applyFilters();
+                        if (selectedLocation != value) {
+                            setState(() => selectedLocation = value);
+                            applyFilters();
+                          }
                       },
                     ) : styledDropdown<String>(
                       value: selectedLocation,
@@ -413,8 +464,10 @@ Future<void> initHiveAndLoad() async {
                         DropdownMenuItem(value: 'other', child: Text("Other")),
                       ],
                       onChanged: (value) {
-                        setState(() => selectedLocation = value);
-                        applyFiltersOffline();
+                      if (selectedLocation != value) {
+                            setState(() => selectedLocation = value);
+                            applyFiltersOffline();
+                          }
                       },
                     ),
                     const SizedBox(width: 8),
@@ -451,7 +504,7 @@ Future<void> initHiveAndLoad() async {
                             }
                           }
 
-                          if (pickedEnd != null) {
+                          if (pickedEnd != null && selectedStartDate != pickedStart && selectedEndDate != pickedEnd) {
                             setState(() {
                               selectedStartDate = pickedStart;
                               selectedEndDate = pickedEnd;
@@ -500,7 +553,7 @@ Future<void> initHiveAndLoad() async {
                             }
                           }
 
-                          if (pickedEnd != null) {
+                          if (pickedEnd != null && selectedStartDate != pickedStart && selectedEndDate != pickedEnd) {
                             setState(() {
                               selectedStartDate = pickedStart;
                               selectedEndDate = pickedEnd;
@@ -555,8 +608,10 @@ Future<void> initHiveAndLoad() async {
                 itemCount: filteredEvents.length,
                 itemBuilder: (context, index) {
                   final event = filteredEvents[index];
-                  return EventCard(event: event, onTap: () {
+                  return EventCard(event: event, onTap: () async {
                     print("Evento seleccionado: ${event.name}");
+                    await precacheImage(NetworkImage(event.image), context);
+                    logEventDetailClick(widget.userId, event.name);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -573,4 +628,12 @@ Future<void> initHiveAndLoad() async {
       ),
     );
   }
+}
+
+void logEventDetailClick(String userId, String eventName) {
+    FirebaseFirestore.instance.collection('eventdetail_clicks').add({
+      'user_id': userId,
+      'timestamp': FieldValue.serverTimestamp(),
+      'name': eventName,
+    });
 }

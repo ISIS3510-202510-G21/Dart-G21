@@ -14,6 +14,7 @@ import 'package:dart_g21/widgets/navigation_bar_host.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MyEventsPage extends StatefulWidget {
   final String userId;
@@ -240,4 +241,12 @@ void _navigateToDetail(String eventId) {
   }
 
 
+}
+
+void logEventDetailClick(String userId, String eventName) {
+    FirebaseFirestore.instance.collection('eventdetail_clicks').add({
+      'user_id': userId,
+      'timestamp': FieldValue.serverTimestamp(),
+      'name': eventName,
+    });
 }
