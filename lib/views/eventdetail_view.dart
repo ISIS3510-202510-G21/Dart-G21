@@ -55,9 +55,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     fetchEventData();
     _setupConnectivity();
     _checkInitialConnectivityAndLoad(); 
-
-    // Solo se llama una vez, evita recomposición del Future
-    _skillsFuture = _skillController.getSkillsByIds(_event?.skills ?? []);
   }
 
 void _setupConnectivity() {
@@ -154,6 +151,7 @@ Future<void> _loadOnlineData() async {
     if (fetchedEvent != null) {
       setState(() {
         _event = fetchedEvent;
+        _skillsFuture = _skillController.getSkillsByIds(_event?.skills ?? []);
       });
     }
 
