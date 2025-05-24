@@ -574,7 +574,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       await LocalStorageService.saveUserId(user_id!);
 
         Navigator.pushReplacement(
-=
+
             context,
             MaterialPageRoute(
               builder: (context) => SelectCategoriesScreen(userId: user_id!),
