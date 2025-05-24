@@ -366,7 +366,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Widget _buildFormFields() {
     return Column(
       children: [
-        _buildInputField(_nameController, 'Full name', Icons.person),
+        _buildInputField(_nameController, 'Full name', Icons.person, maxLength: 40),
         const SizedBox(height: 23),
         _buildInputField(_emailController, 'abc@email.com', Icons.email),
         const SizedBox(height: 23),
@@ -403,18 +403,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  Widget _buildInputField(TextEditingController controller, String hintText, IconData icon) {
-    return TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        prefixIcon: Icon(icon, color: Color(0xFFE6E6E6)),
-        hintText: hintText,
-        border: _buildInputBorder(),
-        enabledBorder: _buildInputBorder(),
-        focusedBorder: _buildInputBorder(),
-      ),
-    );
-  }
+ Widget _buildInputField(
+  TextEditingController controller,
+  String hintText,
+  IconData icon,
+  {int? maxLength}
+) {
+  return TextField(
+    controller: controller,
+    maxLength: maxLength,
+    decoration: InputDecoration(
+      prefixIcon: Icon(icon, color: Color(0xFFE6E6E6)),
+      hintText: hintText,
+      counterText: '', 
+      border: _buildInputBorder(),
+      enabledBorder: _buildInputBorder(),
+      focusedBorder: _buildInputBorder(),
+    ),
+  );
+}
 
   Widget _buildPasswordField(TextEditingController controller, String hintText, bool isVisible, Function(bool) onToggle) {
     return TextField(
