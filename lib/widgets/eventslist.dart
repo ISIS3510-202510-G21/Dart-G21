@@ -111,7 +111,8 @@ class _EventsListState extends State<EventsList> {
 
   Widget _buildEventCard(Event event) {
     return GestureDetector(
-    onTap: () {
+    onTap: () async{
+      await precacheImage(NetworkImage(event.image), context);
       logEventDetailClick(widget.userId, event.name);
       Navigator.push(
         context,

@@ -42,7 +42,7 @@ class _ProfilePageState extends State<ProfilePage> {
   String offlineDescription = "";
   String offlineFollowers = "";
   String offlineFollowing = "";
-  Profile profile_user = Profile(id: '', user_ref: '', headline: '', events_associated: [], picture: '', thumbnail: '', description: '', followers: [], following: [], interests: []);
+  Profile profile_user = Profile(id: '', user_ref: '', headline: '', events_associated: [], picture: '', description: '', followers: [], following: [], interests: []);
 
    @override
   void initState() {

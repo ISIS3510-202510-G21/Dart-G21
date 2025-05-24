@@ -194,8 +194,9 @@ void _setupConnectivity() {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {
+        onTap: () async {
           print("Evento seleccionado: \${event.name}");
+          await precacheImage(NetworkImage(event.image), context);
           logEventDetailClick(widget.userId, event.name);
           Navigator.push(
             context,

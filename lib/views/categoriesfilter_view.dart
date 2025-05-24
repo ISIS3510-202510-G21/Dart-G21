@@ -150,7 +150,8 @@ class _CategoriesFilterState extends State<CategoriesFilter> {
                       itemBuilder: (context, index) {
                         return EventCard(
                           event: filteredEvents[index],
-                          onTap: () {
+                          onTap: () async {
+                            await precacheImage(NetworkImage(filteredEvents[index].image), context);
                             logEventDetailClick(widget.userId, filteredEvents[index].name);
                             Navigator.push(
                               context,

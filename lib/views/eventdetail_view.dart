@@ -35,6 +35,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   final LocationController _locationController = LocationController();
   final SkillController _skillController = SkillController();
   late final Connectivity _connectivity;
+  late Future<List<String>> _skillsFuture;
 
   Event? _event;
   String creatorName = "";
@@ -54,6 +55,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     fetchEventData();
     _setupConnectivity();
     _checkInitialConnectivityAndLoad(); 
+
+    // Solo se llama una vez, evita recomposición del Future
+    _skillsFuture = _skillController.getSkillsByIds(_event?.skills ?? []);
   }
 
 void _setupConnectivity() {
@@ -130,9 +134,10 @@ Future<void> _loadOfflineData() async {
       //creatorImage =profile?.picture ?? "";
       //verificar si existe un profile antes de intentar acceder a sus propiedades
       if (profile != null) {
-        creatorImage = (profile.thumbnail != null && profile.thumbnail!.isNotEmpty)
+        creatorImage =profile?.picture ?? "";
+        /* creatorImage = (profile.thumbnail != null && profile.thumbnail!.isNotEmpty)
             ? profile.thumbnail!
-            : profile.picture;
+            : profile.picture; */
       } else {
         creatorImage = "";
       }
@@ -159,10 +164,10 @@ Future<void> _loadOnlineData() async {
         setState(() {
           creatorName = user?.name ?? "Unknown";
           creatorHeadline = profile.headline;
-          //creatorImage = profile.picture;
-          creatorImage = (profile.thumbnail != null && profile.thumbnail!.isNotEmpty)
+          creatorImage = profile.picture;
+          /* creatorImage = (profile.thumbnail != null && profile.thumbnail!.isNotEmpty)
             ? profile.thumbnail!
-            : profile.picture;
+            : profile.picture; */
         });
 
         // Guardamos para offline
@@ -189,10 +194,10 @@ Future<void> _loadOnlineData() async {
       if (profile != null) {
         final user = await _userController.getUserById(creatorId);
         setState(() {
-          //creatorImage = profile.picture;
-          creatorImage = (profile.thumbnail != null && profile.thumbnail!.isNotEmpty)
+          creatorImage = profile.picture;
+          /* creatorImage = (profile.thumbnail != null && profile.thumbnail!.isNotEmpty)
             ? profile.thumbnail!
-            : profile.picture;
+            : profile.picture; */
           creatorHeadline = profile.headline;
           creatorName = user?.name ?? "Unknown";
         });
@@ -455,7 +460,8 @@ Future<void> _loadOnlineData() async {
                       isConnected?    const Text("Skills", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)): const Text(""),
                       const SizedBox(height: 8),
                       isConnected? FutureBuilder<List<String>>(
-                        future: _skillController.getSkillsByIds(_event!.skills),
+                        //future: _skillController.getSkillsByIds(_event!.skills),
+                        future: _skillsFuture,
                         builder: (context, snapshot) {
                           if (!snapshot.hasData) return const Text("Loading...");
                           return Text(
