@@ -23,6 +23,7 @@ class _SignInScreenState extends State<SignInScreen> {
   
   bool _isPasswordVisible = false;
   bool _rememberMe = false;
+  bool _dialogShown = false;
   final _userController = UserController(); 
   final authController = AuthController();
 
@@ -77,10 +78,14 @@ class _SignInScreenState extends State<SignInScreen> {
   }
 
 
+
 void _checkForSavedUser() async {
-  if (!isConnected) {
+  if (!isConnected && !_dialogShown) {
     final savedUser = await authController.getLastLoggedInUser();
     if (savedUser != null && mounted) {
+      setState(() {
+      _dialogShown = true;
+    });
       showDialog(
         context: context,
         builder: (BuildContext context) {

@@ -110,9 +110,9 @@ Future<void> _checkInitialConnectivityAndLoad() async {
   initHiveAndLoad();
 }
 
-Future<List<Event>> getCachedEvents() async {
+Future<List<Event>> getCached5Events() async {
   final events = await _eventController.getCachedEvents();
-  return events;
+  return events.take(5).toList();
 }
 
 Future<void> initHiveAndLoad() async {
@@ -120,7 +120,7 @@ Future<void> initHiveAndLoad() async {
     isLoading = true;
   });
   if (!isConnected) {
-    final localEvents = await getCachedEvents();
+    final localEvents = await getCached5Events();
     final categories = await _categoryController.getCachedCategoriesDrift();
     final skills = await _skillController.getCachedSkillsDrift();
     final locations = await _locationController.getCachedLocationsDrift();
