@@ -7,7 +7,6 @@ import '../controllers/location_controller.dart';
 import '../core/colors.dart';
 import '../models/event.dart';
 import '../models/location.dart' as app_models;
-import '../data/database/firestore_service.dart';
 
 class EventsList extends StatefulWidget {
   final Stream<List<Event>> Function() eventsStreamProvider;
@@ -21,10 +20,12 @@ class EventsList extends StatefulWidget {
 }
 
 class _EventsListState extends State<EventsList> {
-  int _visibleCount = 5;
   int _lastEventsCount = 0;
   final ScrollController _scrollController = ScrollController();
   bool _hasLoggedInteraction = false;
+  final Map<String, app_models.Location?> _locationCache = {};
+  final ValueNotifier<int> _visibleCount = ValueNotifier<int>(5);
+
 
   @override
   void initState() {
@@ -34,10 +35,8 @@ class _EventsListState extends State<EventsList> {
 
   void _onScroll()  {
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 &&
-        _visibleCount < _lastEventsCount) {
-      setState(() {
-        _visibleCount += 5;
-      });
+        _visibleCount.value < _lastEventsCount) {
+      _visibleCount.value += 5;
     }
     if( !_hasLoggedInteraction){
       logInteraction();
@@ -71,39 +70,46 @@ class _EventsListState extends State<EventsList> {
 
           List<Event> events = snapshot.data!;
           _lastEventsCount = events.length;
-          int itemCount = (_visibleCount < events.length) ? _visibleCount + 1 : events.length + 1;
 
-          return ListView.builder(
-            controller: _scrollController,
-            scrollDirection: Axis.horizontal,
-            itemCount: itemCount,
-            itemBuilder: (context, index) {
-              if (index == itemCount - 1) {
-                return SizedBox(
-                  width: 200,
-                  child: Center(
-                    child: _visibleCount >= events.length
-                        ? const Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: Text(
-                        "There are no more events",
-                        style: TextStyle(
-                          color: AppColors.secondaryText,
-                          fontSize: 14,
-                        ),
+          return ValueListenableBuilder<int>(
+            valueListenable: _visibleCount,
+            builder: (context, count, _) {
+              int itemCount = (count < events.length) ? count + 1 : events.length + 1;
+
+              return ListView.builder(
+                controller: _scrollController,
+                scrollDirection: Axis.horizontal,
+                itemCount: itemCount,
+                itemBuilder: (context, index) {
+                  if (index == itemCount - 1) {
+                    return SizedBox(
+                      width: 200,
+                      child: Center(
+                        child: count >= events.length
+                            ? const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            "There are no more events",
+                            style: TextStyle(
+                              color: AppColors.secondaryText,
+                              fontSize: 14,
+                            ),
+                          ),
+                        )
+                            : const CircularProgressIndicator(),
                       ),
-                    )
-                        : const CircularProgressIndicator(),
-                  ),
-                );
-              }
+                    );
+                  }
 
-              return Padding(
-                padding: const EdgeInsets.only(left: 5.0),
-                child: _buildEventCard(events[index]),
+                  return Padding(
+                    padding: const EdgeInsets.only(left: 5.0),
+                    child: _buildEventCard(events[index]),
+                  );
+                },
               );
             },
           );
+
         },
       ),
     );
@@ -198,7 +204,7 @@ class _EventsListState extends State<EventsList> {
                         const SizedBox(width: 5),
                         Expanded(
                           child: FutureBuilder<app_models.Location?>(
-                            future: LocationController().getLocationById(event.location_id),
+                            future:  _getLocation(event.location_id),
                             builder: (context, snapshot) {
                               if (snapshot.connectionState == ConnectionState.waiting) {
                                 return const Text(
@@ -248,6 +254,13 @@ class _EventsListState extends State<EventsList> {
       'userId': widget.userId,
       'interactionType': widget.section,
     });
+  }
+
+  Future<app_models.Location?> _getLocation(String id) async {
+    if (_locationCache.containsKey(id)) return _locationCache[id];
+    final location = await LocationController().getLocationById(id);
+    _locationCache[id] = location;
+    return location;
   }
 
 }
