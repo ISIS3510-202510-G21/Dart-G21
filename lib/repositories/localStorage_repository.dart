@@ -3,18 +3,22 @@ import 'package:dart_g21/controllers/location_controller.dart';
 import 'package:dart_g21/controllers/profile_controller.dart';
 import 'package:dart_g21/controllers/skill_controller.dart';
 import 'package:dart_g21/controllers/user_controller.dart';
+import 'package:dart_g21/data/database/app_database.dart';
 import 'package:dart_g21/models/profile.dart';
 import 'package:dart_g21/models/user.dart';
+import 'package:dart_g21/repositories/drift_repository.dart';
+import 'package:drift/backends.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:dart_g21/models/event.dart';
 import 'package:dart_g21/models/category.dart';
-import 'package:dart_g21/models/location.dart';
-import 'package:dart_g21/models/skill.dart';
+import 'package:dart_g21/models/location.dart' as model_location;
+import 'package:dart_g21/models/skill.dart' as model_skill;
 import 'package:synchronized/synchronized.dart';
-
+import '../models/signup_draft.dart'; 
 import '../controllers/category_controller.dart';
 
 class LocalStorageRepository{
+  final driftRepository = DriftRepository(AppDatabase());
   static final LocalStorageRepository _instance = LocalStorageRepository._internal();
 
   factory LocalStorageRepository() => _instance;
@@ -49,7 +53,7 @@ class LocalStorageRepository{
 
   Future<void> saveEvents(List<Event> events, CategoryController categoryController,
                           LocationController locationController,
-                          ProfileController profileController, UserController userController) async {
+                          ProfileController profileController, UserController userController, SkillController skillController) async {
     await _lock.synchronized(() async {
       for (var event in events) {
         if (!_eventBox.containsKey(event.id)) {
@@ -63,11 +67,14 @@ class LocalStorageRepository{
 
         Category_event? category = await categoryController.getCategoryById(event.category);
         if (category != null) {
-          saveCategory(category);
+          //saveCategory(category);
+          driftRepository.saveCategoryDrift(category);
         }
-        Location? location = await locationController.getLocationById(event.location_id);
+        model_location.Location? location = (await locationController.getLocationById(event.location_id));
         if (location != null) {
-          saveLocation(location);
+          //saveLocation(location);
+          driftRepository.saveLocationDrift(location);
+
         }
         Profile? profile = await profileController.getProfileByUserId(event.creator_id).first;
         
@@ -79,6 +86,18 @@ class LocalStorageRepository{
           }
 
         }
+
+        if (event.skills != null) {
+          for (var skillId in event.skills!) {
+            model_skill.Skill? skill = await skillController.getSkillById(skillId);
+            if (skill != null) {
+              //saveSkill(skill);
+              driftRepository.saveSkillDrift(skill);
+            }
+          }
+        }
+
+
       }
     });
   }
@@ -103,16 +122,17 @@ class LocalStorageRepository{
     List<Event> eventsCity=[];
     Event event;
     for (event in events) {
-      Location? location = await getLocationById(event.location_id);
+      model_location.Location? location = await getLocationById(event.location_id);
+
       if (location != null && location.city == cityId) {
         eventsCity.add(event);
       }
     }
   }
 
-  Future<Location?> getLocationOfEvent(String eventId) async {
+  Future<model_location.Location?> getLocationOfEvent(String eventId) async {
     final eventJson = _eventBox.get(eventId);
-    Location? location;
+    model_location.Location? location;
     Event? event;
     if (eventJson != null) {
       event = Event.fromJson(Map<String, dynamic>.from(jsonDecode(eventJson)));
@@ -188,11 +208,12 @@ class LocalStorageRepository{
 
 
   /// ----------------------- Skills ------------------------------
-  List<Skill> getSkills() {
-    return _skillBox.values.map((e) => Skill.fromJson(Map<String, dynamic>.from(jsonDecode(e)))).toList();
+  List<model_skill.Skill> getSkills() {
+    return _skillBox.values.map((e) => model_skill.Skill.fromJson(Map<String, dynamic>.from(jsonDecode(e)))).toList();
   }
 
-  Future<void> saveSkills(List<Skill> skills) async {
+  Future<void> saveSkills(List<model_skill.Skill> skills) async {
+
     await _lock.synchronized(() async {
       for (var skill in skills) {
         if (!_skillBox.containsKey(skill.id)) {
@@ -204,11 +225,12 @@ class LocalStorageRepository{
   }
 
   /// ----------------------- Locations ------------------------------
-  List<Location> getLocations() {
-    return _locationBox.values.map((e) => Location.fromJson(Map<String, dynamic>.from(jsonDecode(e)))).toList();
+  List<model_location.Location> getLocations() {
+    return _locationBox.values.map((e) => model_location.Location.fromJson(Map<String, dynamic>.from(jsonDecode(e)))).toList();
   }
 
-  Future<void> saveLocations(List<Location> locations) async {
+  Future<void> saveLocations(List<model_location.Location> locations) async {
+
     await _lock.synchronized(() async {
       for (var loc in locations) {
         if (!_locationBox.containsKey(loc.id)) {
@@ -218,7 +240,8 @@ class LocalStorageRepository{
       }
     });
   }
-  Future<void> saveLocation(Location location) async {
+  Future<void> saveLocation(model_location.Location location) async {
+
     await _lock.synchronized(() async {
       if (!_locationBox.containsKey(location.id)) {
         await _locationBox.put(location.id, jsonEncode(location.toJson()));
@@ -228,10 +251,11 @@ class LocalStorageRepository{
 
 
 
-  Future<Location?> getLocationById(String locationId) async {
+  Future<model_location.Location?> getLocationById(String locationId) async {
     final locationJson = _locationBox.get(locationId);
     if (locationJson != null) {
-      return Location.fromJson(Map<String, dynamic>.from(jsonDecode(locationJson)));
+      return model_location.Location.fromJson(Map<String, dynamic>.from(jsonDecode(locationJson)));
+
     }
     return null;
   }
@@ -309,6 +333,54 @@ Future<void> saveUserName(String userId, String userName) async {
     }
     return null;
   }
+
+
+  Future<void> saveLastLoggedInUser({
+    required String userId,
+    required String email,
+    required String name,
+  }) async {
+    final box = await Hive.openBox('last_user');
+    await box.put('userId', userId);
+    await box.put('email', email);
+    await box.put('name', name);
   }
+
+  Future<Map<String, String>?> getLastLoggedInUser() async {
+    final box = await Hive.openBox('last_user');
+    if (box.containsKey('userId') && box.containsKey('email') && box.containsKey('name')) {
+      return {
+        'userId': box.get('userId'),
+        'email': box.get('email'),
+        'name': box.get('name'),
+      };
+    }
+    return null;
+  }
+
+// ------------------- Sign Up Draft -----------------------
+
+Future<void> saveSignUpDraft(SignUpDraft draft) async {
+  final box = await Hive.openBox('signup_draft');
+  await box.put('data', draft.toJson());
+}
+
+Future<SignUpDraft?> getSignUpDraft() async {
+  final box = await Hive.openBox('signup_draft');
+  final data = box.get('data');
+  if (data != null) {
+    return SignUpDraft.fromJson(Map<String, dynamic>.from(data));
+  }
+  return null;
+}
+
+Future<void> deleteSignUpDraft() async {
+  final box = await Hive.openBox('signup_draft');
+  await box.delete('data');
+}
+
+
+}
+
   
   

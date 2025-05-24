@@ -19,4 +19,5 @@ class LocalStorageService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('userId');
   }
+
 }

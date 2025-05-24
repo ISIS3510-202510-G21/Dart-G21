@@ -24,6 +24,8 @@ class EventController {
   final CategoryController _categoryController = CategoryController();
   final ProfileController _profileController = ProfileController();
   final UserController _userController = UserController();
+  final SkillController skillController = SkillController();
+
 
 
   Stream<List<Event>> getEventsStream() {
@@ -104,7 +106,7 @@ class EventController {
           ..sort((a, b) => a.start_date.compareTo(b.start_date));
 
         final top5 = upcoming.take(5).toList();
-        _localStorageRepository.saveEvents(top5,_categoryController,_locationController,_profileController, _userController);
+        _localStorageRepository.saveEvents(top5,_categoryController,_locationController,_profileController, _userController, skillController);
         yield upcoming;
       }
   }
@@ -193,7 +195,7 @@ class EventController {
           } else {
             final topEvents = cityEvents.toList();
             final top5 = topEvents.take(5).toList();
-            _localStorageRepository.saveEvents(top5,_categoryController, _locationController,_profileController, _userController);
+            _localStorageRepository.saveEvents(top5,_categoryController, _locationController,_profileController, _userController, skillController);
             yield topEvents;
           }
         }
@@ -241,7 +243,7 @@ class EventController {
       }
       yield bogotaEvents;
       final top5= bogotaEvents.take(5).toList();
-      await _localStorageRepository.saveEvents(top5,_categoryController,_locationController,_profileController, _userController);
+      await _localStorageRepository.saveEvents(top5,_categoryController,_locationController,_profileController, _userController, skillController);
     }
   }
 
@@ -387,7 +389,8 @@ class EventController {
   }
     
   Future<void> saveEventsToCache(List<Event> events) async {
-    await _localStorageRepository.saveEvents(events, _categoryController, _locationController, _profileController, _userController);
+    await _localStorageRepository.saveEvents(events, _categoryController, _locationController, _profileController, _userController, skillController);
+
   }
 
   Future<Event?> getEventByIdOffline(String eventId) async {

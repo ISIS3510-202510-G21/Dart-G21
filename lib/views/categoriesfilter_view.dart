@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/core/colors.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../controllers/category_controller.dart';
 import '../controllers/event_controller.dart';
 import '../models/category.dart';
@@ -72,7 +74,8 @@ class _CategoriesFilterState extends State<CategoriesFilter> {
     if (isConnected) {
       category = await _categoryController.getCategoryById(widget.categoryId);
     } else {
-      category = await _categoryController.getCategoryByIdOffline(widget.categoryId);
+      //category = await _categoryController.getCategoryByIdOffline(widget.categoryId);
+      category = await _categoryController.getCategoryByIdOfflineDrift(widget.categoryId);
     }
     if (mounted) {
       setState(() {
@@ -82,15 +85,28 @@ class _CategoriesFilterState extends State<CategoriesFilter> {
   }
 
   // Filtros y ordenamiento en memoria
-  Future<List<Event>> _applyFiltersAndSort(List<Event> events) async {
-    List<Event> filtered = events;
-    if (isSelected[0]) {
-      filtered = await _eventController.getFreeEventsStream(filtered).first;
-    } else if (isSelected[1]) {
-      filtered = await _eventController.getPaidEventsStream(filtered).first;
-    }
-    filtered = await _eventController.getEventsSortedByDate(filtered, selectedSort).first;
-    return filtered;
+  Future<List<Event>> _applyFiltersAndSort(List<Event> events) {
+    return Future.value(events)
+        .then((filtered) async {
+      if (isSelected[0]) {
+        filtered =
+        await _eventController.getFreeEventsStream(filtered).first;
+      } else if (isSelected[1]) {
+        filtered =
+        await _eventController.getPaidEventsStream(filtered).first;
+      }
+      return filtered;
+    })
+        .then((filtered) {
+      return _eventController
+          .getEventsSortedByDate(filtered, selectedSort)
+          .first;
+    })
+        .catchError((e, stack) {
+      print('Error en _applyFiltersAndSort: $e');
+      return <Event>[];
+    });
+
   }
 
   @override
@@ -135,15 +151,19 @@ class _CategoriesFilterState extends State<CategoriesFilter> {
                       itemBuilder: (context, index) {
                         return EventCard(
                           event: filteredEvents[index],
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => EventDetailScreen(
-                                eventId: filteredEvents[index].id,
-                                userId: widget.userId,
+                          onTap: () async {
+                            await precacheImage(NetworkImage(filteredEvents[index].image), context);
+                            logEventDetailClick(widget.userId, filteredEvents[index].name);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => EventDetailScreen(
+                                  eventId: filteredEvents[index].id,
+                                  userId: widget.userId,
+                                ),
                               ),
-                            ),
-                          ),
+                            );
+                          },
                         );
                       },
                     );
@@ -155,6 +175,14 @@ class _CategoriesFilterState extends State<CategoriesFilter> {
         ],
       ),
     );
+  }
+
+  void logEventDetailClick(String userId, String eventName) {
+    FirebaseFirestore.instance.collection('eventdetail_clicks').add({
+      'user_id': userId,
+      'timestamp': FieldValue.serverTimestamp(),
+      'name': eventName,
+    });
   }
 
   Widget _buildFilterBar() {

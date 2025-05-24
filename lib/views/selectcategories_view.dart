@@ -71,7 +71,9 @@ class _SelectCategoriesScreenState extends State<SelectCategoriesScreen> {
     );
     Navigator.pushReplacementNamed(context, '/home', arguments: widget.userId);
   } catch (e) {
-    print("⛔ Error saving categories: $e");
+
+    print("Error saving categories: $e");
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("Error saving categories")),
     );
@@ -88,88 +90,96 @@ class _SelectCategoriesScreenState extends State<SelectCategoriesScreen> {
         elevation: 0,
         toolbarHeight: 0, //ocultar la appbar visualmente
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "Choose up to 5 categories you're interested in",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: StreamBuilder<List<Category_event>>(
-                stream: _categoryController.getCategoriesStream(),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  final categories = snapshot.data!;
-                  return GridView.count(
-                    crossAxisCount: 2,
-                    //Aca podemos ajustar tamaño de los cuadros
-                    childAspectRatio: 1.0,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    children: categories.map((category) {
-                      final isSelected = selectedCategories.contains(category.id);
-                      final icon = categoryIconMapper[category.name] ?? LucideIcons.tag;
 
-                      return GestureDetector(
-                        onTap: () => toggleSelection(category.id),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: isSelected ? AppColors.secondary : Colors.grey.shade300,
-                              width: 2,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            color: isSelected ? AppColors.secondary.withOpacity(0.1) : Colors.white,
-                          ),
-                          padding: const EdgeInsets.all(10),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              //Aca podemos ajustar tamaño de los cuadros
-                              Icon(icon, size: 75, color: AppColors.secondary),
-                              const SizedBox(height: 10),
-                              Text(
-                                category.name,
-                                textAlign: TextAlign.center,
-                                //Aca podemos ajustar tamaño de los cuadros
-                                style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w500),
-                              ),
-                            ],
-                          ),
+      body: SafeArea(
+  child: SingleChildScrollView(
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Choose up to 5 categories you're interested in",
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 24),
+        StreamBuilder<List<Category_event>>(
+          stream: _categoryController.getCategoriesStream(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final categories = snapshot.data!;
+            return GridView.count(
+              crossAxisCount: 2,
+              childAspectRatio: 1.0,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              shrinkWrap: true, 
+              physics: const NeverScrollableScrollPhysics(), // Para que no colisione con el scroll externo
+              children: categories.map((category) {
+                final isSelected = selectedCategories.contains(category.id);
+                final icon = categoryIconMapper[category.name] ?? LucideIcons.tag;
+
+                return GestureDetector(
+                  onTap: () => toggleSelection(category.id),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: isSelected ? AppColors.secondary : Colors.grey.shade300,
+                        width: 2,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      color: isSelected ? AppColors.secondary.withOpacity(0.1) : Colors.white,
+                    ),
+                    padding: const EdgeInsets.all(10),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(icon, size: 60, color: AppColors.secondary),
+                        const SizedBox(height: 10),
+                        Text(
+                          category.name,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                         ),
-                      );
-                    }).toList(),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton(
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            );
+          },
+        ),
+        const SizedBox(height: 20),
+        Center(
+          child: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.9,
+            child: ElevatedButton(
               onPressed: selectedCategories.isEmpty ? null : _saveSelection,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.secondary,
-                padding: const EdgeInsets.symmetric(horizontal: 200, vertical: 20),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
                 ),
               ),
               child: const Text(
                 "Continue",
-                style: TextStyle(color: Colors.white, fontSize: 16),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-          ],
+          ),
         ),
-      ),
+      ],
+    ),
+  ),
+),
     );
+
   }
 }

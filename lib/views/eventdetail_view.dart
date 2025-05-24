@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dart_g21/models/category.dart';
+import 'package:dart_g21/views/usersbyevent_view.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/controllers/event_controller.dart';
 import 'package:dart_g21/controllers/user_controller.dart';
@@ -35,6 +36,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   final LocationController _locationController = LocationController();
   final SkillController _skillController = SkillController();
   late final Connectivity _connectivity;
+  late Future<List<String>> _skillsFuture;
 
   Event? _event;
   String creatorName = "";
@@ -127,11 +129,24 @@ Future<void> _loadOfflineData() async {
     setState(() {
       creatorName = name ?? "Unknown";
       creatorHeadline = profile?.headline ?? "No headline provided";
-      creatorImage =profile?.picture ?? "";
+
+      //creatorImage =profile?.picture ?? "";
+      //verificar si existe un profile antes de intentar acceder a sus propiedades
+      if (profile != null) {
+        creatorImage =profile?.picture ?? "";
+        /* creatorImage = (profile.thumbnail != null && profile.thumbnail!.isNotEmpty)
+            ? profile.thumbnail!
+            : profile.picture; */
+      } else {
+        creatorImage = "";
+      }
     });
 
-    _category = await _categoryController.getCategoryByIdOffline(_event!.category);
-    _location = await _locationController.getLocationByIdOffline(_event!.location_id);
+   // _category = await _categoryController.getCategoryByIdOffline(_event!.category);
+    _category = await _categoryController.getCategoryByIdOfflineDrift(_event!.category);
+   // _location = await _locationController.getLocationByIdOffline(_event!.location_id);
+    _location = await _locationController.getLocationByIdOfflineDrift(_event!.location_id);
+
 }
 
 Future<void> _loadOnlineData() async {
@@ -139,6 +154,9 @@ Future<void> _loadOnlineData() async {
     if (fetchedEvent != null) {
       setState(() {
         _event = fetchedEvent;
+
+        _skillsFuture = _skillController.getSkillsByIds(_event?.skills ?? []);
+
       });
     }
 
@@ -150,6 +168,10 @@ Future<void> _loadOnlineData() async {
           creatorName = user?.name ?? "Unknown";
           creatorHeadline = profile.headline;
           creatorImage = profile.picture;
+          /* creatorImage = (profile.thumbnail != null && profile.thumbnail!.isNotEmpty)
+            ? profile.thumbnail!
+            : profile.picture; */
+
         });
 
         // Guardamos para offline
@@ -177,6 +199,9 @@ Future<void> _loadOnlineData() async {
         final user = await _userController.getUserById(creatorId);
         setState(() {
           creatorImage = profile.picture;
+          /* creatorImage = (profile.thumbnail != null && profile.thumbnail!.isNotEmpty)
+            ? profile.thumbnail!
+            : profile.picture; */
           creatorHeadline = profile.headline;
           creatorName = user?.name ?? "Unknown";
         });
@@ -299,29 +324,39 @@ Future<void> _loadOnlineData() async {
                           // SEPARADOR
                           Container(width: 1, height: 40, color: Colors.grey.shade300),
 
-                          // Location
-                          FutureBuilder<Location?>(
-                            future: _locationController.getLocationById(_event!.location_id),
-                            builder: (context, snapshot) {
-                              return Row(
+                          // Cambio de Location a Attendee!
+                          Row(
                                 children: [
-                                  const SizedBox(width: 12),
-                                  const Icon(Icons.location_on_outlined, color: Colors.grey),
+                                  const Icon(Icons.people_alt_outlined, size: 25, color: Colors.grey),
+
                                   const SizedBox(width: 6),
                                   Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Text("Location", style: TextStyle(fontSize: 14)),
-                                      Text(
-                                        snapshot.data?.address ?? "Unknown",
-                                        style: const TextStyle(fontSize: 14, color: AppColors.secondary),
-                                      ),
+                                      const Text("Attendees", style: TextStyle(fontSize: 14)),
+                                        GestureDetector(
+                                        onTap: () {
+
+                                            Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => AttendeesView(attendeeIds: _event!.attendees),
+                                          ),
+                                          );
+                                        
+                                         
+                                        },
+                                        child: Text(
+                                          "${_event!.attendees.length} people",
+                                          style: const TextStyle(color: AppColors.secondary, fontSize: 13, decoration: TextDecoration.underline),
+                                        ),
+                                        )
+                                      
                                     ],
                                   ),
                                 ],
-                              );
-                            },
-                          ),
+                              ),
+
                         ],
                       ),
                     ],
@@ -401,7 +436,14 @@ Future<void> _loadOnlineData() async {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      Align(
+                      daysLeft>=0 ?Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          "$daysLeft days to go",
+                          style: const TextStyle(color: Color.fromARGB(255, 20, 104, 23), fontSize: 14),
+                        ),
+                      ):Align(
+
                         alignment: Alignment.centerLeft,
                         child: Text(
                           "$daysLeft days left",
@@ -430,25 +472,26 @@ Future<void> _loadOnlineData() async {
                       const SizedBox(height: 8),
                       Text(_event!.description, style: const TextStyle(fontSize: 14)),
                       const SizedBox(height: 16),
+                      const Text("Location", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                      Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text("${_location?.address}, ${_location?.city}", style: const TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+                                if (_location?.details != null && _location!.details.isNotEmpty)
+                                  Text(_location?.details??"Unknown", style: const TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+                              ],
+                            ),
+                      const SizedBox(height: 16),
                       const Text("Category", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                       const SizedBox(height: 8),
-                      // Category
-                      FutureBuilder<Category_event?>(
-                        future: _categoryController.getCategoryById(_event!.category),
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData) return const Text("Loading...");
-                          final category = snapshot.data;
-                          return Text(
-                            category?.name ?? "Unknown",
-                            style: const TextStyle(fontSize: 14, color: AppColors.secondary),
-                          );
-                        },
-                      ),
+                      Text(_category?.name ?? "Unknown",style: const TextStyle(fontSize: 14, color: AppColors.secondary),), //CAMBIO PARA INTEGRAR
+
                       const SizedBox(height: 16),
                       isConnected?    const Text("Skills", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)): const Text(""),
                       const SizedBox(height: 8),
                       isConnected? FutureBuilder<List<String>>(
-                        future: _skillController.getSkillsByIds(_event!.skills),
+                        future: _skillsFuture,
+
                         builder: (context, snapshot) {
                           if (!snapshot.hasData) return const Text("Loading...");
                           return Text(
@@ -458,7 +501,7 @@ Future<void> _loadOnlineData() async {
                         },
                       ): const Text(
                         "",
-                      ),
+                      ),   
                     ],
                   ),
                 ),
@@ -571,13 +614,19 @@ Future<void> _loadOnlineData() async {
                 ),
                 child: const Text("Book Event", style: TextStyle(color: Colors.white, fontSize: 16)),
               ),
-            ): SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: Text("")
-            )
-            ,
-
+            ): Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    "You cannot book this event without an internet connection.",
+                    style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
           ],
         ),
       ),

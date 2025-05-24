@@ -18,7 +18,8 @@ import '../widgets/navigation_bar_host.dart';
 import '../core/colors.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
-
+import 'createevents_view.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'categoriesfilter_view.dart';
 import 'myevents_view.dart';
 
@@ -119,19 +120,24 @@ class _HomePage extends State<HomePage> {
                       ? _eventController.getUpcomingEventsOnlineStream()
                       : _eventController.getUpcomingEventsOfflineStream(),
                   userId: widget.userId,
+                  section: "Upcoming",
+
                 ),
                 _buildSectionTitle("Nearby Events"),
                 EventsList(
                   eventsStreamProvider: () => isConnected
                       ?_eventController.getTopNearbyEventsOnlineStream(_location)
                       : _eventController.getTopNearbyEventsOfflineStream(_location),
-                    userId: widget.userId),
+                    userId: widget.userId,
+                    section: "Nearby",
+                ),
                 _buildSectionTitle("You Might Like"),
                 EventsList(
                   eventsStreamProvider: () => isConnected
                       ?_eventController.getRecommendedEventsStreamForUserOnline(widget.userId)
                       :_eventController.getRecommendedEventsStreamForUserOffline(),
-                    userId: widget.userId
+                    userId: widget.userId,
+                    section: "Recommendations",
                 ),
                 SizedBox(height: 20),
               ],
@@ -201,6 +207,8 @@ class _HomePage extends State<HomePage> {
                   padding: const EdgeInsets.symmetric(horizontal: 5),
                   child: ElevatedButton(
                       onPressed: () {
+                        logInteraction("Categories");
+
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -227,7 +235,9 @@ class _HomePage extends State<HomePage> {
     if(isConnected){
       return _categoryController.getCategoriesStream();
     }else{
-      return _categoryController.getCategoriesStreamOffline();
+      //return _categoryController.getCategoriesStreamOffline();
+      return _categoryController.getCachedCategoriesDrift().asStream();
+
     }
   }
 
@@ -362,6 +372,9 @@ class _HomePage extends State<HomePage> {
         ),
         style: const TextStyle(color: Colors.white),
         onTap: () {
+
+          logInteraction("Search");
+
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -396,6 +409,8 @@ class _HomePage extends State<HomePage> {
       child: FloatingActionButton(
         backgroundColor: AppColors.secondary,
         onPressed: () {
+          logInteraction("Chatbot");
+          logChatbotClick(widget.userId); 
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => ChatBotPage(title: "ChatBot",)), 
@@ -410,10 +425,22 @@ class _HomePage extends State<HomePage> {
     );
   }
 
+
+  void logChatbotClick(String userId) {
+    FirebaseFirestore.instance.collection('chatbot_clicks').add({
+      'user_id': userId,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+  }
+
+
   @override
   void initState() {
     super.initState();
     setUpConnectivity();
+
+    _checkInitialConnectivityAndLoad();
+
     _determinePosition();
   }
 
@@ -427,9 +454,99 @@ class _HomePage extends State<HomePage> {
         setState(() {
           isConnected = currentlyConnected;
         });
-      }
+      };
+      if (!prev && currentlyConnected) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkEventDraft();
+    });
+      };
     });
   }
+
+  Future<void> _checkInitialConnectivityAndLoad() async {
+  final result = await Connectivity().checkConnectivity();
+  setState(() {
+    isConnected = !result.contains(ConnectivityResult.none);
+  });
+
+
+}
+
+  void _checkEventDraft() async {
+    final EventController _eventController = EventController();
+    final draft = await _eventController.getEventDraft();
+    print("DRAFT ENCONTRADO: ${draft?.name}");
+
+    if (draft != null && draft.name != null && draft.name!.isNotEmpty) {
+      print("Mostrando banner...");
+
+      showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return Dialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              backgroundColor: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.warning_amber_rounded, size: 48, color: Colors.amber),
+                    const SizedBox(height: 16),
+                    const Text(
+                      "You have an unfinished event",
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      "Would you like to continue editing it?",
+                      style: TextStyle(fontSize: 14),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        TextButton(
+                          style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+                          onPressed: () async {
+                            await _eventController.deleteEventDraft();
+                            Navigator.pop(context); // Close the dialog
+                          },
+                          child: const Text("Discard"),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.secondary,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context); // Close the dialog
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => CreateEventScreen(userId: widget.userId),
+                              ),
+                            );
+                          },
+                          child: const Text("Yes, resume", style: TextStyle(color: Colors.white)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+        } else {
+          print("No hay draft o el nombre está vacío");
+
+    }
+  }
+
+
 
   @override
   void dispose() {
@@ -464,5 +581,14 @@ class _HomePage extends State<HomePage> {
       }
     }
   }
+
+  Future<void> logInteraction(String interaction) async {
+    await FirebaseFirestore.instance.collection('home_interactions').add({
+      'timestamp': FieldValue.serverTimestamp(),
+      'userId': widget.userId,
+      'interactionType': interaction,
+    });
+  }
+
 
 }

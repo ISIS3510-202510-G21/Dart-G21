@@ -1,4 +1,6 @@
-import 'package:dart_g21/models/location.dart';
+import 'package:dart_g21/data/database/app_database.dart';
+import 'package:dart_g21/models/location.dart' as model;
+import 'package:dart_g21/repositories/drift_repository.dart';
 import 'package:dart_g21/repositories/location_repository.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geocoding/geocoding.dart' as geo;
@@ -7,20 +9,22 @@ import '../repositories/localStorage_repository.dart';
 class LocationController {
   final LocationRepository _locationRepository = LocationRepository();
   final LocalStorageRepository _localStorageRepository = LocalStorageRepository();
+  final DriftRepository _driftRepository = DriftRepository(AppDatabase());
 
-  Stream<List<Location>> getLocationsStream() {
+
+  Stream<List<model.Location>> getLocationsStream() {
     return _locationRepository.getLocationsStream();
   }
 
-  Future<Location?> getLocationById(String locationId) async {
+  Future<model.Location?> getLocationById(String locationId) async {
     return await _locationRepository.getLocationById(locationId);
   }
 
-  Future<void> addLocation(Location location) async {
+  Future<void> addLocation(model.Location location) async {
     await _locationRepository.addLocation(location);
   }
 
-  Future<void> updateLocation(Location location) async {
+  Future<void> updateLocation(model.Location location) async {
     await _locationRepository.updateLocation(location);
   }
 
@@ -28,19 +32,21 @@ class LocationController {
     await _locationRepository.deleteLocation(locationId);
   }
 
-  Stream<Location?> getLocationByAddress(String address) {
+
+  Stream<model.Location?> getLocationByAddress(String address) {
     return _locationRepository.getLocationByAddress(address);
   }
 
-  Future<String?> addLocationAndReturnId(Location location) async {
+  Future<String?> addLocationAndReturnId(model.Location location) async {
     await addLocation(location);
-    Location? createdLocation = await getLocationByAddressAndCity(location.address, location.city);
+    model.Location? createdLocation = await getLocationByAddressAndCity(location.address, location.city);
     return createdLocation?.id; 
   }
 
-  Future<Location?> getLocationByAddressAndCity(String address, String city) async {
-    Stream<List<Location>> locationsStream = getLocationsStream();
-    List<Location> locations = await locationsStream.first;
+  Future<model.Location?> getLocationByAddressAndCity(String address, String city) async {
+    Stream<List<model.Location>> locationsStream = getLocationsStream();
+    List<model.Location> locations = await locationsStream.first;
+
     try {
       return locations.firstWhere((loc) => loc.address == address && loc.city == city);
     } catch (e) {
@@ -51,7 +57,7 @@ class LocationController {
   /// Obtener coordenadas a partir de una dirección
   Future<LatLng?> getCoordinatesFromLocationId(String locationId) async {
     try {
-      Location? location = await getLocationById(locationId);
+      model.Location? location = await getLocationById(locationId);
       if (location == null || location.address.isEmpty) {
         print("No se encontró la ubicación para location_id $locationId");
         return null;
@@ -71,17 +77,19 @@ class LocationController {
     return await _locationRepository.getLocationIdsByUniversity(isUniversity);
   }
 
-  Future<List<Location>> getCachedLocations() async {
+
+  Future<List<model.Location>> getCachedLocations() async {
     return _localStorageRepository.getLocations();
   }
 
-  Future<void> saveLocationsToCache(List<Location> locations) async {
+  Future<void> saveLocationsToCache(List<model.Location> locations) async {
     await _localStorageRepository.saveLocations(locations);
   }
 
-  Future<Location?> getLocationByIdOffline(String locationId) async {
+  Future<model.Location?> getLocationByIdOffline(String locationId) async {
     try {
-      List<Location> cachedLocations = await _localStorageRepository.getLocations();
+      List<model.Location> cachedLocations = await _localStorageRepository.getLocations();
+
       for (final location in cachedLocations) {
         if (location.id == locationId) {
           return location;
@@ -92,4 +100,23 @@ class LocationController {
       print('Error obteniendo ubicación offline: $e');
       return null;
 }}
+
+  Future<void> saveLocationsToCacheDrift(List<model.Location> locations) async {
+    await _driftRepository.saveLocationsDrift(locations);
+  }
+
+  Future<List<model.Location>> getCachedLocationsDrift() async {
+    return await _driftRepository.getLocationsDrift();
+  }
+
+  Future<void> saveLocationDrift(model.Location location) async {
+    await _driftRepository.saveLocationDrift(location);
+  }
+
+  Future<model.Location?> getLocationByIdOfflineDrift(String id) async {
+    return await _driftRepository.getLocationByIdDrift(id);
+  }
+
+
+
 }
