@@ -7,6 +7,7 @@ import 'package:dart_g21/models/event.dart';
 import 'package:dart_g21/models/profile.dart';
 import 'package:dart_g21/models/user.dart';
 import 'package:dart_g21/views/eventdetail_view.dart';
+import 'package:dart_g21/widgets/eventcardMyEvents_view.dart';
 import 'package:flutter/material.dart';
 import 'package:dart_g21/core/colors.dart';
 import 'package:dart_g21/widgets/navigation_bar_host.dart';
@@ -155,23 +156,72 @@ void _setupConnectivity() {
     );
   }
 
-  Widget _buildListView() {
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      children: [
-        buildSectionTitle("Upcoming Events"),
-        ...upcomingEvents.map((event) => buildEventCard(event, profileId)),
+Widget _buildListView() {
+  return ListView(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+    children: [
+      buildSectionTitle("Upcoming Events"),
+      ...upcomingEvents.map((event) => EventCard(
+           event: event,
+            profileId: profileId,
+            isConnected: isConnected,
+            onDelete: () => _handleDelete(event.id),
+            onTap: () => _navigateToDetail(event.id),
+          )),
+      const SizedBox(height: 20),
+      buildSectionTitle("Previous Events"),
+      ...previousEvents.map((event) => EventCard(
+            event: event,
+            profileId: profileId,
+            isConnected: isConnected,
+            onDelete: () => _handleDelete(event.id),
+            onTap: () => _navigateToDetail(event.id),
+          )),
+      if (userType != "Attendee") ...[
         const SizedBox(height: 20),
-        buildSectionTitle("Previous Events"),
-        ...previousEvents.map((event) => buildEventCard(event, profileId)),
-        if (userType != "Attendee") ...[
-          const SizedBox(height: 20),
-          buildSectionTitle("Created By Me"),
-          ...eventsCreated.map((event) => buildEventCard(event, profileId)),
-        ]
-      ],
+        buildSectionTitle("Created By Me"),
+        ...eventsCreated.map((event) => EventCard(
+            event: event,
+            profileId: profileId,
+            isConnected: isConnected,
+            onDelete: () => _handleDelete(event.id),
+            onTap: () => _navigateToDetail(event.id),
+          )),
+      ]
+    ],
+  );
+}
+
+void _handleDelete(String eventId) async {
+  try {
+    await _profileController.removeEventFromProfile(profileId, eventId);
+    setState(() {
+      upcomingEvents.removeWhere((e) => e.id == eventId);
+      previousEvents.removeWhere((e) => e.id == eventId);
+      eventsCreated.removeWhere((e) => e.id == eventId);
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Event removed from My Events")),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Error removing event")),
     );
   }
+}
+
+void _navigateToDetail(String eventId) {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => EventDetailScreen(
+        eventId: eventId,
+        userId: widget.userId,
+      ),
+    ),
+  );
+}
 
   Widget _buildOfflineView() {
     final List<dynamic> u = myEventsBox.get('${widget.userId}_upcoming', defaultValue: []);
@@ -190,156 +240,7 @@ void _setupConnectivity() {
     );
   }
 
- Widget buildEventCard(Event event, String profileId) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () async {
-          print("Evento seleccionado: \${event.name}");
-          await precacheImage(NetworkImage(event.image), context);
-          logEventDetailClick(widget.userId, event.name);
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => EventDetailScreen(
-                eventId: event.id,
-                userId: widget.userId,
-               ),
-            ),
-          );
-        },
-        borderRadius: BorderRadius.circular(12),
-        splashColor: Colors.blue.withOpacity(0.2),
-        highlightColor: Colors.blue.withOpacity(0.1),
-        child: Card(
-          margin: EdgeInsets.symmetric(vertical: 8),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          elevation: 4,
-          child: Padding(
-            padding: EdgeInsets.all(12),
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: CachedNetworkImage(
-                          imageUrl: event.image,
-                          width: 120,
-                          height: 120,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(
-                            width: 120,
-                            height: 120,
-                            color: Colors.grey.shade200,
-                            child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                          ),
-                          errorWidget: (context, url, error) => Container(
-                            width: 120,
-                            height: 120,
-                            decoration: BoxDecoration(
-                              color: AppColors.primary,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(Icons.image_not_supported, size: 40, color: Colors.grey),
-                          ),
-                          cacheManager: CacheManager(
-                            Config(
-                              'customCacheKeyMyEvents',
-                              stalePeriod: const Duration(days: 7),
-                              maxNrOfCacheObjects: 100,
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      if (event.cost != 0)
-                        Icon(Icons.payments, color: AppColors.textPrimary),
-                    ],
-                  ),
 
-                  SizedBox(width: 12),
-
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: 10),
-                         Text(
-                      "${_formatDate(event.start_date)} - ${_formatTime(event.start_date)}",
-                      style: const TextStyle(
-                        color: AppColors.secondary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                        SizedBox(height: 15),
-                        Text(
-                          event.name,
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.flag_outlined, color: AppColors.textPrimary),
-                        onPressed: () {},
-                      ),
-                      Spacer(),
-
-                      isConnected? IconButton(
-                        icon: Icon(Icons.delete_outline, color: AppColors.textPrimary),
-                        onPressed: () async {
-                          print("Eliminando evento: \${event.name}");
-
-                          try {
-                            await _profileController.removeEventFromProfile(profileId, event.id);
-                            setState(() {
-                              upcomingEvents.removeWhere((e) => e.id == event.id);
-                              previousEvents.removeWhere((e) => e.id == event.id);
-                            });
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(" Evento eliminado de My Events"),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
-                          } catch (e) {
-                            print("Error al eliminar evento: \$e");
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text("Error eliminando evento"),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
-                          }
-                        },
-                      ): IconButton(
-                        icon: Icon(Icons.delete_outline, color: AppColors.icons),
-                        onPressed: () async {},
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-  String _formatDate(DateTime date) => "${_getWeekday(date.weekday)}, ${_getMonth(date.month)} ${date.day}";
-  String _formatTime(DateTime date) => "${date.hour % 12 == 0 ? 12 : date.hour % 12}:${date.minute.toString().padLeft(2, '0')} ${date.hour < 12 ? 'AM' : 'PM'}";
-  String _getWeekday(int day) => ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][day - 1];
-  String _getMonth(int month) => ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][month - 1];
 }
 
 void logEventDetailClick(String userId, String eventName) {
