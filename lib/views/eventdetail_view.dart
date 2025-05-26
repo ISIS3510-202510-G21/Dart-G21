@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dart_g21/models/category.dart';
 import 'package:dart_g21/views/usersbyevent_view.dart';
@@ -225,6 +226,14 @@ Future<void> _loadOnlineData() async {
     return months[month - 1];
   }
 
+    void logAttendeesClick(String userId) {
+    FirebaseFirestore.instance.collection('attendees_clicks').add({
+      'user_id': userId,
+      'timestamp': FieldValue.serverTimestamp(),
+      'screen': 'eventDetail',
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_event == null) {
@@ -336,7 +345,7 @@ Future<void> _loadOnlineData() async {
                                       const Text("Attendees", style: TextStyle(fontSize: 14)),
                                         GestureDetector(
                                         onTap: () {
-
+                                          logAttendeesClick(widget.userId);
                                             Navigator.push(
                                           context,
                                           MaterialPageRoute(

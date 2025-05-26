@@ -70,6 +70,13 @@ class _SuccessfulregistrationViewState extends State<SuccessfulregistrationView>
     });
   }
 
+  void logAttendeesClick(String userId) {
+    FirebaseFirestore.instance.collection('attendees_clicks').add({
+      'user_id': userId,
+      'timestamp': FieldValue.serverTimestamp(),
+      'screen': 'registration',
+    });
+  }
   @override
   Widget build(BuildContext context) {
     if (event == null) {
@@ -200,7 +207,7 @@ class _SuccessfulregistrationViewState extends State<SuccessfulregistrationView>
                                       const Text("Attendees", style: TextStyle(color: AppColors.secondaryText, fontWeight: FontWeight.w600, fontSize: 14)),
                                         GestureDetector(
                                         onTap: () {
-
+                                          logAttendeesClick(widget.userId);
                                           
                                             Navigator.push(
                                           context,
