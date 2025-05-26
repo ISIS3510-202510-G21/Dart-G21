@@ -86,7 +86,7 @@ await SystemChrome.setPreferredOrientations([
         categoryId: args,
         userId: ModalRoute.of(context)!.settings.arguments as String,
       ); },  // Pantalla de filtro por categoría
-      'selectCategories': (context)  {
+      '/selectCategories': (context)  {
       final args = ModalRoute.of(context)!.settings.arguments as String;
       return SelectCategoriesScreen(userId: args);
       },

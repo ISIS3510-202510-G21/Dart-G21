@@ -18,18 +18,22 @@ class _SplashScreenState extends State<SplashScreen> {
 
 Future<void> _checkLoginStatus() async {
   await Future.delayed(const Duration(seconds: 1));
-
   final userId = await LocalStorageService.getUserId();
 
-    if (userId != null) {
-      print("Sesión persistente detectada con userId: $userId");
+  if (userId != null && userId.isNotEmpty) {
+    final completed = await LocalStorageService.hasCompletedCategories(userId);
+    if (completed) {
       Navigator.pushReplacementNamed(context, '/home', arguments: userId);
     } else {
-      print("No hay sesión activa. Redirigiendo a SignIn.");
-      Navigator.pushReplacementNamed(context, '/signin');
+      await LocalStorageService.setPendingCategoryNotice(true);
+      Navigator.pushReplacementNamed(context, '/selectCategories', arguments: userId);
     }
-
+  } else {
+    Navigator.pushReplacementNamed(context, '/signin');
+  }
 }
+
+
 
 
   @override

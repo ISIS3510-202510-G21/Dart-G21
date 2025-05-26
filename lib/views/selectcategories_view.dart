@@ -5,7 +5,11 @@ import 'package:dart_g21/models/category.dart';
 import 'package:dart_g21/models/profile.dart';
 import 'package:dart_g21/controllers/profile_controller.dart';
 import 'package:dart_g21/controllers/category_controller.dart';
+import 'package:dart_g21/controllers/auth_controller.dart'; // Import AuthController
 import 'package:lucide_icons/lucide_icons.dart'; // Iconos tipo Material
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'dart:async';
+import 'package:dart_g21/services/local_storage_service.dart';
 
 class SelectCategoriesScreen extends StatefulWidget {
   final String userId;
@@ -22,6 +26,12 @@ class _SelectCategoriesScreenState extends State<SelectCategoriesScreen> {
 
   List<String> selectedCategories = [];
   final int maxSelection = 5;
+
+  bool isConnected = true;
+  late Connectivity _connectivity;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+  bool _dialogShown = false;
+
 
   final Map<String, IconData> categoryIconMapper = {
     "Software": LucideIcons.code,
@@ -49,6 +59,92 @@ class _SelectCategoriesScreenState extends State<SelectCategoriesScreen> {
     "Psychology": LucideIcons.brain,
   };
 
+  @override
+  void initState() {
+    super.initState();
+    _setupConnectivity();
+    _checkInitialConnectivity();
+    _loadInitialData();
+    _checkRecoveryBanner(); 
+  }
+
+  bool _showRecoveryBanner = false;
+
+  void _checkRecoveryBanner() async {
+    final showBanner = await LocalStorageService.getPendingCategoryNotice();
+    if (showBanner && mounted) {
+      setState(() {
+        _showRecoveryBanner = true;
+      });
+      await LocalStorageService.clearPendingCategoryNotice();
+    }
+  }
+  void _setupConnectivity() {
+    _connectivity = Connectivity();
+    _connectivitySubscription = _connectivity.onConnectivityChanged.listen((results) async {
+      final currentlyConnected = !results.contains(ConnectivityResult.none);
+      setState(() {
+        isConnected = currentlyConnected;
+      });
+      if (currentlyConnected) {
+        _checkForCategoryDraft();
+      }
+    });
+  }
+
+  Future<void> _checkInitialConnectivity() async {
+    final result = await Connectivity().checkConnectivity();
+    setState(() {
+      isConnected = !result.contains(ConnectivityResult.none);
+    });
+    if (isConnected) {
+      _checkForCategoryDraft();
+    }
+  }
+
+  void _loadInitialData() {
+    if (!isConnected) {
+      _checkForCategoryDraft();
+    }
+  }
+
+  void _checkForCategoryDraft() async {
+    if (_dialogShown) return;
+    final draft = await LocalStorageService.getSelectedCategoriesDraft(widget.userId);
+    if (draft != null && draft.isNotEmpty && mounted) {
+      _dialogShown = true;
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text("Recovered Selection"),
+            content: const Text("We found a previous selection. Would you like to continue with it?"),
+            actions: [
+              TextButton(
+                child: const Text("Discard"),
+                onPressed: () async {
+                  await LocalStorageService.deleteSelectedCategoriesDraft(widget.userId);
+                  Navigator.pop(context);
+                },
+              ),
+              TextButton(
+                child: const Text("Continue"),
+                onPressed: () {
+                  setState(() {
+                    selectedCategories = draft;
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+
+
+
   void toggleSelection(String categoryId) {
     setState(() {
       if (selectedCategories.contains(categoryId)) {
@@ -57,6 +153,9 @@ class _SelectCategoriesScreenState extends State<SelectCategoriesScreen> {
         selectedCategories.add(categoryId);
       }
     });
+    
+      LocalStorageService.saveSelectedCategoriesDraft(widget.userId, selectedCategories);
+  
   }
 
   Future<void> _saveSelection() async {
@@ -65,6 +164,9 @@ class _SelectCategoriesScreenState extends State<SelectCategoriesScreen> {
     print("Selected categories: $selectedCategories");
 
     await _profileController.updateUserCategories(widget.userId, selectedCategories);
+    await LocalStorageService.setCategoriesCompleted(widget.userId);
+     //BORRAR el borrador local si existe
+    await LocalStorageService.deleteSelectedCategoriesDraft(widget.userId);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("Categories saved successfully")),
@@ -102,6 +204,21 @@ class _SelectCategoriesScreenState extends State<SelectCategoriesScreen> {
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 24),
+        if (_showRecoveryBanner) ...[
+          Container(
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Colors.amber.shade100,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Text(
+              "You didn't finish your registration. Please complete your category selection to continue.",
+              style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w500),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
         StreamBuilder<List<Category_event>>(
           stream: _categoryController.getCategoriesStream(),
           builder: (context, snapshot) {
@@ -155,7 +272,9 @@ class _SelectCategoriesScreenState extends State<SelectCategoriesScreen> {
           child: SizedBox(
             width: MediaQuery.of(context).size.width * 0.9,
             child: ElevatedButton(
-              onPressed: selectedCategories.isEmpty ? null : _saveSelection,
+              //onPressed: selectedCategories.isEmpty ? null : _saveSelection,
+              onPressed: (selectedCategories.isEmpty || !isConnected) ? null : _saveSelection,
+              // Si no hay conexión, el botón estará deshabilitado
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.secondary,
                 padding: const EdgeInsets.symmetric(vertical: 14),
@@ -175,6 +294,22 @@ class _SelectCategoriesScreenState extends State<SelectCategoriesScreen> {
             ),
           ),
         ),
+        if (!isConnected) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.amber.shade100,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Text(
+              "You're offline. Your selection is saved locally and will be restored once you reconnect.",
+              style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w500),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
       ],
     ),
   ),
