@@ -5,7 +5,7 @@ import 'package:dart_g21/controllers/skill_controller.dart';
 import 'package:dart_g21/controllers/user_controller.dart';
 import 'package:dart_g21/data/database/app_database.dart';
 import 'package:dart_g21/models/profile.dart';
-import 'package:dart_g21/models/user.dart';
+import 'package:dart_g21/models/user.dart' as model_user;
 import 'package:dart_g21/repositories/drift_repository.dart';
 import 'package:drift/backends.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -80,7 +80,7 @@ class LocalStorageRepository{
         
         if (profile != null) {
           saveProfile(event.creator_id, profile);
-          User? user = await userController.getUserById(event.creator_id);
+          model_user.User? user = await userController.getUserById(event.creator_id);
           if (user != null) {
             saveUserName(event.creator_id, user.name);
           }
@@ -296,6 +296,7 @@ class LocalStorageRepository{
     return null;
   }
 
+
    Future<void> saveFollowersAndFollowing(String userId, List<String> followers, List<String> following) async {
     await _lock.synchronized(() async {
       if (!_profileBox.containsKey('${userId}_followers')) {
@@ -304,7 +305,7 @@ class LocalStorageRepository{
       if (!_profileBox.containsKey('${userId}_following')) {
         await _profileBox.put('${userId}_following', jsonEncode(following));
       }
-    });
+    }); 
   
   }
 

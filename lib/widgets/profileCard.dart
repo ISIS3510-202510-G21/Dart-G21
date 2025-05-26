@@ -1,16 +1,27 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import '../controllers/user_controller.dart';
-import '../controllers/profile_controller.dart';
-import '../models/user.dart';
-import '../models/profile.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
-class ProfileCard extends StatelessWidget {
-  final String userId; // El usuario que se muestra en la tarjeta
-  final String currentUserId; // El usuario autenticado actual
+import '../controllers/profile_controller.dart';
+import '../controllers/user_controller.dart';
+import '../models/user.dart' as user_model;
+import '../models/profile.dart' as profile_model;
+import '../repositories/drift_repository.dart';
+import '../repositories/localStorage_repository.dart';
+
+class ProfileCard extends StatefulWidget {
+  final String userId;
+  final String currentUserId;
   final UserController userController;
   final ProfileController profileController;
+  final DriftRepository driftRepository;
+  final LocalStorageRepository localStorageRepository;
+  final user_model.User user;
+  final profile_model.Profile profile;
+  final bool isFollowing;
+  final bool isConnected;
 
   const ProfileCard({
     Key? key,
@@ -18,88 +29,110 @@ class ProfileCard extends StatelessWidget {
     required this.currentUserId,
     required this.userController,
     required this.profileController,
+    required this.driftRepository,
+    required this.localStorageRepository,
+    required this.user,
+    required this.profile,
+    required this.isFollowing,
+    required this.isConnected,
   }) : super(key: key);
 
   @override
+  State<ProfileCard> createState() => _ProfileCardState();
+}
+
+class _ProfileCardState extends State<ProfileCard> {
+  late bool isConnected;
+  late bool isFollowing;
+  late Connectivity _connectivity;
+  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    isConnected = widget.isConnected;
+    isFollowing = widget.isFollowing;
+    _checkInitialConnectivity();
+    _setUpConnectivity();
+  }
+
+  Future<void> _checkInitialConnectivity() async {
+    final result = await Connectivity().checkConnectivity();
+    setState(() {
+      isConnected = !result.contains(ConnectivityResult.none);
+    });
+  }
+
+  void _setUpConnectivity() {
+    _connectivity = Connectivity();
+    _connectivitySubscription = _connectivity.onConnectivityChanged.listen((List<ConnectivityResult> results) {
+      final currentlyConnected = !results.contains(ConnectivityResult.none);
+      if (mounted && currentlyConnected != isConnected) {
+        setState(() {
+          isConnected = currentlyConnected;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return StreamBuilder<Profile?>(
-      stream: profileController.getProfileByUserId(currentUserId), // 👈 Perfil del usuario actual
-      builder: (context, currentProfileSnapshot) {
-        if (!currentProfileSnapshot.hasData) {
-          return const SizedBox(
-            height: 80,
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        final currentProfile = currentProfileSnapshot.data!;
-        final bool isFollowing = currentProfile.following.contains(userId); // 👈 ¿lo sigue?
-
-        return StreamBuilder<Profile?>(
-          stream: profileController.getProfileByUserId(userId),
-          builder: (context, profileSnapshot) {
-            return FutureBuilder<User?>(
-              future: userController.getUserById(userId),
-              builder: (context, userSnapshot) {
-                if (!profileSnapshot.hasData || !userSnapshot.hasData) {
-                  return const SizedBox(height: 80);
-                }
-
-                final profile = profileSnapshot.data!;
-                final user = userSnapshot.data!;
-                final String? imageUrl = profile.picture;
-
-                return Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
-                  ),
-                  child: Row(
-                    children: [
-                      buildProfileImage(imageUrl),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              (profile.headline.isNotEmpty) ? profile.headline : "No headline",
-                              style: const TextStyle(color: Colors.indigo, fontSize: 14),
-                            ),
-                            Text(
-                              user.name,
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: () async {
-                          if (isFollowing) {
-                            profileController.unfollowUser(currentUserId, userId);
-                          } else {
-                            profileController.followUser(currentUserId, userId);
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.indigo.withOpacity(0.1),
-                          foregroundColor: Colors.indigo,
-                          shape: const StadiumBorder(),
-                          elevation: 0,
-                        ),
-                        child: Text(isFollowing ? "Unfollow" : "Follow"),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            );
-          },
-        );
-      },
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
+      ),
+      child: Row(
+        children: [
+          buildProfileImage(widget.profile.picture),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.profile.headline.isNotEmpty ? widget.profile.headline : "No headline",
+                  style: const TextStyle(color: Colors.indigo, fontSize: 14),
+                ),
+                Text(
+                  widget.user.name,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+          ElevatedButton(
+            onPressed: isConnected
+                ? () async {
+              if (isFollowing) {
+                await widget.profileController.unfollowUser(widget.currentUserId, widget.userId);
+              } else {
+                await widget.profileController.followUser(widget.currentUserId, widget.userId);
+              }
+              setState(() {
+                isFollowing = !isFollowing;
+              });
+            }
+                : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isConnected ? Colors.indigo.withOpacity(0.1) : Colors.grey.shade300,
+              foregroundColor: isConnected ? Colors.indigo : Colors.grey,
+              shape: const StadiumBorder(),
+              elevation: 0,
+            ),
+            child: Text(isFollowing ? "Unfollow" : "Follow"),
+          ),
+        ],
+      ),
     );
   }
 

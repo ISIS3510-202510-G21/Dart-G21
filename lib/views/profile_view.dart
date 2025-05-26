@@ -66,19 +66,23 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _loadOnlineData() async {
     _profileSubscription?.cancel();
     final profileStream = _profileController.getProfileByUserId(widget.userId);
-    final userStream = _userController.getUserById(widget.userId);
+
     _profileSubscription = profileStream.listen((profile) async {
       if (profile != null && profile_user.id != profile.id) {
         setState(() {
           profile_user = profile;
         });
-        final user = await userStream;
+
+        final user = await _userController.getUserById(widget.userId);
+
         setState(() {
           onlineName = user?.name ?? "";
         });
+
         if (user != null) {
           await _profileController.saveUserNameToLocal(widget.userId, user.name);
         }
+
         await _profileController.saveProfileToLocal(widget.userId, profile);
         await _profileController.saveFollowersAndFollowingToLocal(
           widget.userId,
@@ -88,6 +92,7 @@ class _ProfilePageState extends State<ProfilePage> {
       }
     });
   }
+
 
   Future<void> _loadOfflineData() async {
     final profile = await _profileController.getProfileFromLocal(widget.userId);

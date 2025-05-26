@@ -7,7 +7,7 @@ import 'package:dart_g21/models/tables.dart';
 
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [Categories, Skills, Locations])
+@DriftDatabase(tables: [Categories, Skills, Locations, Users])
 class AppDatabase extends _$AppDatabase {
   // Singleton instance
   static final AppDatabase _instance = AppDatabase._internal();
