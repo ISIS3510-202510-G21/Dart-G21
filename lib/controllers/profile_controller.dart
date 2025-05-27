@@ -112,5 +112,21 @@ class ProfileController {
     }
   }
 
+  /// devuelve los ids (de user) de los seguidores de un usuario
+  Stream<List<String>> getFollowersStream(String profileId) {
+    return _profileRepository.getFollowers(profileId);
+  }
+
+  Stream<List<String>> getFollowingsStream(String profileId) {
+    return _profileRepository.getFollowing(profileId);
+  }
+
+  Future<void> followUser(String currentUserId, String targetUserId) async {
+    return await _profileRepository.followUser(currentUserId, targetUserId);
+  }
+
+  Future<void> unfollowUser(String currentUserId, String targetUserId) async {
+    return await _profileRepository.unfollowUser(currentUserId, targetUserId);
+  }
 
 }

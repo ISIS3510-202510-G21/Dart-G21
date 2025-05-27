@@ -64,7 +64,6 @@ class _CategoriesFilterState extends State<CategoriesFilter> {
     setState(() {
       isConnected = !result.contains(ConnectivityResult.none);
     });
-    print("Estado inicial de conexión corregido: $isConnected");
 
     await _loadCategory();
   }

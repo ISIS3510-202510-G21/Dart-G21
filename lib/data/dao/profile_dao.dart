@@ -96,7 +96,66 @@ class ProfileDAO {
     }
   }
 
+  Stream<List<String>> getFollowersStream(String profileId) {
+    return FirebaseFirestore.instance
+        .collection("profiles")
+        .doc(profileId)
+        .snapshots()
+        .map((snapshot) {
+      if (!snapshot.exists) return [];
+      final data = snapshot.data();
+      final followers = data?['followers'] as List<dynamic>? ?? [];
+      print(followers);
+      return followers.map((e) => e is DocumentReference ? e.id : e.toString()).toList();
+    });
+  }
 
+  Stream<List<String>> getFollowingStream(String profileId) {
+    return FirebaseFirestore.instance
+        .collection("profiles")
+        .doc(profileId)
+        .snapshots()
+        .map((snapshot) {
+      if (!snapshot.exists) return [];
+      final data = snapshot.data();
+      final followers = data?['following'] as List<dynamic>? ?? [];
+      return followers.map((e) => e is DocumentReference ? e.id : e.toString()).toList();
+    });
+  }
+
+  Future<void> followUser(String currentUserId, String targetUserId) async {
+    final currentProfileId = await getProfileIdByUserId(currentUserId);
+    final targetProfileId = await getProfileIdByUserId(targetUserId);
+
+    if (currentProfileId == null || targetProfileId == null) {
+      throw Exception("No se pudo obtener alguno de los perfiles");
+    }
+
+    await FirebaseFirestore.instance.collection(collectionPath).doc(currentProfileId).update({
+      "following": FieldValue.arrayUnion([targetUserId])
+    });
+
+    await FirebaseFirestore.instance.collection(collectionPath).doc(targetProfileId).update({
+      "followers": FieldValue.arrayUnion([currentUserId])
+    });
+  }
+
+  Future<void> unfollowUser(String currentUserId, String targetUserId) async {
+    final currentProfileId = await getProfileIdByUserId(currentUserId);
+    final targetProfileId = await getProfileIdByUserId(targetUserId);
+
+    if (currentProfileId == null || targetProfileId == null) {
+      throw Exception("No se pudo obtener alguno de los perfiles");
+    }
+
+    await FirebaseFirestore.instance.collection(collectionPath).doc(currentProfileId).update({
+      "following": FieldValue.arrayRemove([targetUserId])
+    });
+
+    await FirebaseFirestore.instance.collection(collectionPath).doc(targetProfileId).update({
+      "followers": FieldValue.arrayRemove([currentUserId])
+    });
+  }
 
 }
 

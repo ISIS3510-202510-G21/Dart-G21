@@ -25,3 +25,26 @@ class Locations extends Table {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+class StringListConverter extends TypeConverter<List<String>, String> {
+  const StringListConverter();
+
+  @override
+  List<String> fromSql(String fromDb) =>
+      fromDb.split(',').where((e) => e.isNotEmpty).toList();
+
+  @override
+  String toSql(List<String> value) => value.join(',');
+}
+
+class Users extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  TextColumn get email => text()();
+  TextColumn get userType => text().named('user_type')();
+  TextColumn get recommendedEvents =>
+      text().map(const StringListConverter()).nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}

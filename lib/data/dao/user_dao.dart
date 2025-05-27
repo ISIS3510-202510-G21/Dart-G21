@@ -44,4 +44,8 @@ class UserDAO {
         .getDocumentByFieldOnce(collectionPath, "email", email)
         .map((doc) => doc != null ? User.fromMap(doc as Map<String, dynamic>, doc["id"]) : null);
   }
+
+
+
+
 }
