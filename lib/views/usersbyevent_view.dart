@@ -97,6 +97,7 @@ Future<void> _loadInitialData() async {
 
  Future<void> _loadAttendees() async {
     List<Map<String, dynamic>> result = [];
+    int count = 0;
     for (String userId in widget.attendeeIds) {
       final profileFuture = _profileController.getProfileByUserId(userId).first;
       final userFuture = _userController.getUserById(userId);
@@ -104,12 +105,16 @@ Future<void> _loadInitialData() async {
       final profile = await profileFuture;
       final user = await userFuture;
 
-      if (profile != null) {
-        _profileController.saveProfileToLocal(userId, profile);
+      // Solo guardar la información de máximo 5 usuarios
+      if (count < 5) {
+        if (profile != null) {
+          _profileController.saveProfileToLocal(userId, profile);
+        }
+        if (user != null) {
+          _profileController.saveUserNameToLocal(userId, user.name);
+        }
       }
-      if (user != null) {
-        _profileController.saveUserNameToLocal(userId, user.name);
-      }
+      count++;
 
       if (profile != null && user != null) {
         result.add({
@@ -130,7 +135,7 @@ Future<void> _loadInitialData() async {
 Future<void> _loadOfflineAttendees() async {
     List<Map<String, dynamic>> result = [];
 
-    for (String userId in widget.attendeeIds) {
+    for (String userId in widget.attendeeIds.take(6)) {
       final profile = await _profileController.getProfileFromLocal(userId);
       final userName = await _profileController.getUserNameFromLocal(userId);
 
