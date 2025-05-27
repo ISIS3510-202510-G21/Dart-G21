@@ -106,7 +106,7 @@ Future<void> _loadInitialData() async {
       final user = await userFuture;
 
       // Solo guardar la información de máximo 5 usuarios
-      if (count < 5) {
+      if (count < 6) {
         if (profile != null) {
           _profileController.saveProfileToLocal(userId, profile);
         }
