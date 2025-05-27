@@ -24,7 +24,7 @@ class _SignInScreenState extends State<SignInScreen> {
   
   bool _isPasswordVisible = false;
   bool _rememberMe = false;
-  bool _dialogShown = false;
+  bool _dialogShown = false; // Para evitar mostrar el diálogo varias veces
   final _userController = UserController(); 
   final authController = AuthController();
 
@@ -314,6 +314,9 @@ void _checkForSavedUser() async {
             await authController.saveUserLocally(user_id, user.email, user.name);
 
 
+          setState(() {
+            _dialogShown = true; // Resetea el estado del diálogo
+          }); // Actualiza el estado del widget
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -381,6 +384,10 @@ void _checkForSavedUser() async {
         ),
         TextButton(
           onPressed: () {
+            setState(() {
+              _dialogShown = true; // Resetea el estado del diálogo
+            });
+
             Navigator.pushNamed(context, '/signup'); //HABILITARLO PARA IR A SIGN UP
           },
           child: const Text(

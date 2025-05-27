@@ -6,6 +6,7 @@ class SignUpDraft {
   String headline;
   String description;
   String profileImagePath;
+  List<String> selectedInterests;
 
   SignUpDraft({
     required this.email,
@@ -15,6 +16,7 @@ class SignUpDraft {
     required this.headline,
     required this.description,
     required this.profileImagePath,
+    this.selectedInterests = const [], // importante valor por defecto
   });
 
   Map<String, dynamic> toJson() => {
@@ -25,6 +27,7 @@ class SignUpDraft {
     'headline': headline,
     'description': description,
     'profileImagePath': profileImagePath,
+    'selectedInterests': selectedInterests,
   };
 
   factory SignUpDraft.fromJson(Map<String, dynamic> json) => SignUpDraft(
@@ -35,5 +38,6 @@ class SignUpDraft {
     headline: json['headline'] ?? '',
     description: json['description'] ?? '',
     profileImagePath: json['profileImagePath'] ?? '',
+    selectedInterests: List<String>.from(json['selectedInterests'] ?? []), // manejo del caso donde no hay intereses seleccionados
   );
 }
