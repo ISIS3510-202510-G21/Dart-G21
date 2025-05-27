@@ -183,7 +183,7 @@ class _MapView extends State<MapView> {
                 child: const Text('Show Detail'),
                 onPressed: () async {
                   Navigator.of(context).pop(); // Cierra el diálogo
-                  logEventDetailClick(widget.userId, event.name);
+                  logEventDetailClick(widget.userId, event.id, event.name, event.category);
                   await precacheImage(NetworkImage(event.image), context);
                   Navigator.push(
                     context,
@@ -209,13 +209,16 @@ class _MapView extends State<MapView> {
     );
   }
 
-  void logEventDetailClick(String userId, String eventName) {
+  void logEventDetailClick(String userId, String eventId, String eventName, String categoryName) {
     FirebaseFirestore.instance.collection('eventdetail_clicks').add({
       'user_id': userId,
       'timestamp': FieldValue.serverTimestamp(),
+      'event_id': eventId,
       'name': eventName,
+      'category_name': categoryName,
     });
   }
+
 
   Future<void> downloadBogotaMapImageIfNeeded() async {
     try {
@@ -404,7 +407,7 @@ class _MapView extends State<MapView> {
                               onPressed: () async {
                                 await precacheImage(NetworkImage(e.event.image), context);
                                 Navigator.of(context).pop(); // Cierra el diálogo
-                                logEventDetailClick(widget.userId, e.event.name);
+                                logEventDetailClick(widget.userId, e.event.id, e.event.name, e.event.category);
 
                                 Navigator.push(
                                   context,

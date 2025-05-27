@@ -124,7 +124,7 @@ class _EventsListState extends State<EventsList> {
     return GestureDetector(
     onTap: () async{
       await precacheImage(NetworkImage(event.image), context);
-      logEventDetailClick(widget.userId, event.name);
+      logEventDetailClick(widget.userId, event.id, event.name, event.category);
 
       Navigator.push(
         context,
@@ -249,11 +249,24 @@ class _EventsListState extends State<EventsList> {
   }
 
 
-  void logEventDetailClick(String userId, String eventName) {
+  Future<void> logEventDetailClick(String userId, String eventId, String eventName, String categoryId) async {
+    // Obtener el nombre de la categoría desde Firestore usando el categoryId
+    String? categoryName;
+    try {
+      final doc = await FirebaseFirestore.instance.collection('categories').doc(categoryId).get();
+      if (doc.exists) {
+        categoryName = doc.data()?['name'] as String?;
+      }
+    } catch (e) {
+      categoryName = null;
+    }
+
     FirebaseFirestore.instance.collection('eventdetail_clicks').add({
       'user_id': userId,
       'timestamp': FieldValue.serverTimestamp(),
+      'event_id': eventId,
       'name': eventName,
+      'category_name': categoryName ?? '',
     });
   }
 

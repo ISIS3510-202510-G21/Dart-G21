@@ -152,7 +152,12 @@ class _CategoriesFilterState extends State<CategoriesFilter> {
                           event: filteredEvents[index],
                           onTap: () async {
                             await precacheImage(NetworkImage(filteredEvents[index].image), context);
-                            logEventDetailClick(widget.userId, filteredEvents[index].name);
+                            logEventDetailClick(
+                              widget.userId,
+                              filteredEvents[index].id,
+                              filteredEvents[index].name,
+                              filteredEvents[index].category,
+                            );
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -176,11 +181,13 @@ class _CategoriesFilterState extends State<CategoriesFilter> {
     );
   }
 
-  void logEventDetailClick(String userId, String eventName) {
+  void logEventDetailClick(String userId, String eventId, String eventName, String categoryName) {
     FirebaseFirestore.instance.collection('eventdetail_clicks').add({
       'user_id': userId,
       'timestamp': FieldValue.serverTimestamp(),
+      'event_id': eventId,
       'name': eventName,
+      'category_name': categoryName,
     });
   }
 

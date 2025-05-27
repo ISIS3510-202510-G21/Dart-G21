@@ -641,7 +641,7 @@ void applySearchFilter(String value) {
                   return EventCard(event: event, onTap: () async {
                     print("Evento seleccionado: ${event.name}");
                     await precacheImage(NetworkImage(event.image), context);
-                    logEventDetailClick(widget.userId, event.name);
+                    logEventDetailClick(widget.userId, event.id, event.name, event.category, event.category);
 
                     Navigator.push(
                       context,
@@ -662,11 +662,12 @@ void applySearchFilter(String value) {
 
 }
 
-void logEventDetailClick(String userId, String eventName) {
-    FirebaseFirestore.instance.collection('eventdetail_clicks').add({
-      'user_id': userId,
-      'timestamp': FieldValue.serverTimestamp(),
-      'name': eventName,
-    });
-
+void logEventDetailClick(String userId, String eventId, String eventName, String categoryId, String categoryName) {
+  FirebaseFirestore.instance.collection('eventdetail_clicks').add({
+    'user_id': userId,
+    'timestamp': FieldValue.serverTimestamp(),
+    'event_id': eventId,
+    'name': eventName,
+    'category_name': categoryName,
+  });
 }
