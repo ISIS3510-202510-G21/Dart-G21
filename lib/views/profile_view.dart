@@ -124,12 +124,32 @@ class _ProfilePageState extends State<ProfilePage> {
       } else if (prev && !isConnected) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text("Connection lost, Offline mode activated", style: TextStyle(color: AppColors.primary, fontSize: 16)),
-            backgroundColor: AppColors.buttonRed,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+        content: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Expanded(
+          child: Text(
+            "Connection lost, Offline mode activated",
+            style: TextStyle(color: AppColors.primary, fontSize: 16),
+          ),
             ),
+            TextButton(
+          onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          },
+          child: const Text(
+            "OK",
+            style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+          ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color.fromARGB(255, 93, 101, 255),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        duration: const Duration(days: 1), // stays until user presses OK
           ),
         );
       }
