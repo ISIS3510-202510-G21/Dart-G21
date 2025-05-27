@@ -34,4 +34,11 @@ class UserController {
     return await LocalStorageRepository().getLastLoggedInUser();
   }
 
+  Future<List<User>> getSuggestedUsers({int count = 3}) async {
+    final users = await getUsersStream().first; // obtiene todos los usuarios una vez
+    users.shuffle(); // mezcla aleatoriamente
+    return users.take(count).toList();
+  }
+
+
 }

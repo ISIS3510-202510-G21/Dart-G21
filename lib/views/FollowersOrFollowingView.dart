@@ -1,7 +1,7 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter/material.dart';
 import '../controllers/profile_controller.dart';
 import '../controllers/user_controller.dart';
 import '../data/database/app_database.dart';
@@ -48,6 +48,7 @@ class _FollowersOrFollowingViewState extends State<FollowersOrFollowingView> {
   final _driftRepository = DriftRepository(AppDatabase());
 
   List<FollowerData> followerDataList = [];
+  List<user_model.User> suggestedUsers = [];
   bool isConnected = true;
   bool isLoading = true;
 
@@ -58,12 +59,8 @@ class _FollowersOrFollowingViewState extends State<FollowersOrFollowingView> {
   void initState() {
     super.initState();
     _setupConnectivity();
-    logFollowersOrFollowingView(
-      widget.currentUserId,
-      widget.profileId,
-      widget.isFollowers,
-    );
     _checkInitialConnectivityAndLoad();
+    logFollowersOrFollowingView(widget.currentUserId, widget.profileId, widget.isFollowers);
   }
 
   void _setupConnectivity() {
@@ -81,45 +78,39 @@ class _FollowersOrFollowingViewState extends State<FollowersOrFollowingView> {
   Future<void> _checkInitialConnectivityAndLoad() async {
     final result = await Connectivity().checkConnectivity();
     isConnected = result != ConnectivityResult.none;
+    setState(() => isLoading = false);
 
     if (isConnected) {
-      await _loadOnline();
-
+      _loadOnline();
+      if (!widget.isFollowers) _loadSuggestions();
     } else {
-      await _loadFromLocal();
+      _loadFromLocal();
     }
-
-    setState(() {
-      isLoading = false;
-    });
   }
 
-  @override
-  void dispose() {
-    _connectivitySubscription.cancel();
-    super.dispose();
-  }
+  void _loadOnline() async {
+    final followersFuture = widget.profileController.getFollowersStream(widget.profileId).first;
+    final followingsFuture = widget.profileController.getFollowingsStream(widget.profileId).first;
+    final currentProfileFuture = widget.profileController.getProfileByUserId(widget.currentUserId).first;
 
-  Future<void> _loadOnline() async {
-    final followers = await widget.profileController.getFollowersStream(widget.profileId).first;
-    final followings = await widget.profileController.getFollowingsStream(widget.profileId).first;
-    final currentProfile = await widget.profileController.getProfileByUserId(widget.currentUserId).first;
+    final followers = await followersFuture;
+    final followings = await followingsFuture;
+    final currentProfile = await currentProfileFuture;
 
     final ids = widget.isFollowers ? followers : followings;
 
     for (final id in ids) {
-      final profile = await widget.profileController.getProfileByUserId(id).first;
-      final user = await widget.userController.getUserById(id);
-      final isFollowing = currentProfile?.following.contains(id) ?? false;
+      widget.profileController.getProfileByUserId(id).first.then((profile) async {
+        final user = await widget.userController.getUserById(id);
+        final isFollowing = currentProfile?.following.contains(id) ?? false;
 
-      if (user != null && profile != null) {
-        final data = FollowerData(user: user, profile: profile, isFollowing: isFollowing);
-        setState(() {
-          followerDataList.add(data);
-        });
-        _driftRepository.saveUserDrift(user);
-        _localStorageRepository.saveProfile(id, profile);
-      }
+        if (user != null && profile != null) {
+          final data = FollowerData(user: user, profile: profile, isFollowing: isFollowing);
+          setState(() => followerDataList.add(data));
+          _driftRepository.saveUserDrift(user);
+          _localStorageRepository.saveProfile(id, profile);
+        }
+      });
     }
 
     await _localStorageRepository.saveFollowersAndFollowing(
@@ -129,7 +120,7 @@ class _FollowersOrFollowingViewState extends State<FollowersOrFollowingView> {
     );
   }
 
-  Future<void> _loadFromLocal() async {
+  void _loadFromLocal() async {
     final localData = await _localStorageRepository.getFollowersAndFollowing(widget.profileId);
     final ids = widget.isFollowers ? localData['followers']! : localData['following']!;
 
@@ -139,11 +130,31 @@ class _FollowersOrFollowingViewState extends State<FollowersOrFollowingView> {
 
       if (user != null && profile != null) {
         final data = FollowerData(user: user, profile: profile, isFollowing: false);
-        setState(() {
-          followerDataList.add(data);
-        });
+        setState(() => followerDataList.add(data));
       }
     }
+  }
+
+  void _loadSuggestions() async {
+    final currentFollowings = await widget.profileController.getFollowingsStream(widget.currentUserId).first;
+    final suggestions = await widget.userController.getSuggestedUsers(count: 3);
+    final filtered = suggestions.where((u) => !currentFollowings.contains(u.id) && u.id != widget.currentUserId).toList();
+    setState(() => suggestedUsers = filtered.take(3).toList());
+  }
+
+  void logFollowersOrFollowingView(String userId, String viewedUserId, bool isFollowers) {
+    FirebaseFirestore.instance.collection('followers_following_logs').add({
+      'user_id': userId,
+      'viewed_user_id': viewedUserId,
+      'type': isFollowers ? 'followers' : 'following',
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription.cancel();
+    super.dispose();
   }
 
   @override
@@ -163,41 +174,73 @@ class _FollowersOrFollowingViewState extends State<FollowersOrFollowingView> {
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : followerDataList.isEmpty
-          ? Center(
-        child: Text(widget.isFollowers ? "No followers yet" : "Not following anyone"),
-      )
-          : ListView.builder(
-        itemCount: itemCount,
-        itemBuilder: (context, index) {
-          final data = followerDataList[index];
-          return ProfileCard(
-            userId: data.user.id,
-            currentUserId: widget.currentUserId,
-            userController: widget.userController,
-            profileController: widget.profileController,
-            driftRepository: _driftRepository,
-            localStorageRepository: _localStorageRepository,
-            user: data.user,
-            profile: data.profile,
-            isFollowing: data.isFollowing,
-            isConnected: isConnected,
-          );
-        },
+          : Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              itemCount: itemCount,
+              itemBuilder: (context, index) {
+                final data = followerDataList[index];
+                return ProfileCard(
+                  userId: data.user.id,
+                  currentUserId: widget.currentUserId,
+                  userController: widget.userController,
+                  profileController: widget.profileController,
+                  driftRepository: _driftRepository,
+                  localStorageRepository: _localStorageRepository,
+                  user: data.user,
+                  profile: data.profile,
+                  isFollowing: data.isFollowing,
+                  isConnected: isConnected,
+                );
+              },
+            ),
+          ),
+          if (!widget.isFollowers && isConnected && suggestedUsers.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("Suggestions", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 250, // Altura máxima de la sección de sugerencias
+                    child: ListView.builder(
+                      itemCount: suggestedUsers.length,
+                      itemBuilder: (context, index) {
+                        final user = suggestedUsers[index];
+                        return ProfileCard(
+                          userId: user.id,
+                          currentUserId: widget.currentUserId,
+                          userController: widget.userController,
+                          profileController: widget.profileController,
+                          driftRepository: _driftRepository,
+                          localStorageRepository: _localStorageRepository,
+                          user: user,
+                          profile: profile_model.Profile(
+                            id: '',
+                            user_ref: user.id,
+                            headline: '',
+                            picture: '',
+                            description: '',
+                            events_associated: [],
+                            followers: [],
+                            following: [],
+                            interests: [],
+                          ),
+                          isFollowing: false,
+                          isConnected: true,
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            )
+
+        ],
       ),
     );
   }
-
-  void logFollowersOrFollowingView(String userId, String viewedUserId, bool isFollowers) {
-    print("LOGGING VIEW: $userId viewed ${isFollowers ? 'followers' : 'following'} of $viewedUserId");
-    FirebaseFirestore.instance.collection('followers_following_logs').add({
-      'user_id': userId,
-      'viewed_user_id': viewedUserId,
-      'type': isFollowers ? 'followers' : 'following',
-      'timestamp': FieldValue.serverTimestamp(),
-    });
-  }
-
-
-
 }
