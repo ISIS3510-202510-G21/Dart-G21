@@ -168,21 +168,24 @@ Future<void> _loadOfflineAttendees() async {
   }
 
   // Helper to get category name by ID, handling online/offline
-  Future<String> _getCategoryName(String categoryId) async {
+  Future<String> _getCategoryName(String categoryId) {
     final categoryController = CategoryController();
     if (isConnected) {
-      final category = await categoryController.getCategoryById(categoryId);
-      if (category != null) {
-        await categoryController.saveCategoryToDrift(category);
-        return category.name;
-      }
+      return categoryController.getCategoryById(categoryId).then((category) async {
+        if (category != null) {
+          await categoryController.saveCategoryToDrift(category);
+          return category.name;
+        }
+        return "N/A";
+      });
     } else {
-      final category = await categoryController.getCategoryByIdOfflineDrift(categoryId);
-      if (category != null) {
-        return category.name;
-      }
+      return categoryController.getCategoryByIdOfflineDrift(categoryId).then((category) {
+        if (category != null) {
+          return category.name;
+        }
+        return "N/A";
+      });
     }
-    return "N/A";
   }
 
   Widget _buildStatisticsCard() {
